@@ -375,85 +375,98 @@ function animate() {
     const subSteps = state.isPaused ? 0 : 150;
     const subDt = physicsDt / (subSteps || 1);
 
+    const activePlanets = physicsBodies.filter(b => !b.destroyed && !b.isAsteroid && b.pos && b.vel);
+    const activeAsteroids = physicsBodies.filter(b => !b.destroyed && b.isAsteroid && b.pos && b.vel);
+
+    const _diff = new THREE.Vector3();
+    const _forceDir = new THREE.Vector3();
+    const _sunDir = new THREE.Vector3();
+
+    function applySunGravity(body) {
+        if (body.destroyed) return;
+        const rSq = body.pos.lengthSq();
+        if (rSq > 1600) { 
+            const forceMag = (G * SUN_MASS) / rSq;
+            _sunDir.copy(body.pos).negate().normalize();
+            body.vel.addScaledVector(_sunDir, forceMag * subDt);
+        } else if (body.physMass < SUN_MASS) {
+            body.destroyed = true;
+        }
+    }
+
+    function interact(bodyA, bodyB) {
+        if (bodyA.destroyed || bodyB.destroyed) return;
+
+        _diff.subVectors(bodyB.pos, bodyA.pos);
+        let distSq = _diff.lengthSq();
+
+        const rA = bodyA.isAsteroid ? 5 : (bodyA.mesh.userData.radius || 5);
+        const rB = bodyB.isAsteroid ? 5 : (bodyB.mesh.userData.radius || 5);
+        const minDistance = rA + rB;
+
+        if (distSq < minDistance * minDistance) {
+            // Collision Merge
+            let heavier = bodyA.physMass >= bodyB.physMass ? bodyA : bodyB;
+            let lighter = bodyA.physMass >= bodyB.physMass ? bodyB : bodyA;
+
+            const totalMass = heavier.physMass + lighter.physMass;
+            
+            // Conservation of Momentum (reusing _diff as temp to avoid GC)
+            _diff.copy(lighter.vel).multiplyScalar(lighter.physMass);
+            heavier.vel.multiplyScalar(heavier.physMass).add(_diff).divideScalar(totalMass);
+            
+            heavier.physMass = totalMass;
+            const massRatio = Math.pow(totalMass / (totalMass - lighter.physMass), 0.33);
+            
+            if (heavier.isAsteroid) {
+                heavier.instances.forEach(inst => inst.scale *= massRatio);
+            } else {
+                heavier.mesh.scale.multiplyScalar(massRatio);
+                heavier.mesh.userData.radius = (heavier.mesh.userData.radius || 5) * massRatio;
+            }
+
+            lighter.destroyed = true;
+        } else {
+            const isAsteroidInvolved = bodyA.isAsteroid || bodyB.isAsteroid;
+            const mutualG = isAsteroidInvolved ? G * 5 : G * 50; 
+            
+            _forceDir.copy(_diff).normalize();
+            const forceA = (mutualG * bodyB.physMass) / distSq;
+            const forceB = (mutualG * bodyA.physMass) / distSq;
+            
+            bodyA.vel.addScaledVector(_forceDir, forceA * subDt);
+            bodyB.vel.addScaledVector(_forceDir, -forceB * subDt);
+        }
+    }
+
     for (let s = 0; s < subSteps; s++) {
-        for (let i = 0; i < physicsBodies.length; i++) {
-            const bodyA = physicsBodies[i];
-            if (bodyA.destroyed || !bodyA.pos || !bodyA.vel) continue;
+        // 1. Planets compute Sun gravity and interact with everything
+        for (let i = 0; i < activePlanets.length; i++) {
+            const pA = activePlanets[i];
+            applySunGravity(pA);
 
-            const rVec = new THREE.Vector3(0, 0, 0).sub(bodyA.pos);
-            const rSq = rVec.lengthSq();
-            
-            let accel = new THREE.Vector3();
-
-            // 1. Gravity from Sun and Sun Collision
-            if (rSq > 1600) { 
-                const forceMag = (G * SUN_MASS) / rSq;
-                accel.add(rVec.normalize().multiplyScalar(forceMag));
-            } else if (bodyA.physMass < SUN_MASS) {
-                // Destroyed by Sun
-                bodyA.destroyed = true;
-                continue;
+            for (let j = i + 1; j < activePlanets.length; j++) {
+                interact(pA, activePlanets[j]);
             }
-
-            // 2. N-Body Mutual Gravity and Collision
-            for (let j = i + 1; j < physicsBodies.length; j++) {
-                const bodyB = physicsBodies[j];
-                if (bodyB.destroyed || !bodyB.pos || !bodyB.vel) continue;
-                
-                // Massive Optimization: Asteroids don't pull/collide with other asteroids
-                if (bodyA.isAsteroid && bodyB.isAsteroid) continue;
-
-                const diff = new THREE.Vector3().subVectors(bodyB.pos, bodyA.pos);
-                let distSq = diff.lengthSq();
-
-                const rA = bodyA.isAsteroid ? 5 : (bodyA.mesh.userData.radius || 5);
-                const rB = bodyB.isAsteroid ? 5 : (bodyB.mesh.userData.radius || 5);
-                const minDistance = rA + rB;
-
-                if (distSq < minDistance * minDistance) {
-                    // Collision Merge
-                    let heavier = bodyA.physMass >= bodyB.physMass ? bodyA : bodyB;
-                    let lighter = bodyA.physMass >= bodyB.physMass ? bodyB : bodyA;
-
-                    const totalMass = heavier.physMass + lighter.physMass;
-                    heavier.vel.multiplyScalar(heavier.physMass).add(lighter.vel.clone().multiplyScalar(lighter.physMass)).divideScalar(totalMass);
-                    
-                    heavier.physMass = totalMass;
-                    const massRatio = Math.pow(totalMass / (totalMass - lighter.physMass), 0.33);
-                    
-                    if (heavier.isAsteroid) {
-                        heavier.instances.forEach(inst => inst.scale *= massRatio);
-                    } else {
-                        heavier.mesh.scale.multiplyScalar(massRatio);
-                        heavier.mesh.userData.radius = (heavier.mesh.userData.radius || 5) * massRatio;
-                    }
-
-                    lighter.destroyed = true;
-                } else {
-                    // Multiplied by 50 to make pure planetary mutual gravity extremely visible.
-                    // But if it's an asteroid, reduce the pull by 10x so Jupiter doesn't instantly vacuum the whole belt.
-                    const isAsteroidInvolved = bodyA.isAsteroid || bodyB.isAsteroid;
-                    const mutualG = isAsteroidInvolved ? G * 5 : G * 50; 
-                    
-                    const dist = Math.sqrt(distSq);
-                    const forceDir = diff.normalize();
-                    
-                    const aA = forceDir.clone().multiplyScalar((mutualG * bodyB.physMass) / distSq);
-                    const aB = forceDir.clone().multiplyScalar((-mutualG * bodyA.physMass) / distSq);
-                    
-                    accel.add(aA);
-                    bodyB.vel.add(aB.multiplyScalar(subDt));
-                }
+            for (let j = 0; j < activeAsteroids.length; j++) {
+                interact(pA, activeAsteroids[j]);
             }
-            
-            bodyA.vel.add(accel.multiplyScalar(subDt));
         }
 
-        physicsBodies.forEach(body => {
-            if (!body.destroyed && body.pos && body.vel) {
-                body.pos.add(body.vel.clone().multiplyScalar(subDt));
-            }
-        });
+        // 2. Asteroids ONLY compute Sun gravity (bypassing O(N^2) inner loops completely)
+        for (let i = 0; i < activeAsteroids.length; i++) {
+            applySunGravity(activeAsteroids[i]);
+        }
+
+        // 3. Positional updates
+        for (let i = 0; i < activePlanets.length; i++) {
+            const b = activePlanets[i];
+            if (!b.destroyed) b.pos.addScaledVector(b.vel, subDt);
+        }
+        for (let i = 0; i < activeAsteroids.length; i++) {
+            const b = activeAsteroids[i];
+            if (!b.destroyed) b.pos.addScaledVector(b.vel, subDt);
+        }
     }
 
     // Cleanup destroyed bodies (consumed by collision)
