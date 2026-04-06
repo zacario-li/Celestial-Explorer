@@ -6,9 +6,9 @@ export const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window
 camera.layers.enable(0); // Default layer
 camera.layers.enable(1); // High-Visibility (Headlight) layer
 
-export const renderer = new THREE.WebGLRenderer({ antialias: true });
+export const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
