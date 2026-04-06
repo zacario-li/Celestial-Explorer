@@ -1,0 +1,65 @@
+import { state } from './state.js';
+import { t, tName } from './i18n.js';
+
+export function updateInfoPanel(body) {
+    const panel = document.getElementById('info-panel');
+    const nameEl = document.getElementById('info-name');
+    const massEl = document.getElementById('info-mass');
+    const radiusEl = document.getElementById('info-radius');
+    const densityEl = document.getElementById('info-density');
+    const relEl = document.getElementById('info-relative');
+
+    const allNavItems = document.querySelectorAll('.nav-item');
+    allNavItems.forEach(item => {
+        const engName = item.dataset.engName;
+        if (body && engName === body.userData.name) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+
+    if (!body || !body.userData || !body.userData.mass) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    nameEl.textContent = tName(body.userData.name);
+    massEl.textContent = `${t('mass')}: ${body.userData.mass}`;
+    radiusEl.textContent = `${t('radius')}: ${body.userData.infoRadius}`;
+    densityEl.textContent = `${t('density')}: ${body.userData.density}`;
+    relEl.textContent = body.userData.massRel;
+    panel.style.display = 'block';
+}
+
+export function applyLanguage() {
+    document.querySelector('.ui-side-left h1').textContent = t('title');
+    document.querySelector('.ui-side-left p').textContent = t('subtitle');
+    document.querySelector('.nav-title').textContent = t('navTitle');
+    document.getElementById('highvis-button').textContent = t('highvis');
+    document.getElementById('overview-button').textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
+    document.getElementById('spawn-button').textContent = t('spawnPlanet');
+    document.getElementById('lang-button').textContent = t('langSwitch');
+
+    // Modal UI
+    document.getElementById('modal-title').textContent = t('modalCustomizeTitle');
+    document.getElementById('modal-lbl-template').textContent = t('modalTemplate');
+    document.getElementById('modal-lbl-distance').textContent = t('modalDistance');
+    document.getElementById('modal-lbl-mass').textContent = t('modalMass');
+    document.getElementById('modal-cancel-btn').textContent = t('modalCancel');
+    document.getElementById('modal-confirm-btn').textContent = t('modalConfirm');
+    document.getElementById('opt-random').textContent = t('optRandom');
+    
+    const pauseBtn = document.getElementById('pause-button');
+    pauseBtn.textContent = state.isPaused ? t('resume') : t('pause');
+
+    const autoRotateBtn = document.getElementById('autorotate-button');
+    autoRotateBtn.textContent = state.isAutoRotate ? t('autoRotateOn') : t('autoRotateOff');
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const engName = item.dataset.engName;
+        if (engName) item.textContent = tName(engName);
+    });
+
+    if (state.focusedBody) updateInfoPanel(state.focusedBody);
+}
