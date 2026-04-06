@@ -420,8 +420,11 @@ function animate() {
                     
                     heavier.physMass = totalMass;
                     const massRatio = Math.pow(totalMass / (totalMass - lighter.physMass), 0.33);
-                    heavier.mesh.scale.multiplyScalar(massRatio);
-                    if (!heavier.isAsteroid) {
+                    
+                    if (heavier.isAsteroid) {
+                        heavier.instances.forEach(inst => inst.scale *= massRatio);
+                    } else {
+                        heavier.mesh.scale.multiplyScalar(massRatio);
                         heavier.mesh.userData.radius = (heavier.mesh.userData.radius || 5) * massRatio;
                     }
 
@@ -455,15 +458,28 @@ function animate() {
 
     // Cleanup destroyed bodies (consumed by collision)
     const destroyedBodies = celestialBodies.filter(b => b.destroyed);
+    
+    // We will need a dummy zero object for InstancedMesh vanishing handling
+    const dummyZero = new THREE.Object3D(); 
+    dummyZero.scale.setScalar(0);
+    dummyZero.updateMatrix();
+    
     if (destroyedBodies.length > 0) {
         destroyedBodies.forEach(b => {
-            scene.remove(b.orbitObj);
-            if (b.orbitLine) scene.remove(b.orbitLine);
-            if (state.focusedBody === b.mesh) {
-                state.focusedBody = null;
-                state.isOverview = true;
-                updateInfoPanel(null);
-                document.getElementById('overview-button').textContent = t('overviewOff');
+            if (b.isAsteroid) {
+                b.instances.forEach(inst => {
+                    b.instancedMesh.setMatrixAt(inst.instanceId, dummyZero.matrix);
+                });
+                b.instancedMesh.instanceMatrix.needsUpdate = true;
+            } else {
+                scene.remove(b.orbitObj);
+                if (b.orbitLine) scene.remove(b.orbitLine);
+                if (state.focusedBody === b.mesh) {
+                    state.focusedBody = null;
+                    state.isOverview = true;
+                    updateInfoPanel(null);
+                    document.getElementById('overview-button').textContent = t('overviewOff');
+                }
             }
         });
         
@@ -481,6 +497,9 @@ function animate() {
         controls.target.set(0, 0, 0);
     }
 
+    const _dummyAsteroid = new THREE.Object3D();
+    const instancedMeshesToUpdate = new Set();
+
     celestialBodies.forEach(body => {
         // Self-healing: if caching wiped position or collision caused NaN
         if (!body.pos || isNaN(body.pos.x) || isNaN(body.pos.z)) {
@@ -490,13 +509,30 @@ function animate() {
             body.pos.set(rad, 0, 0);
             body.vel.set(0, 0, Math.sqrt((G * SUN_MASS) / rad));
         }
-        body.orbitObj.position.copy(body.pos);
-        body.mesh.rotation.y += body.rotSpeed * (state.isPaused ? 0 : 1);
+        
+        if (body.isAsteroid) {
+            instancedMeshesToUpdate.add(body.instancedMesh);
+            body.instances.forEach(inst => {
+                _dummyAsteroid.position.copy(body.pos).add(inst.localPos);
+                inst.rotationOffsets.y += body.rotSpeed * (state.isPaused ? 0 : 1);
+                _dummyAsteroid.rotation.copy(inst.rotationOffsets);
+                _dummyAsteroid.scale.setScalar(inst.scale);
+                _dummyAsteroid.updateMatrix();
+                body.instancedMesh.setMatrixAt(inst.instanceId, _dummyAsteroid.matrix);
+            });
+        } else {
+            body.orbitObj.position.copy(body.pos);
+            body.mesh.rotation.y += body.rotSpeed * (state.isPaused ? 0 : 1);
+    
+            body.satellites.forEach(sat => {
+                sat.orbitObj.rotation.y += sat.speed * (state.isPaused ? 0 : 1);
+                sat.mesh.rotation.y += sat.speed * (state.isPaused ? 0 : 1); 
+            });
+        }
+    });
 
-        body.satellites.forEach(sat => {
-            sat.orbitObj.rotation.y += sat.speed * (state.isPaused ? 0 : 1);
-            sat.mesh.rotation.y += sat.speed * (state.isPaused ? 0 : 1); 
-        });
+    instancedMeshesToUpdate.forEach(mesh => {
+        mesh.instanceMatrix.needsUpdate = true;
     });
 
     celestialBodies.forEach(p => {

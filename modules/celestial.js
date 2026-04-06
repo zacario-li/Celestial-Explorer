@@ -144,11 +144,11 @@ export function createMoon(radius, color, name, orbitRadius, speed, mass, massRe
 }
 
 export function createAsteroidsBelt(count, minRadius, maxRadius, minSpeed, maxSpeed, physicsBodies, scene, celestialBodies) {
-    const groupSize = 5; // Reduced to 5 per group to massively multiply group count and destroy clumping
+    const groupSize = 5; 
     const clusterCount = Math.ceil(count / groupSize);
+    const totalInstances = clusterCount * groupSize;
 
-    // MASSIVE PERFORMANCE OPTIMIZATION: Share ONE BufferGeometry and ONE Material 
-    // across all thousands of asteroid meshes to drastically reduce RAM and WebGL State overhead!
+    // VERY IMPORTANT: Use InstancedMesh to drop 12,000 draw calls down to 1! 
     const sharedGeo = new THREE.DodecahedronGeometry(1, 0); 
     const sharedMat = new THREE.MeshStandardMaterial({ 
         color: 0x777777, 
@@ -156,53 +156,73 @@ export function createAsteroidsBelt(count, minRadius, maxRadius, minSpeed, maxSp
         metalness: 0.1 
     });
 
+    const instancedMesh = new THREE.InstancedMesh(sharedGeo, sharedMat, totalInstances);
+    instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    scene.add(instancedMesh);
+
+    let instanceIdCounter = 0;
+    const dummy = new THREE.Object3D();
+
     for (let k = 0; k < clusterCount; k++) {
         const orbitRadius = minRadius + Math.random() * (maxRadius - minRadius);
-        
-        // Distribute mathematically evenly across the 360 degree circle to guarantee NO gaps
         const initialAngle = (k / clusterCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
         const speed = minSpeed + Math.random() * (maxSpeed - minSpeed);
         
-        const clusterGroup = new THREE.Group();
-        const clusterVisualRadius = 50; // Increased scatter spread to guarantee overlapping field logic
+        const clusterVisualRadius = 50; 
+        
+        const instances = [];
         
         for (let g = 0; g < groupSize; g++) {
-            const radius = 0.5 + Math.random() * 2.5; // Slightly larger size variance
+            const radius = 0.5 + Math.random() * 2.5; 
             
-            const mesh = new THREE.Mesh(sharedGeo, sharedMat);
-            mesh.scale.setScalar(radius);
-            mesh.rotation.x = Math.random() * Math.PI;
-            mesh.rotation.y = Math.random() * Math.PI;
-            
-            mesh.position.set(
+            const localPos = new THREE.Vector3(
                 (Math.random() - 0.5) * clusterVisualRadius * 2,
-                (Math.random() - 0.5) * clusterVisualRadius * 0.4, // Keep it relatively flat
+                (Math.random() - 0.5) * clusterVisualRadius * 0.4, 
                 (Math.random() - 0.5) * clusterVisualRadius * 2
             );
+            
+            const rotationOffsets = new THREE.Euler(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                Math.random() * Math.PI
+            );
 
-            clusterGroup.add(mesh);
+            instances.push({
+                instanceId: instanceIdCounter++,
+                localPos: localPos,
+                scale: radius,
+                rotationOffsets: rotationOffsets
+            });
         }
-
-        scene.add(clusterGroup);
 
         const pos = new THREE.Vector3(orbitRadius * Math.cos(initialAngle), 0, orbitRadius * Math.sin(initialAngle));
         pos.y = (Math.random() - 0.5) * (orbitRadius * 0.04);
-
-        clusterGroup.position.copy(pos);
-        clusterGroup.userData = { radius: clusterVisualRadius, isSun: false, isAsteroid: true };
 
         const vel = new THREE.Vector3(-speed * Math.sin(initialAngle), 0, speed * Math.cos(initialAngle));
         vel.y = (Math.random() - 0.5) * speed * 0.05;
 
         const rotSpeed = 0.01 + Math.random() * 0.05;
 
-        // The group acts as a single physical entity, vastly reducing N-body calculation overload limit
+        // Populate initial matrices visually
+        instances.forEach(inst => {
+            dummy.position.copy(pos).add(inst.localPos);
+            dummy.rotation.copy(inst.rotationOffsets);
+            dummy.scale.setScalar(inst.scale);
+            dummy.updateMatrix();
+            instancedMesh.setMatrixAt(inst.instanceId, dummy.matrix);
+        });
+
         const bodyObj = { 
-            mesh: clusterGroup, orbitObj: clusterGroup, speed, rotSpeed, orbitRadius,
-            pos, vel, physMass: 0.0001 * groupSize, isAsteroid: true, satellites: []
+            isAsteroid: true,
+            instancedMesh: instancedMesh,
+            instances: instances,
+            speed, rotSpeed, orbitRadius,
+            pos, vel, physMass: 0.0001 * groupSize, satellites: []
         };
         
         physicsBodies.push(bodyObj);
         celestialBodies.push(bodyObj);
     }
+    
+    instancedMesh.instanceMatrix.needsUpdate = true;
 }
