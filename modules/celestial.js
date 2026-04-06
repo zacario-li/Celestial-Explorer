@@ -173,7 +173,7 @@ export function createAsteroidsBelt(count, minRadius, maxRadius, minSpeed, maxSp
         const instances = [];
         
         for (let g = 0; g < groupSize; g++) {
-            const radius = 0.5 + Math.random() * 2.5; 
+            const radius = 0.15 + Math.random() * 0.6; 
             
             const localPos = new THREE.Vector3(
                 (Math.random() - 0.5) * clusterVisualRadius * 2,

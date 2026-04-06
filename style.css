@@ -281,3 +281,151 @@ canvas {
     padding: 10px 18px;
     margin-top: 0;
 }
+
+/* ==========================================
+   MOBILE RESPONSIVE LAYOUT (≤768px)
+   ========================================== */
+@media (max-width: 768px) {
+    /* --- Title Area --- */
+    .ui-side-left h1 {
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+    }
+    .ui-side-left p {
+        font-size: 0.7rem;
+        display: none; /* hide subtitle on small screens */
+    }
+    .ui-side-left {
+        top: 12px;
+        left: 12px;
+    }
+
+    /* --- Navigation Panel: horizontal scroll strip at top-left --- */
+    .nav-panel {
+        margin-top: 10px;
+        width: auto;
+        max-width: calc(100vw - 24px);
+        padding: 8px 10px;
+        border-radius: 8px;
+    }
+    .nav-title {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    .nav-list {
+        display: flex;
+        flex-direction: row;
+        gap: 2px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .nav-list::-webkit-scrollbar {
+        display: none;
+    }
+    .nav-item {
+        flex-shrink: 0;
+        padding: 5px 10px;
+        font-size: 11px;
+        white-space: nowrap;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 4px;
+    }
+    .nav-item:hover,
+    .nav-item.active {
+        border-left: none;
+        border-bottom: 2px solid #4fa6ff;
+        padding-left: 10px;
+    }
+
+    /* --- Right Side: move to bottom as horizontal toolbar --- */
+    .ui-side-right {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 8px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        background: linear-gradient(transparent, rgba(3, 6, 19, 0.85) 30%);
+    }
+    .pause-btn {
+        width: auto;
+        min-width: 0;
+        padding: 8px 10px;
+        font-size: 0.65rem;
+        margin-top: 0 !important;
+        border-radius: 8px;
+        letter-spacing: 0;
+    }
+
+    /* --- Info Panel: float above the toolbar --- */
+    .info-panel {
+        position: fixed;
+        bottom: 70px;
+        right: 10px;
+        left: auto;
+        top: auto;
+        width: 180px;
+        padding: 12px 14px;
+        margin-top: 0;
+        border-right: 3px solid #4fa6ff;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        z-index: 20;
+    }
+    .info-name {
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+    }
+    .info-mass {
+        font-size: 0.8rem;
+    }
+    .info-relative {
+        font-size: 0.75rem;
+    }
+
+    /* --- Modal: full-width on phones --- */
+    .modal-content {
+        width: calc(100vw - 40px);
+        max-width: 320px;
+        padding: 20px;
+    }
+    .modal-content h2 {
+        font-size: 1.1rem;
+    }
+    .modal-actions {
+        margin-top: 20px;
+    }
+}
+
+/* Extra small screens (iPhone SE, etc.) */
+@media (max-width: 390px) {
+    .ui-side-left h1 {
+        font-size: 0.95rem;
+    }
+    .nav-panel {
+        max-width: calc(100vw - 16px);
+        padding: 6px 8px;
+    }
+    .nav-item {
+        padding: 4px 7px;
+        font-size: 10px;
+    }
+    .pause-btn {
+        padding: 6px 7px;
+        font-size: 0.6rem;
+    }
+    .info-panel {
+        width: 150px;
+        padding: 10px;
+        bottom: 65px;
+    }
+    .info-name {
+        font-size: 1rem;
+    }
+}
