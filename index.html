@@ -17,6 +17,19 @@
     </script>
 </head>
 <body>
+    <div id="error-log" style="position:absolute; top:10px; left:10px; color:red; z-index:999999; font-size:24px; background:white; padding:10px; display:none;"></div>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const el = document.getElementById('error-log');
+            el.style.display = 'block';
+            el.innerHTML += message + '<br>' + source + ':' + lineno + '<hr>';
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            const el = document.getElementById('error-log');
+            el.style.display = 'block';
+            el.innerHTML += 'Promise: ' + event.reason + '<hr>';
+        });
+    </script>
     <div id="canvas-container"></div>
     
     <!-- Left Navigation UI -->

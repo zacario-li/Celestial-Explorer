@@ -344,7 +344,9 @@ if (earthRef) {
 
 // Randomize starting rotations
 celestialBodies.forEach(body => {
-    body.orbitObj.rotation.y = Math.random() * Math.PI * 2;
+    if (!body.isAsteroid) {
+        body.orbitObj.rotation.y = Math.random() * Math.PI * 2;
+    }
 });
 
 const clock = new THREE.Clock();
