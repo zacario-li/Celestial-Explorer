@@ -405,9 +405,8 @@ function animate() {
     starField.rotation.y = state.virtualTime * 0.0005;
     starField.rotation.x = state.virtualTime * 0.0002;
 
-    // Physics: 2000 sim-speed / 30 substeps gives same accuracy as 400/150
-    // but runs 5x fewer iterations => massive CPU savings
-    const simSpeedMultiplier = 2000;
+    // Physics: 30 substeps is sufficient accuracy at this time scale
+    const simSpeedMultiplier = 400;
     const physicsDt = (state.isPaused ? 0 : realDt) * simSpeedMultiplier;
     const subSteps = state.isPaused ? 0 : 30;
     const subDt = physicsDt / (subSteps || 1);
