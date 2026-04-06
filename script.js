@@ -549,8 +549,10 @@ function animate() {
     });
 
     celestialBodies.forEach(p => {
-        p.mesh.layers.set(0);
-        p.satellites.forEach(s => s.mesh.layers.set(0));
+        if (!p.isAsteroid) {
+            p.mesh.layers.set(0);
+            p.satellites.forEach(s => s.mesh.layers.set(0));
+        }
     });
 
     if (state.isHighVis && state.focusedBody) {
