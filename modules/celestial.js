@@ -143,7 +143,7 @@ export function createMoon(radius, color, name, orbitRadius, speed, mass, massRe
     return { mesh, orbitObj: moonOrbitObj, speed };
 }
 
-export function createAsteroidsBelt(count, minRadius, maxRadius, minSpeed, maxSpeed, physicsBodies, scene, celestialBodies) {
+export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, scene, celestialBodies) {
     const groupSize = 5; 
     const clusterCount = Math.ceil(count / groupSize);
     const totalInstances = clusterCount * groupSize;
@@ -166,9 +166,14 @@ export function createAsteroidsBelt(count, minRadius, maxRadius, minSpeed, maxSp
     for (let k = 0; k < clusterCount; k++) {
         const orbitRadius = minRadius + Math.random() * (maxRadius - minRadius);
         const initialAngle = (k / clusterCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
-        const speed = minSpeed + Math.random() * (maxSpeed - minSpeed);
+
+        // Automatically calculate orbital speed for this specific distance
+        // v = sqrt(GM / r). GM is G * SUN_MASS = 15.
+        const circularSpeed = Math.sqrt((G * SUN_MASS) / orbitRadius);
+        // Add a tiny random factor (chaos) so orbits are slightly elliptical
+        const speed = circularSpeed * (0.98 + Math.random() * 0.04);
         
-        const clusterVisualRadius = 50; 
+        const clusterVisualRadius = 10; 
         
         const instances = [];
         

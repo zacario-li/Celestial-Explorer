@@ -353,12 +353,10 @@ planetsData.forEach(d => {
 });
 
 // Generate Asteroid Belt (Between Mars and Jupiter)
-// Distance between ~550 and ~750, Speed ~0.15
-createAsteroidsBelt(4000, 550, 750, 0.13, 0.17, physicsBodies, scene, celestialBodies);
+createAsteroidsBelt(4000, 550, 750, physicsBodies, scene, celestialBodies);
 
 // Generate Kuiper Belt (Beyond Neptune)
-// Distance between 2400 and 3200, Speed ~0.075
-createAsteroidsBelt(8000, 2400, 3200, 0.06, 0.08, physicsBodies, scene, celestialBodies);
+createAsteroidsBelt(8000, 2400, 3200, physicsBodies, scene, celestialBodies);
 
 // Earth Atmosphere
 if (earthRef) {
@@ -405,10 +403,10 @@ function animate() {
     starField.rotation.y = state.virtualTime * 0.0005;
     starField.rotation.x = state.virtualTime * 0.0002;
 
-    // Physics: 30 substeps is sufficient accuracy at this time scale
+    // Physics: 45 substeps for better stability at 400x time
     const simSpeedMultiplier = 400;
     const physicsDt = (state.isPaused ? 0 : realDt) * simSpeedMultiplier;
-    const subSteps = state.isPaused ? 0 : 30;
+    const subSteps = state.isPaused ? 0 : 45;
     const subDt = physicsDt / (subSteps || 1);
 
     refreshActiveBodyLists();
@@ -465,7 +463,7 @@ function animate() {
                 if (aB.destroyed) continue;
                 _diff.subVectors(aB.pos, pA.pos);
                 const dSq = _diff.lengthSq();
-                const minD = (pA.mesh.userData.radius || 5) + 5;
+                const minD = (pA.mesh.userData.radius || 5) + 2; // Asteroids are smaller now
                 if (dSq < minD * minD) {
                     let heavier = pA.physMass >= aB.physMass ? pA : aB;
                     let lighter = pA.physMass >= aB.physMass ? aB : pA;
@@ -484,8 +482,8 @@ function animate() {
                     lighter.destroyed = true; markBodiesDirty();
                 } else {
                     _forceDir.copy(_diff).normalize();
-                    pA.vel.addScaledVector(_forceDir, (G * 5 * aB.physMass / dSq) * subDt);
-                    aB.vel.addScaledVector(_forceDir, -(G * 5 * pA.physMass / dSq) * subDt);
+                    pA.vel.addScaledVector(_forceDir, (G * 15 * aB.physMass / dSq) * subDt);
+                    aB.vel.addScaledVector(_forceDir, -(G * 15 * pA.physMass / dSq) * subDt);
                 }
             }
         }
