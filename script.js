@@ -235,18 +235,20 @@ const pTextures = {
     'Neptune': texLoader.load(BASE_TEX_URL + 'neptunemap.jpg'),
 };
 
-// Texture Mapping for Moons (NASA-based and Reputable Mirrors)
+const MOON_TEX_BASE = 'https://media.githubusercontent.com/media/notakamihe/Unity-Star-Systems-and-Galaxies/refs/heads/master/Assets/Textures/SolarSystem/';
+
+// Texture Mapping for Moons (NASA-based High Fidelity Media)
 const mTextures = {
-    'The Moon': texLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg'),
-    'Phobos':   texLoader.load('https://raw.githubusercontent.com/N3rson/Solar-System-3D/master/assets/textures/phobos.jpg'),
-    'Deimos':   texLoader.load('https://raw.githubusercontent.com/N3rson/Solar-System-3D/master/assets/textures/deimos.jpg'),
-    'Io':       texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/io.jpg'),
-    'Europa':   texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/europa.jpg'),
-    'Ganymede': texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/ganymede.jpg'),
-    'Callisto': texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/callisto.jpg'),
-    'Titan':    texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/titan.jpg'),
-    'Triton':   texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/triton.jpg'),
-    'Titania':  texLoader.load('https://raw.githubusercontent.com/N3rson/Solar-System-3D/master/assets/textures/uranus.jpg')
+    'The Moon': texLoader.load(MOON_TEX_BASE + 'moon.jpg'),
+    'Phobos':   texLoader.load(MOON_TEX_BASE + 'phobos.jpg'),
+    'Deimos':   texLoader.load(MOON_TEX_BASE + 'diemos.jpg'), // Special spelling in source repo
+    'Io':       texLoader.load(MOON_TEX_BASE + 'io.jpg'),
+    'Europa':   texLoader.load(MOON_TEX_BASE + 'europa.jpg'),
+    'Ganymede': texLoader.load(MOON_TEX_BASE + 'ganymede.jpg'),
+    'Callisto': texLoader.load(MOON_TEX_BASE + 'callisto.jpg'),
+    'Titan':    texLoader.load(MOON_TEX_BASE + 'titan.jpg'),
+    'Triton':   texLoader.load(MOON_TEX_BASE + 'triton.jpg'),
+    'Titania':  texLoader.load(MOON_TEX_BASE + 'titania.jpg')
 };
 
 const celestialBodies = [];
