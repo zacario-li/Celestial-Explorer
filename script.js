@@ -235,6 +235,20 @@ const pTextures = {
     'Neptune': texLoader.load(BASE_TEX_URL + 'neptunemap.jpg'),
 };
 
+// Texture Mapping for Moons (NASA-based and Reputable Mirrors)
+const mTextures = {
+    'The Moon': texLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg'),
+    'Phobos':   texLoader.load('https://raw.githubusercontent.com/N3rson/Solar-System-3D/master/assets/textures/phobos.jpg'),
+    'Deimos':   texLoader.load('https://raw.githubusercontent.com/N3rson/Solar-System-3D/master/assets/textures/deimos.jpg'),
+    'Io':       texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/io.jpg'),
+    'Europa':   texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/europa.jpg'),
+    'Ganymede': texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/ganymede.jpg'),
+    'Callisto': texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/callisto.jpg'),
+    'Titan':    texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/titan.jpg'),
+    'Triton':   texLoader.load('https://raw.githubusercontent.com/KyleGough/threejs-solar-system/master/public/textures/triton.jpg'),
+    'Titania':  texLoader.load('https://raw.githubusercontent.com/N3rson/Solar-System-3D/master/assets/textures/uranus.jpg')
+};
+
 const celestialBodies = [];
 let earthRef = null;
 
@@ -286,9 +300,9 @@ planetsData.forEach(d => {
             const moon = createMoon(m.r, m.c, m.name, m.dist, m.speed, m.m, m.mr, m.ir, m.d);
             planet.satelliteAnchor.add(moon.orbitObj);
 
-            if (m.name === 'The Moon') {
-                const moonTex = texLoader.load(BASE_TEX_URL + 'moonmap1k.jpg');
-                moon.mesh.material.map = moonTex;
+            // Apply Moon Textures if available
+            if (mTextures[m.name]) {
+                moon.mesh.material.map = mTextures[m.name];
                 moon.mesh.material.color = new THREE.Color(0xffffff);
                 moon.mesh.material.needsUpdate = true;
             }
