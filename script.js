@@ -144,6 +144,7 @@ document.getElementById('kuiper-belt-button').addEventListener('click', function
 });
 
 document.getElementById('lang-button').addEventListener('click', async function() {
+    state.currentLang = state.currentLang === 'en' ? 'zh' : 'en';
     await applyLanguage();
 });
 
