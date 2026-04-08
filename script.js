@@ -49,8 +49,14 @@ function refreshActiveBodyLists() {
     for (let i = 0; i < physicsBodies.length; i++) {
         const b = physicsBodies[i];
         if (b.destroyed || !b.pos || !b.vel) continue;
-        if (b.isAsteroid) activeAsteroids.push(b);
-        else activePlanets.push(b);
+        
+        if (b.isAsteroid) {
+            if (b.beltType === 'asteroid' && !state.isAsteroidBeltActive) continue;
+            if (b.beltType === 'kuiper' && !state.isKuiperBeltActive) continue;
+            activeAsteroids.push(b);
+        } else {
+            activePlanets.push(b);
+        }
     }
     bodiesListDirty = false;
 }
@@ -115,6 +121,20 @@ document.getElementById('overview-button').addEventListener('click', function() 
     }
     updateTextureResolution();
     this.textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
+});
+
+document.getElementById('asteroid-belt-button').addEventListener('click', function() {
+    state.isAsteroidBeltActive = !state.isAsteroidBeltActive;
+    this.textContent = state.isAsteroidBeltActive ? t('asteroidBeltOn') : t('asteroidBeltOff');
+    if (asteroidBeltMesh) asteroidBeltMesh.visible = state.isAsteroidBeltActive;
+    markBodiesDirty();
+});
+
+document.getElementById('kuiper-belt-button').addEventListener('click', function() {
+    state.isKuiperBeltActive = !state.isKuiperBeltActive;
+    this.textContent = state.isKuiperBeltActive ? t('kuiperBeltOn') : t('kuiperBeltOff');
+    if (kuiperBeltMesh) kuiperBeltMesh.visible = state.isKuiperBeltActive;
+    markBodiesDirty();
 });
 
 document.getElementById('lang-button').addEventListener('click', async function() {
@@ -262,19 +282,42 @@ const mTexPaths = {
 
 const texCache = new Map();
 
-function getOrLoadTexture(name, category, tier) {
+function getOrLoadTexture(name, category, tier, material) {
     const registry = category === 'planet' ? pTexPaths : mTexPaths;
     if (!registry[name]) return null;
     
-    // Resolve path based on tier
     const path = registry[name][tier] || registry[name].high;
     const cacheKey = `${name}-${tier}`;
 
-    if (texCache.has(cacheKey)) return texCache.get(cacheKey);
+    if (texCache.has(cacheKey)) {
+        const tex = texCache.get(cacheKey);
+        if (material && material.map !== tex) {
+            material.map = tex;
+            material.color.set(0xffffff);
+            material.needsUpdate = true;
+        }
+        return tex;
+    }
 
-    const texture = texLoader.load(path, undefined, undefined, (err) => {
-        console.error(`Error loading texture for ${name} at ${path}:`, err);
-    });
+    const texture = texLoader.load(path, 
+        (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            if (material) {
+                material.map = tex;
+                material.color.set(0xffffff);
+                material.needsUpdate = true;
+            }
+        }, 
+        undefined, 
+        (err) => {
+            const el = document.getElementById('error-log');
+            if (el) {
+                el.style.display = 'block';
+                el.innerHTML += `Failed to load ${name} (${tier}) at ${path}<br>`;
+            }
+            console.error(`Error loading texture for ${name} at ${path}:`, err);
+        }
+    );
     
     texCache.set(cacheKey, texture);
     return texture;
@@ -282,10 +325,6 @@ function getOrLoadTexture(name, category, tier) {
 
 function updateTextureResolution() {
     const focused = state.focusedBody;
-    
-    // Determine Tiers
-    // Desktop: focused -> high, others -> low
-    // Mobile: focused -> low, others -> ultra
     const focusedTier = isMobile ? 'low' : 'high';
     const otherTier = isMobile ? 'ultra' : 'low';
 
@@ -296,31 +335,14 @@ function updateTextureResolution() {
         const isMoonFocused = body.satellites.some(s => s.mesh === focused);
         const pTier = (isPlanetFocused || isMoonFocused) ? focusedTier : otherTier;
 
-        // Apply to Planet
-        const pTex = getOrLoadTexture(body.name, 'planet', pTier);
-        if (pTex) {
-            if (body.mesh.material.map !== pTex) {
-                body.mesh.material.map = pTex;
-                body.mesh.material.needsUpdate = true;
-            }
-            // Reset color to white so texture isn't tinted by base color
-            body.mesh.material.color.set(0xffffff);
-        }
+        // Fetch/Load for Planet
+        getOrLoadTexture(body.name, 'planet', pTier, body.mesh.material);
 
-        // Apply to Moons
+        // Fetch/Load for Moons
         body.satellites.forEach(moon => {
             const isThisMoonFocused = (focused === moon.mesh);
             const mTier = (isThisMoonFocused || isPlanetFocused) ? focusedTier : otherTier;
-            
-            const mTex = getOrLoadTexture(moon.name, 'moon', mTier);
-            if (mTex) {
-                if (moon.mesh.material.map !== mTex) {
-                    moon.mesh.material.map = mTex;
-                    moon.mesh.material.needsUpdate = true;
-                }
-                // Reset color to white so texture isn't tinted by base color
-                moon.mesh.material.color.set(0xffffff);
-            }
+            getOrLoadTexture(moon.name, 'moon', mTier, moon.mesh.material);
         });
     });
 }
@@ -436,10 +458,12 @@ planetsData.forEach(d => {
 });
 
 // Generate Asteroid Belt (Between Mars and Jupiter)
-createAsteroidsBelt(4000, 550, 750, physicsBodies, scene, celestialBodies);
+const asteroidBeltMesh = createAsteroidsBelt(4000, 550, 750, physicsBodies, scene, celestialBodies, 'asteroid');
+if (asteroidBeltMesh) asteroidBeltMesh.visible = state.isAsteroidBeltActive;
 
 // Generate Kuiper Belt (Beyond Neptune)
-createAsteroidsBelt(8000, 2400, 3200, physicsBodies, scene, celestialBodies);
+const kuiperBeltMesh = createAsteroidsBelt(8000, 2400, 3200, physicsBodies, scene, celestialBodies, 'kuiper');
+if (kuiperBeltMesh) kuiperBeltMesh.visible = state.isKuiperBeltActive;
 
 // Earth Atmosphere
 if (earthRef) {

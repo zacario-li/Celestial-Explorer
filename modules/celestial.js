@@ -143,7 +143,7 @@ export function createMoon(radius, color, name, orbitRadius, speed, mass, massRe
     return { mesh, orbitObj: moonOrbitObj, speed };
 }
 
-export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, scene, celestialBodies) {
+export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, scene, celestialBodies, beltType = 'asteroid') {
     const groupSize = 5; 
     const clusterCount = Math.ceil(count / groupSize);
     const totalInstances = clusterCount * groupSize;
@@ -222,7 +222,8 @@ export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, 
             instancedMesh: instancedMesh,
             instances: instances,
             speed, rotSpeed, orbitRadius,
-            pos, vel, physMass: 0.0001 * groupSize, satellites: []
+            pos, vel, physMass: 0.0001 * groupSize, satellites: [],
+            beltType: beltType
         };
         
         physicsBodies.push(bodyObj);
@@ -230,4 +231,5 @@ export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, 
     }
     
     instancedMesh.instanceMatrix.needsUpdate = true;
+    return instancedMesh;
 }

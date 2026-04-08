@@ -7,5 +7,7 @@ export const state = {
     isHighVis: false,
     isAutoRotate: true,
     isOverview: false,
-    previousBody: null
+    previousBody: null,
+    isAsteroidBeltActive: false,
+    isKuiperBeltActive: false
 };
