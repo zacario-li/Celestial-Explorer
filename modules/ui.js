@@ -1,5 +1,6 @@
-import { state } from './state.js';
-import { t, tName } from './i18n.js';
+import { state } from './state.js?v=5';
+import { t, tName } from './i18n.js?v=5';
+import { planetsData } from './planetsData.js?v=5';
 
 export function updateInfoPanel(body) {
     const panel = document.getElementById('info-panel');
@@ -32,7 +33,7 @@ export function updateInfoPanel(body) {
     panel.style.display = 'block';
 }
 
-export function applyLanguage() {
+export async function applyLanguage() {
     document.querySelector('.ui-side-left h1').textContent = t('title');
     document.querySelector('.ui-side-left p').textContent = t('subtitle');
     document.querySelector('.nav-title').textContent = t('navTitle');
@@ -60,6 +61,24 @@ export function applyLanguage() {
         const engName = item.dataset.engName;
         if (engName) item.textContent = tName(engName);
     });
+
+    // Update Spawn Template Dropdown Options
+    const spawnTemplate = document.getElementById('spawn-template');
+    if (spawnTemplate) {
+        const opts = spawnTemplate.options;
+        for (let i = 0; i < opts.length; i++) {
+            const val = opts[i].value;
+            if (val === 'Random') {
+                opts[i].textContent = t('optRandom');
+            } else {
+                const idx = parseInt(val);
+                if (!isNaN(idx) && planetsData[idx]) {
+                    const d = planetsData[idx];
+                    opts[i].textContent = `${d.name} (${tName(d.name)})`;
+                }
+            }
+        }
+    }
 
     if (state.focusedBody) updateInfoPanel(state.focusedBody);
 }

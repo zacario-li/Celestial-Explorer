@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import { state } from './modules/state.js';
-import { planetsData } from './modules/planetsData.js';
-import { t, tName } from './modules/i18n.js';
-import { updateInfoPanel, applyLanguage } from './modules/ui.js';
+import { state } from './modules/state.js?v=5';
+import { planetsData } from './modules/planetsData.js?v=5';
+import { t, tName } from './modules/i18n.js?v=5';
+import { updateInfoPanel, applyLanguage } from './modules/ui.js?v=5';
 import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js';
 import { createStarfield } from './modules/starfield.js';
 import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js';
@@ -116,9 +116,9 @@ document.getElementById('overview-button').addEventListener('click', function() 
     this.textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
 });
 
-document.getElementById('lang-button').addEventListener('click', function() {
+document.getElementById('lang-button').addEventListener('click', async function() {
     state.currentLang = state.currentLang === 'en' ? 'zh' : 'en';
-    applyLanguage();
+    await applyLanguage();
 });
 
 const spawnModal = document.getElementById('spawn-modal');
@@ -224,32 +224,52 @@ updateInfoPanel(state.focusedBody);
 const texLoader = new THREE.TextureLoader();
 const BASE_TEX_URL = 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/';
 
+function loadTexture(name, path) {
+    return texLoader.load(path, undefined, undefined, (err) => {
+        console.error(`Error loading texture for ${name} at ${path}:`, err);
+    });
+}
+
 const pTextures = {
-    'Mercury': texLoader.load(BASE_TEX_URL + 'mercurymap.jpg'),
-    'Venus': texLoader.load(BASE_TEX_URL + 'venusmap.jpg'),
-    'Earth': texLoader.load(BASE_TEX_URL + 'earthmap1k.jpg'),
-    'Mars': texLoader.load(BASE_TEX_URL + 'marsmap1k.jpg'),
-    'Jupiter': texLoader.load(BASE_TEX_URL + 'jupitermap.jpg'),
-    'Saturn': texLoader.load(BASE_TEX_URL + 'saturnmap.jpg'),
-    'Uranus': texLoader.load(BASE_TEX_URL + 'uranusmap.jpg'),
-    'Neptune': texLoader.load(BASE_TEX_URL + 'neptunemap.jpg'),
+    'Mercury': loadTexture('Mercury', 'textures/planets/mercury.jpg'),
+    'Venus':   loadTexture('Venus',   'textures/planets/venus.jpg'),
+    'Earth':   loadTexture('Earth',   BASE_TEX_URL + 'earthmap1k.jpg'),
+    'Mars':    loadTexture('Mars',    BASE_TEX_URL + 'marsmap1k.jpg'),
+    'Jupiter': loadTexture('Jupiter', 'textures/planets/jupiter.jpg'),
+    'Saturn':  loadTexture('Saturn',  BASE_TEX_URL + 'saturnmap.jpg'),
+    'Uranus':  loadTexture('Uranus',  BASE_TEX_URL + 'uranusmap.jpg'),
+    'Neptune': loadTexture('Neptune', BASE_TEX_URL + 'neptunemap.jpg'),
+    'Pluto':   loadTexture('Pluto',   'textures/planets/pluto.png'),
+    'Ceres':   loadTexture('Ceres',   'textures/planets/ceres.png'),
+    'Vesta':   loadTexture('Vesta',   'textures/planets/vesta.png'),
 };
 
-const MOON_TEX_BASE = 'https://media.githubusercontent.com/media/notakamihe/Unity-Star-Systems-and-Galaxies/refs/heads/master/Assets/Textures/SolarSystem/';
+const MOON_TEX_BASE = 'textures/moons/';
 
 // Texture Mapping for Moons (NASA-based High Fidelity Media)
 const mTextures = {
-    'The Moon': texLoader.load(MOON_TEX_BASE + 'moon.jpg'),
-    'Phobos':   texLoader.load(MOON_TEX_BASE + 'phobos.jpg'),
-    'Deimos':   texLoader.load(MOON_TEX_BASE + 'diemos.jpg'), // Special spelling in source repo
-    'Io':       texLoader.load(MOON_TEX_BASE + 'io.jpg'),
-    'Europa':   texLoader.load(MOON_TEX_BASE + 'europa.jpg'),
-    'Ganymede': texLoader.load(MOON_TEX_BASE + 'ganymede.jpg'),
-    'Callisto': texLoader.load(MOON_TEX_BASE + 'callisto.jpg'),
-    'Titan':    texLoader.load(MOON_TEX_BASE + 'titan.jpg'),
-    'Triton':   texLoader.load(MOON_TEX_BASE + 'triton.jpg'),
-    'Titania':  texLoader.load(MOON_TEX_BASE + 'titania.jpg')
+    'The Moon':  loadTexture('The Moon',  MOON_TEX_BASE + 'moon.jpg'),
+    'Phobos':    loadTexture('Phobos',    MOON_TEX_BASE + 'phobos.jpg'),
+    'Deimos':    loadTexture('Deimos',    MOON_TEX_BASE + 'deimos.jpg'),
+    'Io':        loadTexture('Io',        MOON_TEX_BASE + 'io.jpg'),
+    'Europa':    loadTexture('Europa',    MOON_TEX_BASE + 'europa.png'),
+    'Ganymede':  loadTexture('Ganymede',  MOON_TEX_BASE + 'ganymede.jpg'),
+    'Callisto':  loadTexture('Callisto',  MOON_TEX_BASE + 'callisto.jpg'),
+    'Mimas':     loadTexture('Mimas',     MOON_TEX_BASE + 'mimas.jpg'),
+    'Enceladus': loadTexture('Enceladus', MOON_TEX_BASE + 'enceladus.jpg'),
+    'Tethys':    loadTexture('Tethys',    MOON_TEX_BASE + 'tethys.jpg'),
+    'Dione':     loadTexture('Dione',     MOON_TEX_BASE + 'dione.jpg'),
+    'Rhea':      loadTexture('Rhea',      MOON_TEX_BASE + 'rhea.jpg'),
+    'Titan':     loadTexture('Titan',     MOON_TEX_BASE + 'titan.jpg'),
+    'Iapetus':   loadTexture('Iapetus',   MOON_TEX_BASE + 'iapetus.jpg'),
+    'Ariel':     loadTexture('Ariel',     MOON_TEX_BASE + 'ariel.jpg'),
+    'Titania':   loadTexture('Titania',   MOON_TEX_BASE + 'titania.jpg'),
+    'Oberon':    loadTexture('Oberon',    MOON_TEX_BASE + 'oberon.jpg'),
+    'Triton':    loadTexture('Triton',    MOON_TEX_BASE + 'triton.jpg'),
+    'Charon':    loadTexture('Charon',    MOON_TEX_BASE + 'charon.jpg')
 };
+
+
 
 const celestialBodies = [];
 let earthRef = null;

@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state } from './state.js?v=5';
 
 export const i18n = {
     en: {
@@ -30,8 +30,11 @@ export const i18n = {
             'Saturn': 'Saturn', 'Uranus': 'Uranus', 'Neptune': 'Neptune',
             'The Moon': 'The Moon', 'Phobos': 'Phobos', 'Deimos': 'Deimos',
             'Io': 'Io', 'Europa': 'Europa', 'Ganymede': 'Ganymede',
-            'Callisto': 'Callisto', 'Titan': 'Titan', 'Titania': 'Titania',
-            'Triton': 'Triton'
+            'Callisto': 'Callisto', 'Mimas': 'Mimas', 'Enceladus': 'Enceladus',
+            'Tethys': 'Tethys', 'Dione': 'Dione', 'Rhea': 'Rhea', 
+            'Titan': 'Titan', 'Iapetus': 'Iapetus', 'Ariel': 'Ariel',
+            'Titania': 'Titania', 'Oberon': 'Oberon', 'Triton': 'Triton',
+            'Pluto': 'Pluto', 'Charon': 'Charon', 'Ceres': 'Ceres', 'Vesta': 'Vesta'
         }
     },
     zh: {
@@ -63,11 +66,15 @@ export const i18n = {
             'Saturn': '土星', 'Uranus': '天王星', 'Neptune': '海王星',
             'The Moon': '月球', 'Phobos': '火卫一', 'Deimos': '火卫二',
             'Io': '木卫一', 'Europa': '木卫二', 'Ganymede': '木卫三',
-            'Callisto': '木卫四', 'Titan': '土卫六', 'Titania': '天卫三',
-            'Triton': '海卫一'
+            'Callisto': '木卫四', 'Mimas': '土卫一', 'Enceladus': '土卫二',
+            'Tethys': '土卫三', 'Dione': '土卫四', 'Rhea': '土卫五',
+            'Titan': '土卫六', 'Iapetus': '土卫八', 'Ariel': '天卫一',
+            'Titania': '天卫三', 'Oberon': '天卫四', 'Triton': '海卫一',
+            'Pluto': '冥王星', 'Charon': '卡戎', 'Ceres': '谷神星', 'Vesta': '灶神星'
         }
     }
 };
+
 
 export function t(key) {
     return i18n[state.currentLang][key];
