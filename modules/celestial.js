@@ -140,7 +140,7 @@ export function createMoon(radius, color, name, orbitRadius, speed, mass, massRe
     const orbitLine = new THREE.Mesh(ringGeo, ringMat);
     moonOrbitObj.add(orbitLine); 
 
-    return { mesh, orbitObj: moonOrbitObj, speed };
+    return { name, mesh, orbitObj: moonOrbitObj, speed };
 }
 
 export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, scene, celestialBodies, beltType = 'asteroid') {
