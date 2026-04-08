@@ -233,7 +233,7 @@ function loadTexture(name, path) {
 const pTextures = {
     'Mercury': loadTexture('Mercury', 'textures/planets/mercury.jpg'),
     'Venus':   loadTexture('Venus',   'textures/planets/venus.jpg'),
-    'Earth':   loadTexture('Earth',   BASE_TEX_URL + 'earthmap1k.jpg'),
+    'Earth':   loadTexture('Earth',   'textures/planets/earth.jpg'),
     'Mars':    loadTexture('Mars',    BASE_TEX_URL + 'marsmap1k.jpg'),
     'Jupiter': loadTexture('Jupiter', 'textures/planets/jupiter.jpg'),
     'Saturn':  loadTexture('Saturn',  BASE_TEX_URL + 'saturnmap.jpg'),
