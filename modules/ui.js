@@ -41,6 +41,8 @@ export async function applyLanguage() {
     document.getElementById('overview-button').textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
     document.getElementById('asteroid-belt-button').textContent = state.isAsteroidBeltActive ? t('asteroidBeltOn') : t('asteroidBeltOff');
     document.getElementById('kuiper-belt-button').textContent = state.isKuiperBeltActive ? t('kuiperBeltOn') : t('kuiperBeltOff');
+    document.getElementById('pilot-button').textContent = state.isFlying ? t('pilotEnd') : t('pilotStart');
+    document.getElementById('pilot-instr').textContent = t('pilotInstructions');
     document.getElementById('spawn-button').textContent = t('spawnPlanet');
     document.getElementById('lang-button').textContent = t('langSwitch');
 

@@ -9,6 +9,7 @@ import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from '.
 import { createStarfield } from './modules/starfield.js';
 import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js';
 import { createSun } from './modules/sunAndWind.js';
+import { createSpaceship } from './modules/spaceship.js';
 
 // Controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -22,6 +23,11 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const targetVec = new THREE.Vector3();
 const physicsBodies = [];
+
+// Pilot Input State
+const keys = {};
+window.addEventListener('keydown', (e) => keys[e.code] = true);
+window.addEventListener('keyup', (e) => keys[e.code] = false);
 
 // Pre-allocated reusable objects (ZERO per-frame GC pressure)
 const _diff = new THREE.Vector3();
@@ -138,8 +144,41 @@ document.getElementById('kuiper-belt-button').addEventListener('click', function
 });
 
 document.getElementById('lang-button').addEventListener('click', async function() {
-    state.currentLang = state.currentLang === 'en' ? 'zh' : 'en';
     await applyLanguage();
+});
+
+document.getElementById('pilot-button').addEventListener('click', function() {
+    state.isFlying = !state.isFlying;
+    const hud = document.getElementById('pilot-hud');
+    
+    if (state.isFlying) {
+        hud.style.display = 'block';
+        controls.enabled = false;
+        this.textContent = t('pilotEnd');
+        this.style.background = 'rgba(0, 255, 255, 0.2)';
+        this.style.borderColor = '#00ffff';
+        
+        // Detach from Earth orbit and move to global scene
+        if (window._spaceship) {
+            window._spaceship.getWorldPosition(targetVec);
+            scene.add(window._spaceship);
+            window._spaceship.position.copy(targetVec);
+            
+            // Clear current velocity when starting flight
+            state.shipVelocity.set(0, 0, 0);
+        }
+    } else {
+        hud.style.display = 'none';
+        controls.enabled = true;
+        this.textContent = t('pilotStart');
+        this.style.background = 'rgba(255, 255, 255, 0.05)';
+        this.style.borderColor = '#4fa6ff';
+        
+        // Return to standard focus logic
+        if (state.focusedBody) {
+            state.isTransitioning = true;
+        }
+    }
 });
 
 const spawnModal = document.getElementById('spawn-modal');
@@ -465,19 +504,27 @@ if (asteroidBeltMesh) asteroidBeltMesh.visible = state.isAsteroidBeltActive;
 const kuiperBeltMesh = createAsteroidsBelt(8000, 2400, 3200, physicsBodies, scene, celestialBodies, 'kuiper');
 if (kuiperBeltMesh) kuiperBeltMesh.visible = state.isKuiperBeltActive;
 
-// Earth Atmosphere
+// Earth Atmosphere & Spaceship
 if (earthRef) {
     const earthAtmoGeo = new THREE.SphereGeometry(8.8, 32, 32);
     const earthAtmoMat = new THREE.MeshBasicMaterial({
         color: 0x4fa6ff,
         transparent: true,
-        opacity: 0.25,
-        blending: THREE.AdditiveBlending,
-        side: THREE.BackSide,
-        depthWrite: false
+        opacity: 0.15,
+        side: THREE.BackSide
     });
     const earthAtmo = new THREE.Mesh(earthAtmoGeo, earthAtmoMat);
     earthRef.mesh.add(earthAtmo);
+
+    // Spaceship above Earth
+    const spaceship = createSpaceship();
+    spaceship.position.set(0, 16, 0); // Directly above (N-pole relative to orbital plane)
+    spaceship.rotation.y = Math.PI / 2;
+    earthRef.orbitObj.add(spaceship);
+    
+    // Add to animation loop indirectly via Earth ref if needed, 
+    // or just let it be. I'll add a simple local ref for animation.
+    window._spaceship = spaceship;
 }
 
 // Randomize starting rotations
@@ -491,6 +538,50 @@ const clock = new THREE.Clock();
 let _prevTime = 0;
 
 function animate() {
+    // Flight Physics & Chase Cam
+    if (state.isFlying && window._spaceship) {
+        const ship = window._spaceship;
+        
+        // 1. Rotation (Yaw/Pitch/Roll)
+        const yaw = (keys['KeyA'] ? 1 : 0) - (keys['KeyD'] ? 1 : 0);
+        const pitch = (keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0);
+        const roll = (keys['KeyQ'] ? 1 : 0) - (keys['KeyE'] ? 1 : 0);
+        
+        const rotSpeed = 0.02;
+        ship.rotateY(yaw * rotSpeed);
+        ship.rotateZ(pitch * rotSpeed);
+        ship.rotateX(roll * rotSpeed);
+        
+        // 2. Thrust (Using Local X as ship points in X)
+        const thrustInput = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
+        const turbo = keys['ShiftLeft'] ? 4 : 1;
+        const accel = 0.05 * turbo;
+        
+        const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
+        state.shipVelocity.addScaledVector(dir, thrustInput * accel);
+        
+        // 3. Movement & Inertia
+        state.shipVelocity.multiplyScalar(0.985); // Space friction/damping
+        ship.position.add(state.shipVelocity);
+        
+        // 4. Chase Camera
+        const camOffset = new THREE.Vector3(-15, 5, 0).applyQuaternion(ship.quaternion);
+        const goalPos = ship.position.clone().add(camOffset);
+        camera.position.lerp(goalPos, 0.1);
+        camera.lookAt(ship.position);
+    } else if (window._spaceship && !state.isFlying && !earthRef.orbitObj.children.includes(window._spaceship)) {
+        // Subtle bobbing for stationary mode (relative to Earth orbital location)
+        // Note: For simplicity, if we exited flight mode far from Earth, 
+        // we'll just keep the ship where it is in global space.
+        const time = performance.now() * 0.001;
+        window._spaceship.position.y += Math.sin(time * 2) * 0.01; 
+    } else if (window._spaceship && !state.isFlying) {
+        // Original docked animation
+        const time = performance.now() * 0.001;
+        window._spaceship.position.y = 16 + Math.sin(time * 2) * 0.5;
+        window._spaceship.rotation.z = Math.sin(time * 0.5) * 0.1;
+    }
+
     requestAnimationFrame(animate);
 
     const time = clock.getElapsedTime();

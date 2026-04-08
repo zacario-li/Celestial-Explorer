@@ -53,6 +53,7 @@
         <button id="overview-button" class="pause-btn" style="margin-top: 10px;">🌌 OVERVIEW</button>
         <button id="asteroid-belt-button" class="pause-btn" style="margin-top: 10px;">☄️ ASTEROID BELT: ON</button>
         <button id="kuiper-belt-button" class="pause-btn" style="margin-top: 10px;">❄️ KUIPER BELT: ON</button>
+        <button id="pilot-button" class="pause-btn" style="margin-top: 10px;">🚀 PILOT SHIP</button>
         <button id="spawn-button" class="pause-btn" style="margin-top: 10px;">➕ SPAWN PLANET</button>
         <button id="lang-button" class="pause-btn lang-btn" style="margin-top: 10px;">🌐 中文</button>
         
@@ -63,6 +64,12 @@
             <div id="info-density" class="info-mass" style="margin-top: 4px;">Density: 5.51 g/cm³</div>
             <div id="info-relative" class="info-relative">~ 1.0 Earth Mass</div>
         </div>
+    </div>
+
+    <!-- Pilot HUD -->
+    <div id="pilot-hud" style="display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 15px 25px; border-radius: 12px; border: 1px solid #00ffff; color: #00ffff; font-family: 'Outfit', sans-serif; pointer-events: none; z-index: 1000; text-align: center; box-shadow: 0 0 20px rgba(0,255,255,0.2);">
+        <div style="font-weight: bold; margin-bottom: 5px; font-size: 1.2rem;">FLIGHT SYSTEMS ACTIVE</div>
+        <div id="pilot-instr" style="font-size: 0.9rem; opacity: 0.9;">W/S: Thrust • A/D: Yaw • Q/E: Roll • Arrows: Pitch</div>
     </div>
 
     <!-- Spawn Custom Planet Modal -->
