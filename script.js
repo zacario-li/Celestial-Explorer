@@ -75,6 +75,7 @@ window.addEventListener('dblclick', (event) => {
     }
     state.isTransitioning = true;
     updateInfoPanel(state.focusedBody);
+    updateTextureResolution();
 });
 
 // Handle UI Buttons
@@ -108,11 +109,11 @@ document.getElementById('overview-button').addEventListener('click', function() 
         state.isTransitioning = true;
         updateInfoPanel(null);
     } else {
-        state.isOverview = false;
         state.focusedBody = state.previousBody || scene.children.find(c => c.userData && c.userData.isSun);
         state.isTransitioning = true;
         updateInfoPanel(state.focusedBody);
     }
+    updateTextureResolution();
     this.textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
 });
 
@@ -203,6 +204,7 @@ document.getElementById('modal-confirm-btn').addEventListener('click', function(
         state.isOverview = false;
         state.isTransitioning = true;
         updateInfoPanel(planet.mesh);
+        updateTextureResolution();
         document.getElementById('overview-button').textContent = t('overviewOn');
     };
     navList.appendChild(navItem);
@@ -244,7 +246,22 @@ const pTextures = {
     'Vesta':   loadTexture('Vesta',   'textures/planets/vesta.jpg'),
 };
 
+const pTexturesLow = {
+    'Mercury': loadTexture('Mercury-Low', 'textures/planets/low/mercury.jpg'),
+    'Venus':   loadTexture('Venus-Low',   'textures/planets/low/venus.jpg'),
+    'Earth':   loadTexture('Earth-Low',   'textures/planets/low/earth.jpg'),
+    'Mars':    loadTexture('Mars-Low',    BASE_TEX_URL + 'marsmap1k.jpg'),
+    'Jupiter': loadTexture('Jupiter-Low', 'textures/planets/low/jupiter.jpg'),
+    'Saturn':  loadTexture('Saturn-Low',  BASE_TEX_URL + 'saturnmap.jpg'),
+    'Uranus':  loadTexture('Uranus-Low',  BASE_TEX_URL + 'uranusmap.jpg'),
+    'Neptune': loadTexture('Neptune-Low', BASE_TEX_URL + 'neptunemap.jpg'),
+    'Pluto':   loadTexture('Pluto-Low',   'textures/planets/low/pluto.jpg'),
+    'Ceres':   loadTexture('Ceres-Low',   'textures/planets/low/ceres.jpg'),
+    'Vesta':   loadTexture('Vesta-Low',   'textures/planets/low/vesta.jpg'),
+};
+
 const MOON_TEX_BASE = 'textures/moons/';
+const MOON_LOW_BASE = 'textures/moons/low/';
 
 // Texture Mapping for Moons (NASA-based High Fidelity Media)
 const mTextures = {
@@ -269,6 +286,63 @@ const mTextures = {
     'Charon':    loadTexture('Charon',    MOON_TEX_BASE + 'charon.jpg')
 };
 
+const mTexturesLow = {
+    'The Moon':  loadTexture('The Moon-Low',  MOON_LOW_BASE + 'moon.jpg'),
+    'Phobos':    loadTexture('Phobos-Low',    MOON_LOW_BASE + 'phobos.jpg'),
+    'Deimos':    loadTexture('Deimos-Low',    MOON_LOW_BASE + 'deimos.jpg'),
+    'Io':        loadTexture('Io-Low',        MOON_LOW_BASE + 'io.jpg'),
+    'Europa':    loadTexture('Europa-Low',    MOON_LOW_BASE + 'europa.jpg'),
+    'Ganymede':  loadTexture('Ganymede-Low',  MOON_LOW_BASE + 'ganymede.jpg'),
+    'Callisto':  loadTexture('Callisto-Low',  MOON_LOW_BASE + 'callisto.jpg'),
+    'Mimas':     loadTexture('Mimas-Low',     MOON_LOW_BASE + 'mimas.jpg'),
+    'Enceladus': loadTexture('Enceladus-Low', MOON_LOW_BASE + 'enceladus.jpg'),
+    'Tethys':    loadTexture('Tethys-Low',    MOON_LOW_BASE + 'tethys.jpg'),
+    'Dione':     loadTexture('Dione-Low',     MOON_LOW_BASE + 'dione.jpg'),
+    'Rhea':      loadTexture('Rhea-Low',      MOON_LOW_BASE + 'rhea.jpg'),
+    'Titan':     loadTexture('Titan-Low',     MOON_LOW_BASE + 'titan.jpg'),
+    'Iapetus':   loadTexture('Iapetus-Low',   MOON_LOW_BASE + 'iapetus.jpg'),
+    'Ariel':     loadTexture('Ariel-Low',     MOON_LOW_BASE + 'ariel.jpg'),
+    'Titania':   loadTexture('Titania-Low',   MOON_LOW_BASE + 'titania.jpg'),
+    'Oberon':    loadTexture('Oberon-Low',    MOON_LOW_BASE + 'oberon.jpg'),
+    'Triton':    loadTexture('Triton-Low',    MOON_LOW_BASE + 'triton.jpg'),
+    'Charon':    loadTexture('Charon-Low',    MOON_LOW_BASE + 'charon.jpg')
+};
+
+function updateTextureResolution() {
+    const focused = state.focusedBody;
+    celestialBodies.forEach(body => {
+        if (body.isAsteroid) return;
+        
+        const isPlanetFocused = (focused === body.mesh);
+        const isMoonFocused = body.satellites.some(s => s.mesh === focused);
+        const shouldBeHighRes = isPlanetFocused || isMoonFocused;
+
+        // Apply to Planet
+        if (pTextures[body.name]) {
+            const targetMap = shouldBeHighRes ? pTextures[body.name] : pTexturesLow[body.name];
+            if (body.mesh.material.map !== targetMap) {
+                body.mesh.material.map = targetMap;
+                body.mesh.material.needsUpdate = true;
+            }
+        }
+
+        // Apply to Moons
+        body.satellites.forEach(moon => {
+            const isThisMoonFocused = (focused === moon.mesh);
+            const moonHighRes = isThisMoonFocused || isPlanetFocused; // If planet is focused, moons can be high res too or just focused one
+            
+            if (mTextures[moon.name]) {
+                const targetMap = moonHighRes ? mTextures[moon.name] : mTexturesLow[moon.name];
+                if (moon.mesh.material.map !== targetMap) {
+                    moon.mesh.material.map = targetMap;
+                    moon.mesh.material.needsUpdate = true;
+                }
+            }
+        });
+    });
+}
+
+
 
 
 const celestialBodies = [];
@@ -286,6 +360,7 @@ sunNavItem.onclick = () => {
     state.isOverview = false;
     state.isTransitioning = true;
     updateInfoPanel(sun);
+    updateTextureResolution();
     document.getElementById('overview-button').textContent = t('overviewOn');
 };
 navList.appendChild(sunNavItem);
@@ -304,6 +379,7 @@ planetsData.forEach(d => {
         state.isOverview = false;
         state.isTransitioning = true;
         updateInfoPanel(planet.mesh);
+        updateTextureResolution();
         document.getElementById('overview-button').textContent = t('overviewOn');
     };
     navList.appendChild(navItem);
@@ -703,4 +779,5 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+updateTextureResolution();
 animate();
