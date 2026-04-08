@@ -239,9 +239,9 @@ const pTextures = {
     'Saturn':  loadTexture('Saturn',  BASE_TEX_URL + 'saturnmap.jpg'),
     'Uranus':  loadTexture('Uranus',  BASE_TEX_URL + 'uranusmap.jpg'),
     'Neptune': loadTexture('Neptune', BASE_TEX_URL + 'neptunemap.jpg'),
-    'Pluto':   loadTexture('Pluto',   'textures/planets/pluto.png'),
-    'Ceres':   loadTexture('Ceres',   'textures/planets/ceres.png'),
-    'Vesta':   loadTexture('Vesta',   'textures/planets/vesta.png'),
+    'Pluto':   loadTexture('Pluto',   'textures/planets/pluto.jpg'),
+    'Ceres':   loadTexture('Ceres',   'textures/planets/ceres.jpg'),
+    'Vesta':   loadTexture('Vesta',   'textures/planets/vesta.jpg'),
 };
 
 const MOON_TEX_BASE = 'textures/moons/';
@@ -252,7 +252,7 @@ const mTextures = {
     'Phobos':    loadTexture('Phobos',    MOON_TEX_BASE + 'phobos.jpg'),
     'Deimos':    loadTexture('Deimos',    MOON_TEX_BASE + 'deimos.jpg'),
     'Io':        loadTexture('Io',        MOON_TEX_BASE + 'io.jpg'),
-    'Europa':    loadTexture('Europa',    MOON_TEX_BASE + 'europa.png'),
+    'Europa':    loadTexture('Europa',    MOON_TEX_BASE + 'europa.jpg'),
     'Ganymede':  loadTexture('Ganymede',  MOON_TEX_BASE + 'ganymede.jpg'),
     'Callisto':  loadTexture('Callisto',  MOON_TEX_BASE + 'callisto.jpg'),
     'Mimas':     loadTexture('Mimas',     MOON_TEX_BASE + 'mimas.jpg'),
