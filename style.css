@@ -1,12 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600&display=swap');
 
-body, html {
+body,
+html {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: #030613; /* Deep space dark blue/black */
+    background-color: #030613;
+    /* Deep space dark blue/black */
     font-family: 'Space Grotesk', sans-serif;
 }
 
@@ -59,13 +61,15 @@ canvas {
 /* --- Planet Info Panel --- */
 .info-panel {
     display: none;
-    margin-top: 15px; /* Spaced from pause button above */
+    margin-top: 15px;
+    /* Spaced from pause button above */
     padding: 20px 25px;
     width: 220px;
     background: rgba(10, 15, 30, 0.4);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-right: 4px solid #4fa6ff; /* Mirrored to right side */
+    border-right: 4px solid #4fa6ff;
+    /* Mirrored to right side */
     border-radius: 6px;
     pointer-events: none;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -116,7 +120,8 @@ canvas {
     transition: all 0.3s ease;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-    pointer-events: auto; /* Enable clicks since UI container has pointer-events: none */
+    pointer-events: auto;
+    /* Enable clicks since UI container has pointer-events: none */
 }
 
 .pause-btn:hover {
@@ -134,12 +139,14 @@ canvas {
 .nav-panel {
     margin-top: 30px;
     width: 140px;
-    background: rgba(255, 255, 255, 0.05); /* very light */
+    background: rgba(255, 255, 255, 0.05);
+    /* very light */
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 12px;
-    pointer-events: auto; /* ensure we can click it */
+    pointer-events: auto;
+    /* ensure we can click it */
     user-select: none;
     transition: transform 0.3s ease;
 }
@@ -191,7 +198,10 @@ canvas {
 /* --- Modal Overlay & Content --- */
 .modal-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -203,10 +213,12 @@ canvas {
     pointer-events: none;
     transition: opacity 0.3s ease;
 }
+
 .modal-overlay.active {
     opacity: 1;
     pointer-events: auto;
 }
+
 .modal-content {
     background: rgba(10, 15, 30, 0.85);
     border: 1px solid rgba(79, 166, 255, 0.4);
@@ -218,9 +230,11 @@ canvas {
     transform: scale(0.95);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .modal-overlay.active .modal-content {
     transform: scale(1);
 }
+
 .modal-content h2 {
     margin-top: 0;
     font-size: 1.4rem;
@@ -229,9 +243,11 @@ canvas {
     text-transform: uppercase;
     text-shadow: 0 0 10px rgba(79, 166, 255, 0.3);
 }
+
 .modal-group {
     margin-bottom: 20px;
 }
+
 .modal-group label {
     display: block;
     font-size: 0.85rem;
@@ -239,6 +255,7 @@ canvas {
     margin-bottom: 8px;
     letter-spacing: 0.5px;
 }
+
 .modal-input {
     width: 100%;
     background: rgba(255, 255, 255, 0.08);
@@ -251,18 +268,22 @@ canvas {
     transition: border-color 0.2s ease;
     box-sizing: border-box;
 }
+
 .modal-input:focus {
     border-color: #4fa6ff;
 }
+
 .modal-input option {
     background: #0a0f1e;
     color: white;
 }
+
 .range-container {
     display: flex;
     align-items: center;
     gap: 15px;
 }
+
 .range-container span {
     min-width: 55px;
     text-align: right;
@@ -270,12 +291,14 @@ canvas {
     color: #4fa6ff;
     font-weight: bold;
 }
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
     margin-top: 35px;
 }
+
 .modal-btn {
     width: auto;
     padding: 10px 18px;
@@ -286,36 +309,52 @@ canvas {
    MOBILE RESPONSIVE LAYOUT (≤768px)
    ========================================== */
 @media (max-width: 768px) {
+
     /* --- Title Area --- */
     .ui-side-left h1 {
         font-size: 1.1rem;
         letter-spacing: 1px;
     }
+
     .ui-side-left p {
         font-size: 0.7rem;
-        display: none; /* hide subtitle on small screens */
+        display: none;
+        /* hide subtitle on small screens */
     }
+
     .ui-side-left {
         top: 12px;
         left: 12px;
-    }
-
-    /* --- Navigation Panel: horizontal scroll strip at top-left --- */
+    }    /* --- Navigation Panel: Move back to top area --- */
     .nav-panel {
-        margin-top: 10px;
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
         width: auto;
         max-width: calc(100vw - 24px);
-        padding: 8px 10px;
-        border-radius: 8px;
+        margin-top: 10px;
+        padding: 6px 10px;
+        background: rgba(10, 15, 30, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        z-index: 10;
+        pointer-events: auto;
     }
     .nav-title {
-        font-size: 11px;
-        margin-bottom: 6px;
+        font-size: 10px;
+        margin-bottom: 4px;
+        display: block; /* Show title on top layout for clarity */
+        color: rgba(79, 166, 255, 0.8);
+        text-transform: uppercase;
+        font-weight: bold;
     }
     .nav-list {
         display: flex;
         flex-direction: row;
-        gap: 2px;
+        gap: 6px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -325,66 +364,81 @@ canvas {
     }
     .nav-item {
         flex-shrink: 0;
-        padding: 5px 10px;
+        padding: 6px 12px;
         font-size: 11px;
-        white-space: nowrap;
-        border-left: none;
-        border-bottom: 2px solid transparent;
-        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .nav-item:hover,
     .nav-item.active {
-        border-left: none;
-        border-bottom: 2px solid #4fa6ff;
-        padding-left: 10px;
+        background: rgba(79, 166, 255, 0.2);
+        color: #4fa6ff;
+        border-color: rgba(79, 166, 255, 0.4);
     }
 
-    /* --- Right Side: move to bottom as horizontal toolbar --- */
+    /* --- Right Side (Actions): keep at bottom horizontal strip --- */
     .ui-side-right {
         top: auto;
         right: 0;
         bottom: 0;
         left: 0;
         flex-direction: row;
+        flex-wrap: nowrap;
         align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 10px 8px;
+        justify-content: flex-start;
+        gap: 8px;
+        padding: 10px 14px;
         padding-bottom: max(10px, env(safe-area-inset-bottom));
-        background: linear-gradient(transparent, rgba(3, 6, 19, 0.85) 30%);
+        background: rgba(10, 15, 30, 0.8);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        z-index: 16;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .ui-side-right::-webkit-scrollbar {
+        display: none;
     }
     .pause-btn {
         width: auto;
-        min-width: 0;
-        padding: 8px 10px;
-        font-size: 0.65rem;
+        min-width: 85px;
+        flex-shrink: 0;
+        padding: 8px 12px;
+        font-size: 0.7rem;
         margin-top: 0 !important;
-        border-radius: 8px;
-        letter-spacing: 0;
+        margin-bottom: 0 !important;
+        border-radius: 20px;
     }
 
-    /* --- Info Panel: float above the toolbar --- */
+    /* --- Info Panel: float above bottom action bar --- */
     .info-panel {
         position: fixed;
-        bottom: 70px;
-        right: 10px;
+        bottom: 80px; /* Sitting above only one bar now */
+        right: 12px;
         left: auto;
         top: auto;
         width: 180px;
-        padding: 12px 14px;
+        padding: 14px;
         margin-top: 0;
         border-right: 3px solid #4fa6ff;
-        border-radius: 8px;
-        font-size: 0.8rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
         z-index: 20;
+        background: rgba(10, 15, 30, 0.65);
+        backdrop-filter: blur(20px);
     }
+
     .info-name {
         font-size: 1.2rem;
         margin-bottom: 4px;
     }
+
     .info-mass {
         font-size: 0.8rem;
     }
+
     .info-relative {
         font-size: 0.75rem;
     }
@@ -395,9 +449,11 @@ canvas {
         max-width: 320px;
         padding: 20px;
     }
+
     .modal-content h2 {
         font-size: 1.1rem;
     }
+
     .modal-actions {
         margin-top: 20px;
     }
@@ -408,23 +464,29 @@ canvas {
     .ui-side-left h1 {
         font-size: 0.95rem;
     }
+
     .nav-panel {
         max-width: calc(100vw - 16px);
         padding: 6px 8px;
     }
+
     .nav-item {
         padding: 4px 7px;
         font-size: 10px;
     }
+
     .pause-btn {
         padding: 6px 7px;
         font-size: 0.6rem;
     }
+
     .info-panel {
         width: 150px;
         padding: 10px;
-        bottom: 65px;
+        bottom: 180px;
+        /* Elevated further to clear up to 4 rows of wrapped buttons */
     }
+
     .info-name {
         font-size: 1rem;
     }
