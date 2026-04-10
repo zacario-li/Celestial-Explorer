@@ -200,9 +200,30 @@ bindVKey('v-down', 'ArrowDown');
 bindVKey('v-left', 'ArrowLeft');
 bindVKey('v-right', 'ArrowRight');
 
-// Virtual Throttle Binding (Momentary Thrust)
-bindVKey('v-throttle-up', 'KeyW');
-bindVKey('v-throttle-down', 'KeyS');
+// Virtual Throttle Binding (Persistent Magnitude + Step)
+const vThrottleUp = document.getElementById('v-throttle-up');
+const vThrottleDown = document.getElementById('v-throttle-down');
+const vToggleReverse = document.getElementById('v-toggle-reverse');
+
+if (vThrottleUp) {
+    vThrottleUp.addEventListener('pointerdown', (e) => { 
+        e.preventDefault(); 
+        state.shipThrottle = Math.min(1.0, state.shipThrottle + 0.1); 
+    });
+}
+if (vThrottleDown) {
+    vThrottleDown.addEventListener('pointerdown', (e) => { 
+        e.preventDefault(); 
+        state.shipThrottle = Math.max(0.0, state.shipThrottle - 0.1); 
+    });
+}
+if (vToggleReverse) {
+    vToggleReverse.addEventListener('click', (e) => {
+        state.isReverse = !state.isReverse;
+        vToggleReverse.classList.toggle('reverse-active', state.isReverse);
+        vToggleReverse.textContent = state.isReverse ? 'REV: ON' : 'REV: OFF';
+    });
+}
 
 const spawnModal = document.getElementById('spawn-modal');
 const spawnTemplate = document.getElementById('spawn-template');
@@ -575,25 +596,40 @@ function animate() {
         ship.rotateZ(pitch * rotSpeed);
         ship.rotateX(roll * rotSpeed);
         
-        // 2. Thrust Control (Momentary)
-        const thrust = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
-        
-        // 3. Constant Speed Physics (No Inertia)
+        // 2. Persistent Throttle Logic (W/S step adjustment)
+        const throttleStep = 0.01;
+        if (keys['KeyW']) state.shipThrottle = Math.min(1.0, state.shipThrottle + throttleStep);
+        if (keys['KeyS']) state.shipThrottle = Math.max(0.0, state.shipThrottle - throttleStep);
+
+        // 3. Constant Speed Physics (Magnitude * Direction)
         const turbo = keys['ShiftLeft'] ? 2.5 : 1;
         const BASE_SPEED = 2.0; 
-        const currentSpeed = thrust * BASE_SPEED * turbo;
+        const speedMagnitude = state.shipThrottle * BASE_SPEED * turbo;
+        const speedDirection = state.isReverse ? -1 : 1;
+        const currentSpeed = speedMagnitude * speedDirection;
         
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
         ship.position.addScaledVector(dir, currentSpeed);
         
-        // 4. Update HUD State (Show 100% or 0% based on thrusting)
-        state.shipThrottle = Math.abs(thrust); 
-        
+        // 4. Update HUD State
         // Update Virtual Throttle UI
         const vBar = document.getElementById('v-throttle-bar');
         const vVal = document.getElementById('v-throttle-val');
-        if (vBar) vBar.style.height = `${state.shipThrottle * 100}%`;
-        if (vVal) vVal.textContent = state.shipThrottle > 0 ? (thrust > 0 ? 'FWD' : 'REV') : '0%';
+        const vToggleBtn = document.getElementById('v-toggle-reverse');
+        
+        if (vBar) {
+            vBar.style.height = `${state.shipThrottle * 100}%`;
+            vBar.classList.toggle('reverse', state.isReverse);
+        }
+        if (vVal) {
+            const pct = Math.round(state.shipThrottle * 100);
+            const mode = state.isReverse ? 'REV' : 'FWD';
+            vVal.textContent = `${pct}% ${mode}`;
+        }
+        if (vToggleBtn) {
+            vToggleBtn.classList.toggle('reverse-active', state.isReverse);
+            vToggleBtn.textContent = state.isReverse ? 'REV: ON' : 'REV: OFF';
+        }
 
         // 5. Chase Camera
         const camOffset = new THREE.Vector3(-15, 5, 0).applyQuaternion(ship.quaternion);

@@ -13,7 +13,8 @@ export const state = {
     isAsteroidBeltActive: false,
     isKuiperBeltActive: false,
     isFlying: false,
-    shipThrottle: 0, // NEW: 0.0 to 1.0 persistent throttle
+    shipThrottle: 0, 
+    isReverse: false, // NEW: Direction toggle for thrust
     shipVelocity: new THREE.Vector3(),
     shipRotation: new THREE.Euler()
 };
