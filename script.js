@@ -151,6 +151,7 @@ document.getElementById('lang-button').addEventListener('click', async function(
 document.getElementById('pilot-button').addEventListener('click', function() {
     state.isFlying = !state.isFlying;
     const hud = document.getElementById('pilot-hud');
+    const vController = document.getElementById('v-controller');
     const vCrosshair = document.getElementById('v-crosshair');
     
     if (state.isFlying) {
@@ -158,6 +159,12 @@ document.getElementById('pilot-button').addEventListener('click', function() {
         if (vController) vController.style.display = 'block';
         if (vCrosshair) vCrosshair.style.display = 'block';
         controls.enabled = false;
+        
+        // Disconnect from planets
+        state.focusedBody = null; 
+        state.isTransitioning = false;
+        updateInfoPanel(null);
+        
         this.textContent = t('pilotEnd');
         this.style.background = 'rgba(0, 255, 255, 0.2)';
         this.style.borderColor = '#00ffff';
@@ -633,14 +640,15 @@ function animate() {
             vToggleBtn.textContent = state.isReverse ? 'REV: ON' : 'REV: OFF';
         }
 
-        // 5. Chase Camera (Locked Alignment)
-        // Offset is now directly behind (-20 on local X) with NO Y-offset to form a straight line
-        const camOffset = new THREE.Vector3(-20, 0, 0).applyQuaternion(ship.quaternion);
+        // 5. First-Person Cockpit Camera (Hard-Locked)
+        // Eye point is inside the cockpit (approx 1.2 on X, 0.4 on Y)
+        const camOffset = new THREE.Vector3(1.0, 0.4, 0).applyQuaternion(ship.quaternion);
         const goalPos = ship.position.clone().add(camOffset);
         
-        // No Lerp for "Locked" feel - ship stays perfectly in center
+        // Locked position and rotation (1:1 with ship)
         camera.position.copy(goalPos);
-        camera.lookAt(ship.position);
+        camera.quaternion.copy(ship.quaternion);
+        // Add a slight nose-down tilt if needed, but per user request, keep it 1:1
     } else if (window._spaceship && !state.isFlying && !earthRef.orbitObj.children.includes(window._spaceship)) {
         // Subtle bobbing for stationary mode (relative to Earth orbital location)
         // Note: For simplicity, if we exited flight mode far from Earth, 
@@ -889,42 +897,50 @@ function animate() {
     }
 
     solarWind.update(dt);
-
-    if (state.focusedBody) {
-        state.focusedBody.getWorldPosition(targetVec);
-    } else {
-        targetVec.set(0, 0, 0);
-    }
-
-    _prevTarget.copy(controls.target);
-    controls.target.lerp(targetVec, 0.45);
-    _targetDelta.subVectors(controls.target, _prevTarget);
-    camera.position.add(_targetDelta);
-
-    if (state.isTransitioning) {
-        controls.autoRotate = false;
-        const radius = state.focusedBody ? (state.focusedBody.userData.radius || 10) : 40;
-        const dist = state.isOverview ? 6000 : Math.max(radius * 3.5, 12);
-
-        _camDir.subVectors(camera.position, controls.target).normalize();
-
-        if (state.isOverview && Math.abs(_camDir.y) < 0.3) {
-            _camDir.y = 0.5;
-            _camDir.normalize();
-        } else if (_camDir.lengthSq() < 0.1) {
-            _camDir.set(0, 0, 1);
+    
+    // Only follow targets if NOT flying
+    if (!state.isFlying) {
+        if (state.focusedBody) {
+            state.focusedBody.getWorldPosition(targetVec);
+        } else {
+            targetVec.set(0, 0, 0);
         }
 
-        _desiredPos.copy(controls.target).add(_camDir.multiplyScalar(dist));
-        camera.position.lerp(_desiredPos, 0.45);
+        _prevTarget.copy(controls.target);
+        controls.target.lerp(targetVec, 0.45);
+        _targetDelta.subVectors(controls.target, _prevTarget);
+        camera.position.add(_targetDelta);
 
-        const moveThreshold = state.isOverview ? 100 : radius * 0.5;
-        if (camera.position.distanceTo(_desiredPos) < moveThreshold) {
-            state.isTransitioning = false;
+        if (state.isTransitioning) {
+            controls.autoRotate = false;
+            const radius = state.focusedBody ? (state.focusedBody.userData.radius || 10) : 40;
+            const dist = state.isOverview ? 6000 : Math.max(radius * 3.5, 12);
+
+            _camDir.subVectors(camera.position, controls.target).normalize();
+
+            if (state.isOverview && Math.abs(_camDir.y) < 0.3) {
+                _camDir.y = 0.5;
+                _camDir.normalize();
+            } else if (_camDir.lengthSq() < 0.1) {
+                _camDir.set(0, 0, 1);
+            }
+
+            _desiredPos.copy(controls.target).add(_camDir.multiplyScalar(dist));
+            camera.position.lerp(_desiredPos, 0.45);
+
+            const moveThreshold = state.isOverview ? 100 : radius * 0.5;
+            if (camera.position.distanceTo(_desiredPos) < moveThreshold) {
+                state.isTransitioning = false;
+            }
+        } else {
+            controls.autoRotate = state.isAutoRotate;
+            controls.autoRotateSpeed = (state.focusedBody && state.focusedBody.userData.isSun) ? 0.3 : 2.5;
         }
     } else {
-        controls.autoRotate = state.isAutoRotate;
-        controls.autoRotateSpeed = (state.focusedBody && state.focusedBody.userData.isSun) ? 0.3 : 2.5;
+        // Flying: Ensure controls.target follows ship but don't let it move camera
+        if (window._spaceship) {
+            controls.target.copy(window._spaceship.position);
+        }
     }
 
     controls.update();
