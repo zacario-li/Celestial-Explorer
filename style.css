@@ -376,25 +376,23 @@ canvas {
         border-color: rgba(79, 166, 255, 0.4);
     }
 
-    /* --- Right Side (Actions): keep at bottom horizontal strip --- */
+    /* --- Right Side (Actions): tiled layout for quick access --- */
     .ui-side-right {
         top: auto;
         right: 0;
         bottom: 0;
         left: 0;
         flex-direction: row;
-        flex-wrap: nowrap;
+        flex-wrap: wrap; /* Tiled instead of scrolling */
         align-items: center;
-        justify-content: flex-start;
-        gap: 8px;
-        padding: 10px 14px;
-        padding-bottom: max(10px, env(safe-area-inset-bottom));
-        background: rgba(10, 15, 30, 0.8);
+        justify-content: center;
+        gap: 6px;
+        padding: 12px 10px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        background: rgba(10, 15, 30, 0.9);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+        overflow-x: visible;
         z-index: 16;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
@@ -402,20 +400,22 @@ canvas {
         display: none;
     }
     .pause-btn {
-        width: auto;
-        min-width: 85px;
-        flex-shrink: 0;
-        padding: 8px 12px;
-        font-size: 0.7rem;
+        width: 30%; /* Ensure 3 buttons per row */
+        min-width: 100px;
+        flex-shrink: 1;
+        padding: 10px 4px;
+        font-size: 0.65rem;
         margin-top: 0 !important;
         margin-bottom: 0 !important;
-        border-radius: 20px;
+        border-radius: 12px;
+        text-align: center;
+        white-space: nowrap;
     }
 
-    /* --- Info Panel: float above bottom action bar --- */
+    /* --- Info Panel: float higher to clear tiled buttons --- */
     .info-panel {
         position: fixed;
-        bottom: 80px; /* Sitting above only one bar now */
+        bottom: 180px; /* Elevated to clear 3 rows of tool buttons */
         right: 12px;
         left: auto;
         top: auto;
@@ -426,8 +426,8 @@ canvas {
         border-radius: 12px;
         font-size: 0.85rem;
         z-index: 20;
-        background: rgba(10, 15, 30, 0.65);
-        backdrop-filter: blur(20px);
+        background: rgba(10, 15, 30, 0.7);
+        backdrop-filter: blur(25px);
     }
 
     .info-name {
@@ -476,15 +476,16 @@ canvas {
     }
 
     .pause-btn {
-        padding: 6px 7px;
+        width: 30%;
+        min-width: 80px;
+        padding: 8px 2px;
         font-size: 0.6rem;
     }
 
     .info-panel {
-        width: 150px;
+        width: 156px;
         padding: 10px;
-        bottom: 180px;
-        /* Elevated further to clear up to 4 rows of wrapped buttons */
+        bottom: 185px; /* Stay clear of the grid */
     }
 
     .info-name {
