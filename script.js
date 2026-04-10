@@ -213,6 +213,7 @@ bindVKey('v-right', 'ArrowRight');
 const vThrottleUp = document.getElementById('v-throttle-up');
 const vThrottleDown = document.getElementById('v-throttle-down');
 const vToggleReverse = document.getElementById('v-toggle-reverse');
+const vToggleView = document.getElementById('v-toggle-view');
 
 if (vThrottleUp) {
     vThrottleUp.addEventListener('pointerdown', (e) => { 
@@ -231,6 +232,11 @@ if (vToggleReverse) {
         state.isReverse = !state.isReverse;
         vToggleReverse.classList.toggle('reverse-active', state.isReverse);
         vToggleReverse.textContent = state.isReverse ? 'REV: ON' : 'REV: OFF';
+    });
+}
+if (vToggleView) {
+    vToggleView.addEventListener('click', (e) => {
+        state.shipViewMode = state.shipViewMode === 'cockpit' ? 'chase' : 'cockpit';
     });
 }
 
@@ -640,14 +646,23 @@ function animate() {
             vToggleBtn.textContent = state.isReverse ? 'REV: ON' : 'REV: OFF';
         }
 
-        // 5. First-Person Cockpit Camera (Hard-Locked)
-        // Eye point is inside the cockpit (approx 1.2 on X, 0.4 on Y)
-        const camOffset = new THREE.Vector3(1.0, 0.4, 0).applyQuaternion(ship.quaternion);
-        const goalPos = ship.position.clone().add(camOffset);
+        // 5. Camera Management
+        const vCrosshair = document.getElementById('v-crosshair');
         
-        // Locked position and rotation (1:1 with ship)
-        camera.position.copy(goalPos);
-        camera.quaternion.copy(ship.quaternion);
+        if (state.shipViewMode === 'cockpit') {
+            // First-Person Cockpit Camera (Hard-Locked)
+            const camOffset = new THREE.Vector3(1.0, 0.4, 0).applyQuaternion(ship.quaternion);
+            camera.position.copy(ship.position.clone().add(camOffset));
+            camera.quaternion.copy(ship.quaternion);
+            if (vCrosshair) vCrosshair.style.display = 'block';
+        } else {
+            // Third-Person Chase Camera (Soft-Follow)
+            const camOffset = new THREE.Vector3(-30, 8, 0).applyQuaternion(ship.quaternion);
+            const goalPos = ship.position.clone().add(camOffset);
+            camera.position.lerp(goalPos, 0.1);
+            camera.lookAt(ship.position);
+            if (vCrosshair) vCrosshair.style.display = 'none';
+        }
         // Add a slight nose-down tilt if needed, but per user request, keep it 1:1
     } else if (window._spaceship && !state.isFlying && !earthRef.orbitObj.children.includes(window._spaceship)) {
         // Subtle bobbing for stationary mode (relative to Earth orbital location)

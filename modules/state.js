@@ -14,7 +14,8 @@ export const state = {
     isKuiperBeltActive: false,
     isFlying: false,
     shipThrottle: 0, 
-    isReverse: false, // NEW: Direction toggle for thrust
+    isReverse: false, 
+    shipViewMode: 'cockpit', // 'cockpit' (1st person) or 'chase' (3rd person)
     shipVelocity: new THREE.Vector3(),
     shipRotation: new THREE.Euler()
 };
