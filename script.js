@@ -594,17 +594,16 @@ function animate() {
         if (keys['KeyW']) state.shipThrottle = Math.min(1.0, state.shipThrottle + throttleStep);
         if (keys['KeyS']) state.shipThrottle = Math.max(0.0, state.shipThrottle - throttleStep);
         
-        // 3. Thrust Physics
-        const turbo = keys['ShiftLeft'] ? 3 : 1;
-        const maxAccel = 0.08 * turbo;
-        const currentAccel = state.shipThrottle * maxAccel;
+        // 3. Constant Speed Physics (No Inertia)
+        const turbo = keys['ShiftLeft'] ? 2.5 : 1;
+        const BASE_SPEED = 2.0; 
+        const currentSpeed = state.shipThrottle * BASE_SPEED * turbo;
         
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
-        state.shipVelocity.addScaledVector(dir, currentAccel);
+        ship.position.addScaledVector(dir, currentSpeed);
         
-        // 3. Movement & Inertia
-        state.shipVelocity.multiplyScalar(0.985); // Space friction/damping
-        ship.position.add(state.shipVelocity);
+        // Clear velocity to prevent sudden jumps if switching back to physics-based modes
+        state.shipVelocity.set(0, 0, 0);
         
         // 4. Chase Camera
         const camOffset = new THREE.Vector3(-15, 5, 0).applyQuaternion(ship.quaternion);
