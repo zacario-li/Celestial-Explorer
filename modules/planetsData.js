@@ -76,8 +76,8 @@ export const planetsData = [
         massValue: 0.0002, angle: 4.0, moons: []
     },
     {
-        name: 'Vesta',  r: 2.5, c: 0x777777, dist: 580, speed: 0.00015, rotSpeed: 0.025,
+        name: 'Vesta',  r: 2.5, c: 0x777777, dist: 560, speed: 0.00015, rotSpeed: 0.025,
         mass: '2.59 × 10²² kg', massRel: '~ 0.004 Earths', radius: '500+ km', density: '3.46 g/cm³',
-        massValue: 0.01, angle: 5.5, moons: []
+        massValue: 0.05, angle: 5.5, moons: []
     }
 ];

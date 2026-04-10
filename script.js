@@ -745,8 +745,10 @@ function animate() {
                     lighter.destroyed = true; markBodiesDirty();
                 } else {
                     _forceDir.copy(_diff).normalize();
-                    pA.vel.addScaledVector(_forceDir, (G * 50 * pB.physMass / dSq) * subDt);
-                    pB.vel.addScaledVector(_forceDir, -(G * 50 * pA.physMass / dSq) * subDt);
+                    // Biased interaction reduced to 10x and added softening (dSq + 25) for stability
+                    const sharedForce = (G * 10 * pB.physMass * pA.physMass / (dSq + 25)) * subDt;
+                    pA.vel.addScaledVector(_forceDir, sharedForce / pA.physMass);
+                    pB.vel.addScaledVector(_forceDir, -sharedForce / pB.physMass);
                 }
             }
 
