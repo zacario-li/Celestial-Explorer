@@ -547,7 +547,7 @@ const asteroidBeltMesh = createAsteroidsBelt(4000, 550, 750, physicsBodies, scen
 if (asteroidBeltMesh) asteroidBeltMesh.visible = state.isAsteroidBeltActive;
 
 // Generate Kuiper Belt (Beyond Neptune)
-const kuiperBeltMesh = createAsteroidsBelt(8000, 2400, 3200, physicsBodies, scene, celestialBodies, 'kuiper');
+const kuiperBeltMesh = createAsteroidsBelt(8000, 3200, 5000, physicsBodies, scene, celestialBodies, 'kuiper');
 if (kuiperBeltMesh) kuiperBeltMesh.visible = state.isKuiperBeltActive;
 
 // Earth Atmosphere & Spaceship
