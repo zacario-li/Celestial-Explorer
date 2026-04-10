@@ -543,23 +543,28 @@ function animate() {
     if (state.isFlying && window._spaceship) {
         const ship = window._spaceship;
         
-        // 1. Rotation (Yaw/Pitch/Roll)
-        const yaw = (keys['KeyA'] ? 1 : 0) - (keys['KeyD'] ? 1 : 0);
+        // 1. Rotation (Arrow keys for Pitch/Yaw, Q/E for Roll)
+        const yaw = (keys['ArrowLeft'] ? 1 : 0) - (keys['ArrowRight'] ? 1 : 0);
         const pitch = (keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0);
         const roll = (keys['KeyQ'] ? 1 : 0) - (keys['KeyE'] ? 1 : 0);
         
-        const rotSpeed = 0.02;
+        const rotSpeed = 0.025;
         ship.rotateY(yaw * rotSpeed);
         ship.rotateZ(pitch * rotSpeed);
         ship.rotateX(roll * rotSpeed);
         
-        // 2. Thrust (Using Local X as ship points in X)
-        const thrustInput = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
-        const turbo = keys['ShiftLeft'] ? 4 : 1;
-        const accel = 0.05 * turbo;
+        // 2. Throttle System (W increases, S decreases)
+        const throttleStep = 0.01;
+        if (keys['KeyW']) state.shipThrottle = Math.min(1.0, state.shipThrottle + throttleStep);
+        if (keys['KeyS']) state.shipThrottle = Math.max(0.0, state.shipThrottle - throttleStep);
+        
+        // 3. Thrust Physics
+        const turbo = keys['ShiftLeft'] ? 3 : 1;
+        const maxAccel = 0.08 * turbo;
+        const currentAccel = state.shipThrottle * maxAccel;
         
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
-        state.shipVelocity.addScaledVector(dir, thrustInput * accel);
+        state.shipVelocity.addScaledVector(dir, currentAccel);
         
         // 3. Movement & Inertia
         state.shipVelocity.multiplyScalar(0.985); // Space friction/damping
