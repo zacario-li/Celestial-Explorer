@@ -200,23 +200,9 @@ bindVKey('v-down', 'ArrowDown');
 bindVKey('v-left', 'ArrowLeft');
 bindVKey('v-right', 'ArrowRight');
 
-// Virtual Throttle Binding
-const vThrottleUp = document.getElementById('v-throttle-up');
-const vThrottleDown = document.getElementById('v-throttle-down');
-if (vThrottleUp) {
-    vThrottleUp.addEventListener('pointerdown', (e) => { 
-        e.preventDefault(); 
-        if (state.shipThrottle === undefined) state.shipThrottle = 0;
-        state.shipThrottle = Math.min(1.0, state.shipThrottle + 0.1); 
-    });
-}
-if (vThrottleDown) {
-    vThrottleDown.addEventListener('pointerdown', (e) => { 
-        e.preventDefault(); 
-        if (state.shipThrottle === undefined) state.shipThrottle = 0;
-        state.shipThrottle = Math.max(0.0, state.shipThrottle - 0.1); 
-    });
-}
+// Virtual Throttle Binding (Momentary Thrust)
+bindVKey('v-throttle-up', 'KeyW');
+bindVKey('v-throttle-down', 'KeyS');
 
 const spawnModal = document.getElementById('spawn-modal');
 const spawnTemplate = document.getElementById('spawn-template');
@@ -589,33 +575,31 @@ function animate() {
         ship.rotateZ(pitch * rotSpeed);
         ship.rotateX(roll * rotSpeed);
         
-        // 2. Throttle System (W increases, S decreases)
-        const throttleStep = 0.01;
-        if (keys['KeyW']) state.shipThrottle = Math.min(1.0, state.shipThrottle + throttleStep);
-        if (keys['KeyS']) state.shipThrottle = Math.max(0.0, state.shipThrottle - throttleStep);
+        // 2. Thrust Control (Momentary)
+        const thrust = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
         
         // 3. Constant Speed Physics (No Inertia)
         const turbo = keys['ShiftLeft'] ? 2.5 : 1;
         const BASE_SPEED = 2.0; 
-        const currentSpeed = state.shipThrottle * BASE_SPEED * turbo;
+        const currentSpeed = thrust * BASE_SPEED * turbo;
         
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
         ship.position.addScaledVector(dir, currentSpeed);
         
-        // Clear velocity to prevent sudden jumps if switching back to physics-based modes
-        state.shipVelocity.set(0, 0, 0);
+        // 4. Update HUD State (Show 100% or 0% based on thrusting)
+        state.shipThrottle = Math.abs(thrust); 
         
-        // 4. Chase Camera
-        const camOffset = new THREE.Vector3(-15, 5, 0).applyQuaternion(ship.quaternion);
-        const goalPos = ship.position.clone().add(camOffset);
-        camera.position.lerp(goalPos, 0.1);
-        camera.lookAt(ship.position);
-
         // Update Virtual Throttle UI
         const vBar = document.getElementById('v-throttle-bar');
         const vVal = document.getElementById('v-throttle-val');
         if (vBar) vBar.style.height = `${state.shipThrottle * 100}%`;
-        if (vVal) vVal.textContent = `${Math.round(state.shipThrottle * 100)}%`;
+        if (vVal) vVal.textContent = state.shipThrottle > 0 ? (thrust > 0 ? 'FWD' : 'REV') : '0%';
+
+        // 5. Chase Camera
+        const camOffset = new THREE.Vector3(-15, 5, 0).applyQuaternion(ship.quaternion);
+        const goalPos = ship.position.clone().add(camOffset);
+        camera.position.lerp(goalPos, 0.1);
+        camera.lookAt(ship.position);
     } else if (window._spaceship && !state.isFlying && !earthRef.orbitObj.children.includes(window._spaceship)) {
         // Subtle bobbing for stationary mode (relative to Earth orbital location)
         // Note: For simplicity, if we exited flight mode far from Earth, 
