@@ -24,7 +24,7 @@ export function createSpaceship() {
             model.rotation.y = Math.PI / 2;
             
             // Scale and center the model
-            model.scale.set(0.5, 0.5, 0.5);
+            model.scale.set(0.3, 0.3, 0.3);
             
             model.traverse((child) => {
                 if (child.isMesh) {
@@ -33,19 +33,20 @@ export function createSpaceship() {
                     
                     // Enhance materials if they exist
                     if (child.material) {
-                        child.material.metalness = 0.8;
-                        child.material.roughness = 0.2;
+                        child.material.metalness = 0.9;
+                        child.material.roughness = 0.1;
                         
                         // Add some emissive glow to parts that look like lights
                         if (child.name.toLowerCase().includes('light') || child.name.toLowerCase().includes('glow')) {
                             child.material.emissive = new THREE.Color(0x00ffff);
-                            child.material.emissiveIntensity = 2.0;
+                            child.material.emissiveIntensity = 8.0;
                         }
                     }
                 }
             });
 
             group.add(model);
+            console.log("Spaceship Model Loaded Successfully: High-Fidelity 3D Assets Active.");
             
             // Add a point light to the engine area for dynamic thrust effect
             const engineLight = new THREE.PointLight(0x00ffff, 2, 5);

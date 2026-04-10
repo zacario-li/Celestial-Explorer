@@ -15,8 +15,11 @@ document.getElementById('canvas-container').appendChild(renderer.domElement);
 camera.position.set(0, 300, 500);
 
 // Lighting
-export const ambientLight = new THREE.AmbientLight(0x222222);
+export const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
 scene.add(ambientLight);
+
+export const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+scene.add(hemisphereLight);
 
 export const sunLight = new THREE.PointLight(0xffffff, 3, 5000, 0);
 scene.add(sunLight);
