@@ -651,13 +651,15 @@ function animate() {
         
         if (state.shipViewMode === 'cockpit') {
             // First-Person Cockpit Camera (Hard-Locked)
-            const camOffset = new THREE.Vector3(1.0, 0.4, 0).applyQuaternion(ship.quaternion);
+            // Adjusted Eye point for the new high-quality model
+            const camOffset = new THREE.Vector3(0.5, 0.2, 0).applyQuaternion(ship.quaternion);
             camera.position.copy(ship.position.clone().add(camOffset));
             camera.quaternion.copy(ship.quaternion);
             if (vCrosshair) vCrosshair.style.display = 'block';
         } else {
             // Third-Person Chase Camera (Soft-Follow)
-            const camOffset = new THREE.Vector3(-30, 8, 0).applyQuaternion(ship.quaternion);
+            // Adjusted offset for the new model scale
+            const camOffset = new THREE.Vector3(-15, 4, 0).applyQuaternion(ship.quaternion);
             const goalPos = ship.position.clone().add(camOffset);
             camera.position.lerp(goalPos, 0.1);
             camera.lookAt(ship.position);
