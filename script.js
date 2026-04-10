@@ -151,11 +151,12 @@ document.getElementById('lang-button').addEventListener('click', async function(
 document.getElementById('pilot-button').addEventListener('click', function() {
     state.isFlying = !state.isFlying;
     const hud = document.getElementById('pilot-hud');
-    const vController = document.getElementById('v-controller');
+    const vCrosshair = document.getElementById('v-crosshair');
     
     if (state.isFlying) {
         hud.style.display = 'block';
         if (vController) vController.style.display = 'block';
+        if (vCrosshair) vCrosshair.style.display = 'block';
         controls.enabled = false;
         this.textContent = t('pilotEnd');
         this.style.background = 'rgba(0, 255, 255, 0.2)';
@@ -173,6 +174,7 @@ document.getElementById('pilot-button').addEventListener('click', function() {
     } else {
         hud.style.display = 'none';
         if (vController) vController.style.display = 'none';
+        if (vCrosshair) vCrosshair.style.display = 'none';
         state.shipThrottle = 0; // RESET THROTTLE ON EXIT
         controls.enabled = true;
         this.textContent = t('pilotStart');
@@ -631,10 +633,13 @@ function animate() {
             vToggleBtn.textContent = state.isReverse ? 'REV: ON' : 'REV: OFF';
         }
 
-        // 5. Chase Camera
-        const camOffset = new THREE.Vector3(-15, 5, 0).applyQuaternion(ship.quaternion);
+        // 5. Chase Camera (Locked Alignment)
+        // Offset is now directly behind (-20 on local X) with NO Y-offset to form a straight line
+        const camOffset = new THREE.Vector3(-20, 0, 0).applyQuaternion(ship.quaternion);
         const goalPos = ship.position.clone().add(camOffset);
-        camera.position.lerp(goalPos, 0.1);
+        
+        // No Lerp for "Locked" feel - ship stays perfectly in center
+        camera.position.copy(goalPos);
         camera.lookAt(ship.position);
     } else if (window._spaceship && !state.isFlying && !earthRef.orbitObj.children.includes(window._spaceship)) {
         // Subtle bobbing for stationary mode (relative to Earth orbital location)
