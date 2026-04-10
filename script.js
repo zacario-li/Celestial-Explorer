@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import { state } from './modules/state.js?v=5';
-import { planetsData } from './modules/planetsData.js?v=5';
-import { t, tName } from './modules/i18n.js?v=5';
-import { updateInfoPanel, applyLanguage } from './modules/ui.js?v=5';
+import { state } from './modules/state.js';
+import { planetsData } from './modules/planetsData.js';
+import { t, tName } from './modules/i18n.js';
+import { updateInfoPanel, applyLanguage } from './modules/ui.js';
 import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js';
 import { createStarfield } from './modules/starfield.js';
 import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js';
@@ -151,9 +151,11 @@ document.getElementById('lang-button').addEventListener('click', async function(
 document.getElementById('pilot-button').addEventListener('click', function() {
     state.isFlying = !state.isFlying;
     const hud = document.getElementById('pilot-hud');
+    const vController = document.getElementById('v-controller');
     
     if (state.isFlying) {
         hud.style.display = 'block';
+        if (vController) vController.style.display = 'block';
         controls.enabled = false;
         this.textContent = t('pilotEnd');
         this.style.background = 'rgba(0, 255, 255, 0.2)';
@@ -170,6 +172,8 @@ document.getElementById('pilot-button').addEventListener('click', function() {
         }
     } else {
         hud.style.display = 'none';
+        if (vController) vController.style.display = 'none';
+        state.shipThrottle = 0; // RESET THROTTLE ON EXIT
         controls.enabled = true;
         this.textContent = t('pilotStart');
         this.style.background = 'rgba(255, 255, 255, 0.05)';
@@ -181,6 +185,38 @@ document.getElementById('pilot-button').addEventListener('click', function() {
         }
     }
 });
+
+// Virtual Controller Input Binding
+function bindVKey(id, keyCode) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('pointerdown', (e) => { e.preventDefault(); keys[keyCode] = true; });
+    btn.addEventListener('pointerup', (e) => { e.preventDefault(); keys[keyCode] = false; });
+    btn.addEventListener('pointerleave', (e) => { e.preventDefault(); keys[keyCode] = false; });
+}
+
+bindVKey('v-up', 'ArrowUp');
+bindVKey('v-down', 'ArrowDown');
+bindVKey('v-left', 'ArrowLeft');
+bindVKey('v-right', 'ArrowRight');
+
+// Virtual Throttle Binding
+const vThrottleUp = document.getElementById('v-throttle-up');
+const vThrottleDown = document.getElementById('v-throttle-down');
+if (vThrottleUp) {
+    vThrottleUp.addEventListener('pointerdown', (e) => { 
+        e.preventDefault(); 
+        if (state.shipThrottle === undefined) state.shipThrottle = 0;
+        state.shipThrottle = Math.min(1.0, state.shipThrottle + 0.1); 
+    });
+}
+if (vThrottleDown) {
+    vThrottleDown.addEventListener('pointerdown', (e) => { 
+        e.preventDefault(); 
+        if (state.shipThrottle === undefined) state.shipThrottle = 0;
+        state.shipThrottle = Math.max(0.0, state.shipThrottle - 0.1); 
+    });
+}
 
 const spawnModal = document.getElementById('spawn-modal');
 const spawnTemplate = document.getElementById('spawn-template');
@@ -575,6 +611,12 @@ function animate() {
         const goalPos = ship.position.clone().add(camOffset);
         camera.position.lerp(goalPos, 0.1);
         camera.lookAt(ship.position);
+
+        // Update Virtual Throttle UI
+        const vBar = document.getElementById('v-throttle-bar');
+        const vVal = document.getElementById('v-throttle-val');
+        if (vBar) vBar.style.height = `${state.shipThrottle * 100}%`;
+        if (vVal) vVal.textContent = `${Math.round(state.shipThrottle * 100)}%`;
     } else if (window._spaceship && !state.isFlying && !earthRef.orbitObj.children.includes(window._spaceship)) {
         // Subtle bobbing for stationary mode (relative to Earth orbital location)
         // Note: For simplicity, if we exited flight mode far from Earth, 

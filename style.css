@@ -493,3 +493,104 @@ canvas {
         font-size: 1rem;
     }
 }
+
+/* --- Virtual Mobile Controls (Pilot Mode) --- */
+#v-controller {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.v-btn {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    color: #4fa6ff;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s;
+    box-shadow: 0 0 10px rgba(79, 166, 255, 0.1);
+}
+
+.v-btn:active {
+    background: rgba(79, 166, 255, 0.3);
+    border-color: #4fa6ff;
+    transform: scale(0.9);
+    box-shadow: 0 0 20px rgba(79, 166, 255, 0.4);
+}
+
+/* D-Pad Layout */
+.v-pad {
+    position: absolute;
+    bottom: 40px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.v-pad-row {
+    display: flex;
+    gap: 45px;
+}
+
+/* Vertical Throttle Layout */
+.v-throttle {
+    position: absolute;
+    bottom: 40px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.v-throttle-gauge {
+    width: 12px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.v-throttle-bar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(to top, #00ffff, #4fa6ff);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    transition: height 0.1s linear;
+}
+
+.v-throttle-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+}
+
+.v-throttle-label, .v-throttle-val {
+    color: #00ffff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}

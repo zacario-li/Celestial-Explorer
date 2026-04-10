@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Solar System Simulation</title>
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
     <!-- Import maps polyfill -->
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -77,6 +77,30 @@
         <div id="pilot-instr" style="font-size: 0.9rem; opacity: 0.9;">W/S: Throttle • Arrows: Pitch/Yaw • Q/E: Roll</div>
     </div>
 
+    <!-- Mobile/Touch Controllers for Pilot Mode -->
+    <div id="v-controller" style="display: none;">
+        <!-- D-Pad (Left Side) -->
+        <div class="v-pad">
+            <button id="v-up" class="v-btn v-btn-top">▲</button>
+            <div class="v-pad-row">
+                <button id="v-left" class="v-btn">◀</button>
+                <button id="v-right" class="v-btn">▶</button>
+            </div>
+            <button id="v-down" class="v-btn v-btn-bottom">▼</button>
+        </div>
+
+        <!-- Throttle Control (Right Side) -->
+        <div class="v-throttle">
+            <div class="v-throttle-label">PWR</div>
+            <button id="v-throttle-up" class="v-btn v-throttle-btn">＋</button>
+            <div class="v-throttle-gauge">
+                <div id="v-throttle-bar" class="v-throttle-bar"></div>
+            </div>
+            <button id="v-throttle-down" class="v-btn v-throttle-btn">－</button>
+            <div id="v-throttle-val" class="v-throttle-val">0%</div>
+        </div>
+    </div>
+
     <!-- Spawn Custom Planet Modal -->
     <div id="spawn-modal" class="modal-overlay">
         <div class="modal-content">
@@ -116,7 +140,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=5"></script>
+    <script type="module" src="script.js?v=10"></script>
 </body>
 
 </html>
