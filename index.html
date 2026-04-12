@@ -12,13 +12,41 @@
       {
         "imports": {
           "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+          "three/loaders/STLLoader": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js"
         }
       }
     </script>
 </head>
 
 <body>
+    <div id="loading-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#00ffff; font-family:monospace; transition: opacity 0.5s ease; text-align: center; padding: 20px;">
+        <div style="font-size:2rem; margin-bottom:1rem; letter-spacing: 5px; text-shadow: 0 0 10px #00ffff;">SYNCING SHIP DATA...</div>
+        <div class="v-throttle-bar-container" style="width:260px; height:4px; background:rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+            <div id="v-sync-progress" style="width:0%; height:100%; background:#00ffff; box-shadow:0 0 15px #00ffff; transition: width 0.3s ease;"></div>
+        </div>
+        <div id="loading-subtext" style="margin-top:1.5rem; font-size:0.8rem; opacity:0.6; letter-spacing: 2px;">LINKING HIGH-FIDELITY ASSETS</div>
+        
+        <!-- Emergency Bypass (Hidden by default, shown after 5s) -->
+        <div id="loading-troubleshooter" style="display: none; margin-top: 2rem; animation: slideUp 0.6s ease; background: rgba(255, 79, 79, 0.15); padding: 20px; border-radius: 12px; border: 1px solid #ff4f4f; max-width: 550px;">
+            <div style="color: #ff4f4f; font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px;">⚠️ Action Required: Browser Security Block ⚠️</div>
+            <p style="color: #ffffff; font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.6; text-align: left;">
+                Your browser is blocking the 3D engine because you opened the file directly. To enable the <b>Orange Spaceship</b> and <b>Full 3D Visuals</b>, please follow these steps:
+            </p>
+            <div style="text-align: left; margin-bottom: 20px; font-size: 0.85rem; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
+                1. Open your project folder.<br>
+                2. Find the green icon: <code style="color: #00ffff; background: #1a1a1a; padding: 2px 5px; border-radius: 3px;">Start_Simulation.command</code><br>
+                3. <b>Double-click it</b> to start (if macOS warns you, <b>Right-click -> Open</b> instead).<br>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="document.getElementById('loading-overlay').style.display='none'" 
+                    style="background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-size: 0.75rem;">
+                    Bypass Anyway (Blank Screen Possible)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="error-log"
         style="position:absolute; top:10px; left:10px; color:red; z-index:999999; font-size:24px; background:white; padding:10px; display:none;">
     </div>
@@ -33,6 +61,23 @@
             el.style.display = 'block';
             el.innerHTML += 'Promise: ' + event.reason + '<hr>';
         });
+
+        // --- SMART TROUBLESHOOTER (Checks if Modules/CORS are blocked) ---
+        setTimeout(() => {
+            if (!window.SIM_READY) {
+                console.error("Simulation engine failed to initialize (CORS/Module block likely).");
+                const troubleshooter = document.getElementById('loading-troubleshooter');
+                const subtext = document.getElementById('loading-subtext');
+                const progress = document.getElementById('v-sync-progress').parentElement;
+                
+                if (troubleshooter) troubleshooter.style.display = 'block';
+                if (subtext) subtext.style.color = '#ff4f4f';
+                if (subtext) subtext.innerText = 'PROTOCOL ERROR: HYPERDRIVE LINK BLOCKED';
+            } else {
+                // Success! The module loaded and set SIM_READY.
+                console.log("Simulation engine initialized successfully.");
+            }
+        }, 4000);
     </script>
     <div id="canvas-container"></div>
 
@@ -57,6 +102,7 @@
         <button id="overview-button" class="pause-btn" style="margin-top: 10px;">🌌 OVERVIEW</button>
         <button id="asteroid-belt-button" class="pause-btn" style="margin-top: 10px;">☄️ ASTEROID BELT: ON</button>
         <button id="kuiper-belt-button" class="pause-btn" style="margin-top: 10px;">❄️ KUIPER BELT: ON</button>
+        <button id="hoverzones-button" class="pause-btn" style="margin-top: 10px;">👾 HOVER ZONES: OFF</button>
         <button id="pilot-button" class="pause-btn" style="margin-top: 10px;">🚀 PILOT SHIP</button>
         <button id="spawn-button" class="pause-btn" style="margin-top: 10px;">➕ SPAWN PLANET</button>
         <button id="lang-button" class="pause-btn lang-btn" style="margin-top: 10px;">🌐 中文</button>
@@ -75,6 +121,15 @@
         style="display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 15px 25px; border-radius: 12px; border: 1px solid #00ffff; color: #00ffff; font-family: 'Outfit', sans-serif; pointer-events: none; z-index: 1000; text-align: center; box-shadow: 0 0 20px rgba(0,255,255,0.2);">
         <div style="font-weight: bold; margin-bottom: 5px; font-size: 1.2rem;">FLIGHT SYSTEMS ACTIVE</div>
         <div id="pilot-instr" style="font-size: 0.9rem; opacity: 0.9;">W/S: Throttle • Arrows: Pitch/Yaw • Q/E: Roll</div>
+        <button id="pilot-autolevel-button" 
+            style="pointer-events: auto; margin-top: 10px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; transition: background 0.3s;">
+            ⚖️ AUTO-LEVEL
+        </button>
+        <div id="station-keeping-indicator" style="display: none; margin-top: 10px; padding: 8px; background: rgba(0, 255, 0, 0.1); border: 1px dashed #00ff00; border-radius: 4px; animation: pulse 2s infinite;">
+            <div id="sk-status" style="font-weight: bold; color: #00ff00; font-size: 0.85rem; letter-spacing: 1px;">STATION KEEPING ACTIVE</div>
+            <div id="sk-target-throttle" style="display: none; font-weight: bold; color: #ff00ff; font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">TARGET THROTTLE: --%</div>
+            <div id="sk-hint" style="font-size: 0.7rem; opacity: 0.8; color: #00ff00; margin-top: 2px;">Press W to Break Lock</div>
+        </div>
     </div>
 
     <!-- Mobile/Touch Controllers for Pilot Mode -->
@@ -141,13 +196,15 @@
 
             <div class="modal-actions">
                 <button id="modal-cancel-btn" class="pause-btn modal-btn">CANCEL</button>
+                <button id="modal-machinegun-btn" class="pause-btn modal-btn"
+                    style="background: rgba(255, 100, 0, 0.2); border-color: #ff6400;">MACHINE GUN</button>
                 <button id="modal-confirm-btn" class="pause-btn modal-btn"
                     style="background: rgba(79, 166, 255, 0.2); border-color: #4fa6ff;">SPAWN!</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="script.js?v=10"></script>
+    <script type="module" src="script.js?v=fixed_collision"></script>
 </body>
 
 </html>

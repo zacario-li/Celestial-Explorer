@@ -17,5 +17,13 @@ export const state = {
     isReverse: false, 
     shipViewMode: 'cockpit', // 'cockpit' (1st person) or 'chase' (3rd person)
     shipVelocity: new THREE.Vector3(),
-    shipRotation: new THREE.Euler()
+    shipRotation: new THREE.Euler(),
+    // Inspection Mode state
+    isOrbitingShip: false,
+    shipOrbitAngles: { theta: Math.PI, phi: 0.26 },
+    lastOrbitTime: 0,
+    isAutoLeveling: false,
+    capturedBody: null,
+    relativePos: new THREE.Vector3(),
+    showHoverZones: false
 };

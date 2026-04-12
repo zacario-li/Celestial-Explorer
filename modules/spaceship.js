@@ -1,67 +1,88 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { STLLoader } from 'three/loaders/STLLoader';
 
 /**
- * Creates a high-quality 3D spaceship model using GLTFLoader.
- * Loads an external .glb asset and applies optimized materials.
+ * Creates a spaceship using the user's custom STL model.
+ * Features:
+ * 1. Custom professional STL geometry.
+ * 2. High-fidelity PBR materials for a premium metallic look.
+ * 3. Integrated into the existing flight mechanics.
  */
 export function createSpaceship() {
     const group = new THREE.Group();
     group.userData = { isFocusable: true, name: 'Spaceship' };
 
-    const loader = new GLTFLoader();
+    const loader = new STLLoader();
+    const progressEl = document.getElementById('v-sync-progress');
+    const overlay = document.getElementById('loading-overlay');
     
-    // High-quality sci-fi spaceship model
-    const modelUrl = 'https://cdn.jsdelivr.net/gh/Sean-Bradley/Three.js-TypeScript-Boilerplate@master/dist/client/models/spaceship.glb';
+    // Material for the STL model (Absolute Realism Metallic)
+    const shipMat = new THREE.MeshStandardMaterial({ 
+        color: 0xffa500, // Vibrant Orange
+        metalness: 0.9, 
+        roughness: 0.15,
+        emissive: 0x000000, // No self-illumination
+        emissiveIntensity: 0,
+        side: THREE.DoubleSide
+    });
+
+    // --- NAVIGATION LIGHTS (Removed for Absolute Darkness) ---
+    // User wants completely black back side
+    // ---------------------------------------------------------
+
+    // --- FALLBACK MODEL (Visible until STL loads) ---
+    const fallbackGeo = new THREE.ConeGeometry(0.5, 2, 4);
+    fallbackGeo.rotateX(Math.PI / 2);
+    fallbackGeo.rotateY(Math.PI / 2);
+    const fallbackMesh = new THREE.Mesh(fallbackGeo, shipMat);
+    group.add(fallbackMesh);
+    // ------------------------------------------------
+
+    // Loading local STL model
+    const coreUrl = 'assets/ship2_monitor.stl';
 
     loader.load(
-        modelUrl,
-        (gltf) => {
-            const model = gltf.scene;
-            
-            // Adjust model orientation to match our coordinate system (pointing forward along X)
-            // Most GLB models are Z-forward, our code expects X-forward.
-            model.rotation.y = Math.PI / 2;
-            
-            // Scale and center the model
-            model.scale.set(0.3, 0.3, 0.3);
-            
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    
-                    // Enhance materials if they exist
-                    if (child.material) {
-                        child.material.metalness = 0.9;
-                        child.material.roughness = 0.1;
-                        
-                        // Add some emissive glow to parts that look like lights
-                        if (child.name.toLowerCase().includes('light') || child.name.toLowerCase().includes('glow')) {
-                            child.material.emissive = new THREE.Color(0x00ffff);
-                            child.material.emissiveIntensity = 8.0;
-                        }
-                    }
-                }
-            });
+        coreUrl,
+        (geometry) => {
+            // ESSENTIAL: Compute normals if missing (Fixes 'black' STL issue)
+            geometry.computeVertexNormals();
 
-            group.add(model);
-            console.log("Spaceship Model Loaded Successfully: High-Fidelity 3D Assets Active.");
+            // Remove fallback on success
+            group.remove(fallbackMesh);
+
+            const mesh = new THREE.Mesh(geometry, shipMat);
             
-            // Add a point light to the engine area for dynamic thrust effect
-            const engineLight = new THREE.PointLight(0x00ffff, 2, 5);
-            engineLight.position.set(-1.5, 0, 0);
-            group.add(engineLight);
+            // --- FINAL CALIBRATED ORIENTATION ---
+            // Aligned such that the Nose points at +X (Movement Axis)
+            // and the Deck faces +Y (Up Axis).
+            mesh.rotation.x = -Math.PI / 2; 
+            mesh.rotation.z = 0; // Corrected from -Math.PI / 2 (Crab flight fixed)
+            mesh.scale.set(0.25, 0.25, 0.25);
+            mesh.position.set(0, 0, 0);
+            
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            group.add(mesh);
+
+            console.log("Custom STL Spaceship Integrated Successfully.");
+            
+            // Hide loading overlay
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 600);
+            }
         },
-        undefined,
+        (xhr) => {
+            if (xhr.lengthComputable && progressEl) {
+                const percent = (xhr.loaded / xhr.total) * 100;
+                progressEl.style.width = percent + '%';
+            }
+        },
         (error) => {
-            console.error('Error loading spaceship model:', error);
-            // Fallback: Create a simple placeholder box if loading fails
-            const box = new THREE.Mesh(
-                new THREE.BoxGeometry(1, 0.5, 0.5),
-                new THREE.MeshStandardMaterial({ color: 0xff0000 })
-            );
-            group.add(box);
+            console.error('Error loading custom STL:', error);
+            // Keep fallback mesh visible so the user can still pilot something
+            if (overlay) overlay.style.display = 'none';
         }
     );
 

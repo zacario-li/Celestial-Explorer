@@ -1,15 +1,19 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import { state } from './modules/state.js';
-import { planetsData } from './modules/planetsData.js';
-import { t, tName } from './modules/i18n.js';
-import { updateInfoPanel, applyLanguage } from './modules/ui.js';
-import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js';
-import { createStarfield } from './modules/starfield.js';
-import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js';
-import { createSun } from './modules/sunAndWind.js';
-import { createSpaceship } from './modules/spaceship.js';
+import { state } from './modules/state.js?v=fixed_spawn';
+import { planetsData } from './modules/planetsData.js?v=fixed_spawn';
+import { t, tName } from './modules/i18n.js?v=fixed_spawn';
+import { updateInfoPanel, applyLanguage } from './modules/ui.js?v=fixed_spawn';
+import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js?v=fixed_spawn';
+import { createStarfield } from './modules/starfield.js?v=fixed_spawn';
+import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js?v=fixed_spawn';
+import { createSun } from './modules/sunAndWind.js?v=fixed_spawn';
+import { createSpaceship } from './modules/spaceship.js?v=fixed_spawn';
+
+// --- SYSTEM INITIALIZATION FLAG ---
+window.SIM_READY = true;
+// ----------------------------------
 
 // Controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -17,6 +21,13 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.zoomSpeed = 5.0; 
 controls.maxDistance = 20000;
+
+// --- PILOT HEADLIGHT (Follows camera) ---
+const headlight = new THREE.PointLight(0xffffff, 0, 1000); 
+headlight.name = 'pilotHeadlight';
+camera.add(headlight);
+scene.add(camera); // Must add camera to scene to let children render properly
+// ----------------------------------------
 
 // Interaction vars
 const raycaster = new THREE.Raycaster();
@@ -143,6 +154,48 @@ document.getElementById('kuiper-belt-button').addEventListener('click', function
     markBodiesDirty();
 });
 
+document.getElementById('hoverzones-button').addEventListener('click', function() {
+    state.showHoverZones = !state.showHoverZones;
+    this.textContent = state.showHoverZones ? t('hoverZonesOn') : t('hoverZonesOff');
+    this.classList.toggle('active', state.showHoverZones);
+    
+    // Update all existing capture meshes immediately
+    celestialBodies.forEach(b => {
+        if (b.captureMesh) b.captureMesh.visible = state.showHoverZones;
+    });
+});
+
+// --- SHIP ORBIT INSPECTION HANDLERS ---
+let lastPointerPos = { x: 0, y: 0 };
+
+window.addEventListener('pointerdown', (e) => {
+    if (state.isFlying && state.shipViewMode === 'chase') {
+        state.isOrbitingShip = true;
+        lastPointerPos = { x: e.clientX, y: e.clientY };
+    }
+});
+
+window.addEventListener('pointermove', (e) => {
+    if (state.isOrbitingShip) {
+        const deltaX = e.clientX - lastPointerPos.x;
+        const deltaY = e.clientY - lastPointerPos.y;
+        
+        // Update angles (Radiant sensitivity)
+        if (!state.shipOrbitAngles) state.shipOrbitAngles = { theta: Math.PI, phi: 0.26 };
+        state.shipOrbitAngles.theta -= deltaX * 0.005;
+        state.shipOrbitAngles.phi = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, state.shipOrbitAngles.phi + deltaY * 0.005));
+        
+        lastPointerPos = { x: e.clientX, y: e.clientY };
+        state.lastOrbitTime = Date.now();
+    }
+});
+
+window.addEventListener('pointerup', () => {
+    state.isOrbitingShip = false;
+    state.lastOrbitTime = Date.now();
+});
+// ----------------------------------------
+
 document.getElementById('lang-button').addEventListener('click', async function() {
     state.currentLang = state.currentLang === 'en' ? 'zh' : 'en';
     await applyLanguage();
@@ -169,6 +222,10 @@ document.getElementById('pilot-button').addEventListener('click', function() {
         this.style.background = 'rgba(0, 255, 255, 0.2)';
         this.style.borderColor = '#00ffff';
         
+        // --- PILOT HEADLIGHT DISCONNECTED ---
+        headlight.intensity = 0; // Absolute darkness on back side
+        // ------------------------------------
+
         // Detach from Earth orbit and move to global scene
         if (window._spaceship) {
             window._spaceship.getWorldPosition(targetVec);
@@ -188,11 +245,19 @@ document.getElementById('pilot-button').addEventListener('click', function() {
         this.style.background = 'rgba(255, 255, 255, 0.05)';
         this.style.borderColor = '#4fa6ff';
         
+        // --- DEACTIVATE HEADLIGHT ---
+        headlight.intensity = 0;
+        // ---------------------------
+
         // Return to standard focus logic
         if (state.focusedBody) {
             state.isTransitioning = true;
         }
     }
+});
+
+document.getElementById('pilot-autolevel-button').addEventListener('click', function() {
+    state.isAutoLeveling = !state.isAutoLeveling;
 });
 
 // Virtual Controller Input Binding
@@ -267,10 +332,8 @@ document.getElementById('modal-cancel-btn').addEventListener('click', function()
     spawnModal.classList.remove('active');
 });
 
-document.getElementById('modal-confirm-btn').addEventListener('click', function() {
-    spawnModal.classList.remove('active');
-    
-    // Read values
+function spawnSinglePlanet(isSilent = false) {
+    // Read values from modal
     let baseData;
     if (spawnTemplate.value === 'Random') {
         baseData = planetsData[Math.floor(Math.random() * planetsData.length)];
@@ -278,26 +341,29 @@ document.getElementById('modal-confirm-btn').addEventListener('click', function(
         baseData = planetsData[parseInt(spawnTemplate.value)];
     }
     
-    const dist = parseFloat(spawnDistance.value);
-    const massMult = parseFloat(spawnMass.value);
+    // Add small random jitter for machine gun spray effect if silent
+    const jitterDist = isSilent ? (Math.random() - 0.5) * 40 : 0;
+    const jitterAngle = isSilent ? (Math.random() - 0.5) * 0.15 : 0;
+    
+    const dist = parseFloat(spawnDistance.value) + jitterDist;
+    const massMult = parseFloat(spawnMass.value) * (isSilent ? (0.9 + Math.random() * 0.2) : 1);
     
     // Generate specs
-    const spawnId = Math.floor(Math.random() * 9000) + 1000;
+    const spawnId = Math.floor(Math.random() * 90000) + 10000;
     const spawnName = baseData.name + '-' + spawnId;
     
-    const newSpeed = baseData.speed * Math.sqrt(baseData.dist / dist) * (0.8 + Math.random() * 0.4);
-    const newAngle = Math.random() * Math.PI * 2;
+    const newSpeed = baseData.speed * Math.sqrt(baseData.dist / dist) * (0.85 + Math.random() * 0.3);
+    const newAngle = (Math.random() * Math.PI * 2) + jitterAngle;
     const newMassValue = baseData.massValue * massMult;
     
     const planet = createPlanet(
         baseData.r, baseData.c, spawnName, dist, newSpeed,
-        baseData.rotSpeed, `Custom: ${massMult}x Mass`, baseData.massRel, baseData.radius,
-        baseData.density, newMassValue, newAngle, physicsBodies, scene
+        baseData.rotSpeed, `Custom: ${massMult.toFixed(1)}x Mass`, baseData.massRel, baseData.radius,
+        baseData.density, newMassValue, newAngle, physicsBodies, scene, baseData.name
     );
 
     if (massMult !== 1.0) {
-        // Adjust visual size based on mass multiplier for physical feedback
-        const scaleVal = Math.pow(massMult, 0.3333); // Volume scales cubically
+        const scaleVal = Math.pow(massMult, 0.3333);
         planet.mesh.scale.setScalar(scaleVal);
         planet.mesh.userData.radius = baseData.r * scaleVal;
     }
@@ -321,8 +387,30 @@ document.getElementById('modal-confirm-btn').addEventListener('click', function(
     };
     navList.appendChild(navItem);
 
-    // Auto focus the newly spawned planet
-    navItem.click();
+    if (!isSilent) {
+        navItem.click();
+    }
+}
+
+document.getElementById('modal-confirm-btn').addEventListener('click', function() {
+    spawnModal.classList.remove('active');
+    spawnSinglePlanet(false);
+});
+
+document.getElementById('modal-machinegun-btn').addEventListener('click', function() {
+    spawnModal.classList.remove('active');
+    
+    let firedCount = 0;
+    const totalToFire = 100; // 20 per sec for 5 sec
+    
+    const sprayInterval = setInterval(() => {
+        spawnSinglePlanet(true);
+        firedCount++;
+        if (firedCount >= totalToFire) {
+            clearInterval(sprayInterval);
+            console.log("Machine Gun Spawn Sequence Complete.");
+        }
+    }, 50); // 20 per second
 });
 
 // Environment setup
@@ -423,6 +511,9 @@ function getOrLoadTexture(name, category, tier, material) {
 
 function updateTextureResolution() {
     const focused = state.focusedBody;
+    
+    // When flying, we want everything to look sharp, not just one focused object.
+    const pilotQuality = isMobile ? 'low' : 'high'; 
     const focusedTier = isMobile ? 'low' : 'high';
     const otherTier = isMobile ? 'ultra' : 'low';
 
@@ -431,16 +522,27 @@ function updateTextureResolution() {
         
         const isPlanetFocused = (focused === body.mesh);
         const isMoonFocused = body.satellites.some(s => s.mesh === focused);
-        const pTier = (isPlanetFocused || isMoonFocused) ? focusedTier : otherTier;
+        
+        let pTier;
+        if (state.isFlying) {
+            pTier = pilotQuality;
+        } else {
+            pTier = (isPlanetFocused || isMoonFocused) ? focusedTier : otherTier;
+        }
 
         // Fetch/Load for Planet
-        getOrLoadTexture(body.name, 'planet', pTier, body.mesh.material);
+        getOrLoadTexture(body.textureKey || body.name, 'planet', pTier, body.mesh.material);
 
         // Fetch/Load for Moons
         body.satellites.forEach(moon => {
             const isThisMoonFocused = (focused === moon.mesh);
-            const mTier = (isThisMoonFocused || isPlanetFocused) ? focusedTier : otherTier;
-            getOrLoadTexture(moon.name, 'moon', mTier, moon.mesh.material);
+            let mTier;
+            if (state.isFlying) {
+                mTier = pilotQuality;
+            } else {
+                mTier = (isThisMoonFocused || isPlanetFocused) ? focusedTier : otherTier;
+            }
+            getOrLoadTexture(moon.textureKey || moon.name, 'moon', mTier, moon.mesh.material);
         });
     });
 }
@@ -470,7 +572,7 @@ navList.appendChild(sunNavItem);
 
 // Planets Setup
 planetsData.forEach(d => {
-    const planet = createPlanet(d.r, d.c, d.name, d.dist, d.speed, d.rotSpeed, d.mass, d.massRel, d.radius, d.density, d.massValue, d.angle || 0, physicsBodies, scene);
+    const planet = createPlanet(d.r, d.c, d.name, d.dist, d.speed, d.rotSpeed, d.mass, d.massRel, d.radius, d.density, d.massValue, d.angle || 0, physicsBodies, scene, d.name);
 
     const navItem = document.createElement('div');
     navItem.className = 'nav-item';
@@ -492,7 +594,7 @@ planetsData.forEach(d => {
 
     if (d.moons) {
         d.moons.forEach(m => {
-            const moon = createMoon(m.r, m.c, m.name, m.dist, m.speed, m.m, m.mr, m.ir, m.d);
+            const moon = createMoon(m.r, m.c, m.name, m.dist, m.speed, m.m, m.mr, m.ir, m.d, m.name);
             planet.satelliteAnchor.add(moon.orbitObj);
 
             planet.satellites.push(moon);
@@ -597,6 +699,18 @@ const clock = new THREE.Clock();
 let _prevTime = 0;
 
 function animate() {
+    requestAnimationFrame(animate);
+
+    const timeRaw = clock.getElapsedTime();
+    const realDt = Math.min(timeRaw - _prevTime, 0.05); 
+    _prevTime = timeRaw;
+
+    const dt = state.isPaused ? 0 : realDt;
+    state.virtualTime += dt;
+    
+    const simSpeedMultiplier = 400;
+    const physicsDt = (state.isPaused ? 0 : realDt) * simSpeedMultiplier;
+
     // Flight Physics & Chase Cam
     if (state.isFlying && window._spaceship) {
         const ship = window._spaceship;
@@ -607,9 +721,43 @@ function animate() {
         const roll = (keys['KeyQ'] ? 1 : 0) - (keys['KeyE'] ? 1 : 0);
         
         const rotSpeed = 0.025;
-        ship.rotateY(yaw * rotSpeed);
-        ship.rotateZ(pitch * rotSpeed);
-        ship.rotateX(roll * rotSpeed);
+
+        if (yaw !== 0 || pitch !== 0 || roll !== 0) {
+            state.isAutoLeveling = false;
+        }
+
+        if (state.isAutoLeveling) {
+            // Smoothly rotate ship towards level
+            const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
+            forward.y = 0; 
+            forward.normalize();
+            if (forward.lengthSq() < 0.001) forward.set(1, 0, 0);
+
+            const targetMat = new THREE.Matrix4();
+            const targetUp = new THREE.Vector3(0, 1, 0);
+            const targetX = forward;
+            const targetZ = new THREE.Vector3().crossVectors(targetX, targetUp).normalize();
+            const targetY = new THREE.Vector3().crossVectors(targetZ, targetX).normalize();
+            
+            targetMat.makeBasis(targetX, targetY, targetZ);
+            const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetMat);
+            
+            ship.quaternion.slerp(targetQuat, 0.05);
+
+            const alBtn = document.getElementById('pilot-autolevel-button');
+            if (alBtn) alBtn.style.background = 'rgba(0,255,255,0.4)';
+
+            if (ship.quaternion.angleTo(targetQuat) < 0.001) {
+                state.isAutoLeveling = false;
+            }
+        } else {
+            ship.rotateY(yaw * rotSpeed);
+            ship.rotateZ(pitch * rotSpeed);
+            ship.rotateX(roll * rotSpeed);
+
+            const alBtn = document.getElementById('pilot-autolevel-button');
+            if (alBtn) alBtn.style.background = 'rgba(0,255,255,0.1)';
+        }
         
         // 2. Persistent Throttle Logic (W/S step adjustment)
         const throttleStep = 0.01;
@@ -624,7 +772,74 @@ function animate() {
         const currentSpeed = speedMagnitude * speedDirection;
         
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
-        ship.position.addScaledVector(dir, currentSpeed);
+        
+        // --- STATION KEEPING (HOVER) LOGIC ---
+        const skIndicator = document.getElementById('station-keeping-indicator');
+        const skTargetThrottle = document.getElementById('sk-target-throttle');
+        
+        // Break lock if user provides meaningful input (Acceleration or Turbo)
+        if (state.capturedBody) {
+             if (keys['KeyW'] || keys['KeyS'] || keys['ShiftLeft']) {
+                 state.capturedBody = null;
+                 if (skIndicator) skIndicator.style.display = 'none';
+             }
+        }
+
+        if (state.capturedBody) {
+            // Apply captured movement: Ship follows planet position exactly
+            ship.position.copy(state.capturedBody.pos).add(state.relativePos);
+            // Reset throttle to a matched state visually if desired, 
+            // but for now we just suppress movement additive.
+        } else {
+            ship.position.addScaledVector(dir, currentSpeed);
+            
+            // Proximity & Velocity Match Detection
+            let closest = null;
+            let minDist = Infinity;
+            for (let i = 0; i < celestialBodies.length; i++) {
+                const b = celestialBodies[i];
+                if (b.isAsteroid || b.destroyed) continue;
+                const d = ship.position.distanceTo(b.pos);
+                if (d < minDist) { minDist = d; closest = b; }
+            }
+
+            if (closest) {
+                // Radius-based capture zone (8x radius)
+                const planetRadius = closest.mesh.userData.radius || 10;
+                const captureRadius = planetRadius * 8;
+                
+                if (minDist < captureRadius) {
+                    // Update Target Throttle Guidance
+                    if (state.showHoverZones && skTargetThrottle) {
+                        const targetSpeedMag = closest.vel.clone().multiplyScalar(physicsDt).length();
+                        const reqThrottlePct = Math.round((targetSpeedMag / 2.0) * 100);
+                        skTargetThrottle.textContent = `${t('targetThrottle')}: ${reqThrottlePct}%`;
+                        skTargetThrottle.style.display = 'block';
+                        if (skIndicator) skIndicator.style.display = 'block';
+                    }
+
+                    const vShip = dir.clone().multiplyScalar(currentSpeed);
+                    const vPlanet = closest.vel.clone().multiplyScalar(physicsDt);
+                    
+                    const relV = vShip.clone().sub(vPlanet);
+                    // If relative velocity magnitude is very low, lock position
+                    if (relV.length() < 0.25) { 
+                        state.capturedBody = closest;
+                        state.relativePos.copy(ship.position).sub(closest.pos);
+                        if (skIndicator) skIndicator.style.display = 'block';
+                        if (skTargetThrottle) skTargetThrottle.style.display = 'none'; // Hide guidance when captured
+                    }
+                } else {
+                    // Out of range, hide guidance
+                    if (skTargetThrottle) skTargetThrottle.style.display = 'none';
+                    if (skIndicator && !state.capturedBody) skIndicator.style.display = 'none';
+                }
+            } else {
+                if (skTargetThrottle) skTargetThrottle.style.display = 'none';
+                if (skIndicator && !state.capturedBody) skIndicator.style.display = 'none';
+            }
+        }
+        // -------------------------------------
         
         // 4. Update HUD State
         // Update Virtual Throttle UI
@@ -651,16 +866,32 @@ function animate() {
         
         if (state.shipViewMode === 'cockpit') {
             // First-Person Cockpit Camera (Hard-Locked)
-            // Adjusted Eye point for the new high-quality model
-            const camOffset = new THREE.Vector3(0.5, 0.2, 0).applyQuaternion(ship.quaternion);
+            // Recalibrated for the flipped model orientation
+            const camOffset = new THREE.Vector3(1.2, 0.3, 0).applyQuaternion(ship.quaternion);
             camera.position.copy(ship.position.clone().add(camOffset));
             camera.quaternion.copy(ship.quaternion);
             if (vCrosshair) vCrosshair.style.display = 'block';
         } else {
-            // Third-Person Chase Camera (Soft-Follow)
-            // Adjusted offset for the new model scale
-            const camOffset = new THREE.Vector3(-15, 4, 0).applyQuaternion(ship.quaternion);
+            // Third-Person Chase Camera (Soft-Follow + Drag Inspect)
+            const DEFAULT_THETA = 4.712; // Directly behind (Negative X-axis)
+            const DEFAULT_PHI = 0.3;     // Slight upward angle for better view
+            
+            // Auto-Reset logic: Interpolate back to default after 1s of inactivity
+            if (!state.shipOrbitAngles) state.shipOrbitAngles = { theta: 4.712, phi: 0.3 };
+            if (!state.isOrbitingShip && (Date.now() - state.lastOrbitTime > 1000)) {
+                state.shipOrbitAngles.theta += (DEFAULT_THETA - state.shipOrbitAngles.theta) * 0.05;
+                state.shipOrbitAngles.phi += (DEFAULT_PHI - state.shipOrbitAngles.phi) * 0.05;
+            }
+
+            // Calculate offset based on current orbit angles
+            const r = 15.52; // Maintain consistent distance
+            const ox = r * Math.sin(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
+            const oy = r * Math.sin(state.shipOrbitAngles.phi);
+            const oz = r * Math.cos(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
+            
+            const camOffset = new THREE.Vector3(ox, oy, oz).applyQuaternion(ship.quaternion);
             const goalPos = ship.position.clone().add(camOffset);
+            
             camera.position.lerp(goalPos, 0.1);
             camera.lookAt(ship.position);
             if (vCrosshair) vCrosshair.style.display = 'none';
@@ -679,15 +910,6 @@ function animate() {
         window._spaceship.rotation.z = Math.sin(time * 0.5) * 0.1;
     }
 
-    requestAnimationFrame(animate);
-
-    const time = clock.getElapsedTime();
-    const realDt = Math.min(time - _prevTime, 0.05); 
-    _prevTime = time;
-
-    const dt = state.isPaused ? 0 : realDt;
-    state.virtualTime += dt;
-
     sun.rotation.y += 0.00148 * (state.isPaused ? 0 : 1);
 
     const pulse = 1 + 0.03 * Math.sin(state.virtualTime * 1.2);
@@ -699,8 +921,6 @@ function animate() {
     starField.rotation.x = state.virtualTime * 0.0002;
 
     // Physics: 45 substeps for better stability at 400x time
-    const simSpeedMultiplier = 400;
-    const physicsDt = (state.isPaused ? 0 : realDt) * simSpeedMultiplier;
     const subSteps = state.isPaused ? 0 : 45;
     const subDt = physicsDt / (subSteps || 1);
 
@@ -714,13 +934,18 @@ function animate() {
         for (let i = 0; i < nPlanets; i++) {
             const pA = activePlanets[i];
             if (pA.destroyed) continue;
-            // Sun gravity (inlined for speed)
+            // Sun gravity & Collision (surface-to-surface)
             const rSqA = pA.pos.lengthSq();
-            if (rSqA > 1600) {
+            const pRad = pA.mesh.userData.radius || 5;
+            const sunRad = 40; 
+            const collisionDist = sunRad + pRad;
+
+            if (rSqA > collisionDist * collisionDist) {
                 const fA = (G * SUN_MASS) / rSqA;
                 _sunDir.copy(pA.pos).negate().normalize();
                 pA.vel.addScaledVector(_sunDir, fA * subDt);
-            } else if (pA.physMass < SUN_MASS) {
+            } else {
+                // Surface collision: Planet consumed regardless of mass
                 pA.destroyed = true; markBodiesDirty(); continue;
             }
 
@@ -790,10 +1015,12 @@ function animate() {
             const a = activeAsteroids[i];
             if (a.destroyed) continue;
             const rSq = a.pos.lengthSq();
-            if (rSq > 1600) {
+            // Asteroids visually radius is 1.0 (sharedGeo), but we'll use 2.0 for safer Sun collision
+            const asteroidSunThreshold = (40 + 2) * (40 + 2); 
+            if (rSq > asteroidSunThreshold) {
                 _sunDir.copy(a.pos).negate().normalize();
                 a.vel.addScaledVector(_sunDir, (G * SUN_MASS / rSq) * subDt);
-            } else if (a.physMass < SUN_MASS) {
+            } else {
                 a.destroyed = true; markBodiesDirty();
             }
         }
@@ -834,6 +1061,14 @@ function animate() {
                     updateInfoPanel(null);
                     document.getElementById('overview-button').textContent = t('overviewOff');
                 }
+
+                // Remove from Nav List
+                const items = navList.querySelectorAll('.nav-item');
+                items.forEach(item => {
+                    if (item.dataset.engName === b.name) {
+                        item.remove();
+                    }
+                });
             }
             celestialBodies.splice(i, 1);
         }

@@ -16,9 +16,12 @@ export const i18n = {
         asteroidBeltOff: '☄️ ASTEROID BELT: OFF',
         kuiperBeltOn: '❄️ KUIPER BELT: ON',
         kuiperBeltOff: '❄️ KUIPER BELT: OFF',
+        hoverZonesOn: '👾 HOVER ZONES: ON',
+        hoverZonesOff: '👾 HOVER ZONES: OFF',
         pilotStart: '🚀 PILOT SHIP',
         pilotEnd: '❌ EXIT PILOT',
         pilotInstructions: 'W/S: Throttle • Arrows: Pitch/Yaw • Q/E: Roll',
+        pilotAutoLevel: '⚖️ AUTO-LEVEL',
         spawnPlanet: '➕ SPAWN PLANET',
         modalCustomizeTitle: 'Customize Planet',
         modalTemplate: 'Base Template:',
@@ -26,6 +29,7 @@ export const i18n = {
         modalMass: 'Mass Multiplier:',
         modalCancel: 'CANCEL',
         modalConfirm: 'SPAWN!',
+        modalMachineGun: '🔥 MACHINE GUN SPAWN',
         optRandom: '🎲 Random',
         langSwitch: '🌐 中文',
         mass: 'Mass',
@@ -42,7 +46,10 @@ export const i18n = {
             'Titan': 'Titan', 'Iapetus': 'Iapetus', 'Ariel': 'Ariel',
             'Titania': 'Titania', 'Oberon': 'Oberon', 'Triton': 'Triton',
             'Pluto': 'Pluto', 'Charon': 'Charon', 'Ceres': 'Ceres', 'Vesta': 'Vesta'
-        }
+        },
+        stationKeepingActive: 'STATION KEEPING ACTIVE',
+        stationKeepingHint: 'Press W to Break Lock',
+        targetThrottle: 'TARGET THROTTLE'
     },
     zh: {
         title: '星空探索者',
@@ -59,9 +66,12 @@ export const i18n = {
         asteroidBeltOff: '☄️ 小行星带：关',
         kuiperBeltOn: '❄️ 柯伊伯带：开',
         kuiperBeltOff: '❄️ 柯伊伯带：关',
+        hoverZonesOn: '👾 捕获区域：开',
+        hoverZonesOff: '👾 捕获区域：关',
         pilotStart: '🚀 驾驶飞船',
         pilotEnd: '❌ 退出驾驶',
         pilotInstructions: 'W/S: 油门调节 • 方向键: 俯仰/偏航 • Q/E: 旋转',
+        pilotAutoLevel: '⚖️ 自动校正',
         spawnPlanet: '➕ 生成新行星',
         modalCustomizeTitle: '自定义行星',
         modalTemplate: '基底复制模板：',
@@ -69,6 +79,7 @@ export const i18n = {
         modalMass: '引力质量倍数：',
         modalCancel: '取消',
         modalConfirm: '立即投射！',
+        modalMachineGun: '🔥 筋膜枪投放',
         optRandom: '🎲 随机盲盒',
         langSwitch: '🌐 English',
         mass: '质量',
@@ -85,7 +96,10 @@ export const i18n = {
             'Titan': '土卫六', 'Iapetus': '土卫八', 'Ariel': '天卫一',
             'Titania': '天卫三', 'Oberon': '天卫四', 'Triton': '海卫一',
             'Pluto': '冥王星', 'Charon': '卡戎', 'Ceres': '谷神星', 'Vesta': '灶神星'
-        }
+        },
+        stationKeepingActive: '同步轨道捕获：开启',
+        stationKeepingHint: '按 W 键强制脱离',
+        targetThrottle: '目标油门'
     }
 };
 

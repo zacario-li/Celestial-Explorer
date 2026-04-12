@@ -41,8 +41,17 @@ export async function applyLanguage() {
     document.getElementById('overview-button').textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
     document.getElementById('asteroid-belt-button').textContent = state.isAsteroidBeltActive ? t('asteroidBeltOn') : t('asteroidBeltOff');
     document.getElementById('kuiper-belt-button').textContent = state.isKuiperBeltActive ? t('kuiperBeltOn') : t('kuiperBeltOff');
+    document.getElementById('hoverzones-button').textContent = state.showHoverZones ? t('hoverZonesOn') : t('hoverZonesOff');
     document.getElementById('pilot-button').textContent = state.isFlying ? t('pilotEnd') : t('pilotStart');
     document.getElementById('pilot-instr').textContent = t('pilotInstructions');
+    const autoLevelBtn = document.getElementById('pilot-autolevel-button');
+    if (autoLevelBtn) autoLevelBtn.textContent = t('pilotAutoLevel');
+    
+    const skStatus = document.getElementById('sk-status');
+    if (skStatus) skStatus.textContent = t('stationKeepingActive');
+    const skHint = document.getElementById('sk-hint');
+    if (skHint) skHint.textContent = t('stationKeepingHint');
+
     document.getElementById('spawn-button').textContent = t('spawnPlanet');
     document.getElementById('lang-button').textContent = t('langSwitch');
 
@@ -52,6 +61,7 @@ export async function applyLanguage() {
     document.getElementById('modal-lbl-distance').textContent = t('modalDistance');
     document.getElementById('modal-lbl-mass').textContent = t('modalMass');
     document.getElementById('modal-cancel-btn').textContent = t('modalCancel');
+    document.getElementById('modal-machinegun-btn').textContent = t('modalMachineGun');
     document.getElementById('modal-confirm-btn').textContent = t('modalConfirm');
     document.getElementById('opt-random').textContent = t('optRandom');
     

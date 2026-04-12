@@ -14,8 +14,12 @@ document.getElementById('canvas-container').appendChild(renderer.domElement);
 
 camera.position.set(0, 300, 500);
 
+export const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
+mainLight.position.set(50, 50, 50);
+scene.add(mainLight);
+
 // Lighting
-export const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
+export const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); 
 scene.add(ambientLight);
 
 export const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);

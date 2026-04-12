@@ -34,7 +34,7 @@ export function createLabel(text) {
     return sprite;
 }
 
-export function createPlanet(radius, color, name, orbitRadius, speed, rotSpeed = 0.02, mass = 'Unknown', massRel = 'Unknown', infoRadius = 'Unknown', density = 'Unknown', massValue = 1.0, initialAngle = 0, physicsBodies, scene) {
+export function createPlanet(radius, color, name, orbitRadius, speed, rotSpeed = 0.02, mass = 'Unknown', massRel = 'Unknown', infoRadius = 'Unknown', density = 'Unknown', massValue = 1.0, initialAngle = 0, physicsBodies, scene, textureKey = null) {
     const geo = new THREE.SphereGeometry(radius, 64, 64);
     const mat = new THREE.MeshStandardMaterial({
         color: color,
@@ -49,7 +49,8 @@ export function createPlanet(radius, color, name, orbitRadius, speed, rotSpeed =
         mass: mass, 
         massRel: massRel, 
         infoRadius: infoRadius, 
-        density: density 
+        density: density,
+        textureKey: textureKey || name
     };
 
     const orbitObj = new THREE.Object3D();
@@ -100,17 +101,32 @@ export function createPlanet(radius, color, name, orbitRadius, speed, rotSpeed =
     orbitObj.add(satelliteAnchor);
 
     const satellites = [];
-
+    
+    // --- CAPTURE ZONE VISUALIZATION (Purple Sphere) ---
+    const captureGeo = new THREE.SphereGeometry(radius * 8, 32, 32);
+    const captureMat = new THREE.MeshBasicMaterial({ 
+        color: 0x800080, 
+        transparent: true, 
+        opacity: 0.15, 
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    const captureMesh = new THREE.Mesh(captureGeo, captureMat);
+    captureMesh.visible = false; // Hidden by default
+    orbitObj.add(captureMesh);
+    // --------------------------------------------------
+    
     const bodyObj = { 
         mesh, orbitObj, orbitLine, speed, rotSpeed, orbitRadius, name, satellites, satelliteAnchor, label,
-        pos, vel, physMass: massValue || 1.0, angle: initialAngle 
+        pos, vel, physMass: massValue || 1.0, angle: initialAngle, textureKey: textureKey || name,
+        captureMesh: captureMesh
     };
     
     physicsBodies.push(bodyObj);
     return bodyObj;
 }
 
-export function createMoon(radius, color, name, orbitRadius, speed, mass, massRel, infoRadius, density) {
+export function createMoon(radius, color, name, orbitRadius, speed, mass, massRel, infoRadius, density, textureKey = null) {
     const geo = new THREE.SphereGeometry(radius, 32, 32);
     const mat = new THREE.MeshStandardMaterial({
         color: color,
@@ -125,7 +141,8 @@ export function createMoon(radius, color, name, orbitRadius, speed, mass, massRe
         mass: mass, 
         massRel: massRel, 
         infoRadius: infoRadius, 
-        density: density 
+        density: density,
+        textureKey: textureKey || name
     };
 
     const moonOrbitObj = new THREE.Object3D();
@@ -140,7 +157,7 @@ export function createMoon(radius, color, name, orbitRadius, speed, mass, massRe
     const orbitLine = new THREE.Mesh(ringGeo, ringMat);
     moonOrbitObj.add(orbitLine); 
 
-    return { name, mesh, orbitObj: moonOrbitObj, speed };
+    return { name, mesh, orbitObj: moonOrbitObj, speed, textureKey: textureKey || name };
 }
 
 export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, scene, celestialBodies, beltType = 'asteroid') {
