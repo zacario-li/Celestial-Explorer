@@ -25,5 +25,12 @@ export const state = {
     isAutoLeveling: false,
     capturedBody: null,
     relativePos: new THREE.Vector3(),
-    showHoverZones: false
+    showHoverZones: false,
+    isAutopilotModalActive: false,
+    autopilotTarget: null,
+    isAutopilotActive: false,
+    autopilotStatus: '',
+    showAutopilotTrajectory: true,
+    timeToIntercept: 0,
+    _prevAutopilotTarget: null
 };

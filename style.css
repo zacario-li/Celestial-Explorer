@@ -639,3 +639,51 @@ canvas {
     width: 1px;
     height: 100%;
 }
+
+/* Autopilot Destination List Items */
+.dest-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: inherit;
+    font-size: 0.95rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dest-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: #00ffff;
+    transition: height 0.2s;
+}
+
+.dest-item:hover {
+    background: rgba(0, 255, 255, 0.1);
+    border-color: rgba(0, 255, 255, 0.4);
+    transform: translateX(8px);
+    box-shadow: -5px 0 15px rgba(0, 255, 255, 0.1);
+}
+
+.dest-item:hover::before {
+    height: 70%;
+}
+
+.dest-item .dest-dist {
+    font-size: 0.8rem;
+    color: rgba(0, 255, 255, 0.6);
+    font-weight: 300;
+}

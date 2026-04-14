@@ -125,10 +125,17 @@
             style="pointer-events: auto; margin-top: 10px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; transition: background 0.3s;">
             ⚖️ AUTO-LEVEL
         </button>
+        <button id="pilot-autopilot-button" 
+            style="pointer-events: auto; margin-top: 10px; margin-left: 10px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; transition: background 0.3s;">
+            🤖 AUTOPILOT
+        </button>
         <div id="station-keeping-indicator" style="display: none; margin-top: 10px; padding: 8px; background: rgba(0, 255, 0, 0.1); border: 1px dashed #00ff00; border-radius: 4px; animation: pulse 2s infinite;">
             <div id="sk-status" style="font-weight: bold; color: #00ff00; font-size: 0.85rem; letter-spacing: 1px;">STATION KEEPING ACTIVE</div>
             <div id="sk-target-throttle" style="display: none; font-weight: bold; color: #ff00ff; font-size: 0.85rem; letter-spacing: 1px; margin-top: 4px;">TARGET THROTTLE: --%</div>
             <div id="sk-hint" style="font-size: 0.7rem; opacity: 0.8; color: #00ff00; margin-top: 2px;">Press W to Break Lock</div>
+        </div>
+        <div id="autopilot-indicator" style="display: none; margin-top: 10px; padding: 8px; background: rgba(0, 255, 255, 0.1); border: 1px dashed #00ffff; border-radius: 4px; animation: pulse 2s infinite;">
+            <div id="ap-status" style="font-weight: bold; color: #00ffff; font-size: 0.85rem; letter-spacing: 1px;">AUTOPILOT NAVIGATING</div>
         </div>
     </div>
 
@@ -204,7 +211,20 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=fixed_fly"></script>
+    <!-- Autopilot Destination Modal -->
+    <div id="autopilot-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; max-height: 80vh; display: flex; flex-direction: column;">
+            <h2 id="autopilot-modal-title">Select Destination</h2>
+            <div id="autopilot-dest-list" style="flex: 1; overflow-y: auto; margin: 15px 0; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
+                <!-- Planets populated dynamically -->
+            </div>
+            <div class="modal-actions">
+                <button id="autopilot-cancel-btn" class="pause-btn modal-btn">ABORT</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js?v=fixed_collision"></script>
 </body>
 
 </html>

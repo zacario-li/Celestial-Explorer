@@ -46,11 +46,21 @@ export async function applyLanguage() {
     document.getElementById('pilot-instr').textContent = t('pilotInstructions');
     const autoLevelBtn = document.getElementById('pilot-autolevel-button');
     if (autoLevelBtn) autoLevelBtn.textContent = t('pilotAutoLevel');
+    const autopilotBtn = document.getElementById('pilot-autopilot-button');
+    if (autopilotBtn) autopilotBtn.textContent = t('pilotAutopilot');
     
     const skStatus = document.getElementById('sk-status');
     if (skStatus) skStatus.textContent = t('stationKeepingActive');
     const skHint = document.getElementById('sk-hint');
     if (skHint) skHint.textContent = t('stationKeepingHint');
+
+    const apStatus = document.getElementById('ap-status');
+    if (apStatus && state.autopilotStatus) {
+        // Status is dynamic e.g. "NAVIGATING TO [Planet]"
+        const base = t(state.autopilotStatus);
+        const target = state.autopilotTarget ? tName(state.autopilotTarget.name) : '';
+        apStatus.textContent = `${base} ${target}`.trim();
+    }
 
     document.getElementById('spawn-button').textContent = t('spawnPlanet');
     document.getElementById('lang-button').textContent = t('langSwitch');
@@ -64,6 +74,9 @@ export async function applyLanguage() {
     document.getElementById('modal-machinegun-btn').textContent = t('modalMachineGun');
     document.getElementById('modal-confirm-btn').textContent = t('modalConfirm');
     document.getElementById('opt-random').textContent = t('optRandom');
+    
+    document.getElementById('autopilot-modal-title').textContent = t('autopilotModalTitle');
+    document.getElementById('autopilot-cancel-btn').textContent = t('autopilotCancel');
     
     const pauseBtn = document.getElementById('pause-button');
     pauseBtn.textContent = state.isPaused ? t('resume') : t('pause');
@@ -95,4 +108,31 @@ export async function applyLanguage() {
     }
 
     if (state.focusedBody) updateInfoPanel(state.focusedBody);
+}
+
+export function populateAutopilotDestinations(activePlanets, onSelect) {
+    const list = document.getElementById('autopilot-dest-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    activePlanets.forEach(p => {
+        if (p.destroyed) return;
+        const item = document.createElement('div');
+        item.className = 'dest-item';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = tName(p.name);
+        
+        const distSpan = document.createElement('span');
+        distSpan.className = 'dest-dist';
+        // Simple distance from origin in AU-like units
+        const dist = Math.round(p.pos.length());
+        distSpan.textContent = `${dist} AU`;
+
+        item.appendChild(nameSpan);
+        item.appendChild(distSpan);
+        
+        item.onclick = () => onSelect(p);
+        list.appendChild(item);
+    });
 }
