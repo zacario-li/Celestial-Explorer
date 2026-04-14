@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import { state } from './modules/state.js?v=fixed_spawn';
-import { planetsData } from './modules/planetsData.js?v=fixed_spawn';
-import { t, tName } from './modules/i18n.js?v=fixed_spawn';
-import { updateInfoPanel, applyLanguage } from './modules/ui.js?v=fixed_spawn';
-import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js?v=fixed_spawn';
-import { createStarfield } from './modules/starfield.js?v=fixed_spawn';
-import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js?v=fixed_spawn';
-import { createSun } from './modules/sunAndWind.js?v=fixed_spawn';
-import { createSpaceship } from './modules/spaceship.js?v=fixed_spawn';
+import { state } from './modules/state.js';
+import { planetsData } from './modules/planetsData.js';
+import { t, tName } from './modules/i18n.js';
+import { updateInfoPanel, applyLanguage } from './modules/ui.js';
+import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js';
+import { createStarfield } from './modules/starfield.js';
+import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js';
+import { createSun } from './modules/sunAndWind.js';
+import { createSpaceship } from './modules/spaceship.js';
 
 // --- SYSTEM INITIALIZATION FLAG ---
 window.SIM_READY = true;
@@ -777,20 +777,28 @@ function animate() {
         const skIndicator = document.getElementById('station-keeping-indicator');
         const skTargetThrottle = document.getElementById('sk-target-throttle');
         
-        // Break lock if user provides meaningful input (Acceleration or Turbo)
+        const vShip = dir.clone().multiplyScalar(currentSpeed);
+        
         if (state.capturedBody) {
-             if (keys['KeyW'] || keys['KeyS'] || keys['ShiftLeft']) {
-                 state.capturedBody = null;
-                 if (skIndicator) skIndicator.style.display = 'none';
-             }
+            const vPlanet = state.capturedBody.vel.clone().multiplyScalar(physicsDt);
+            const relV = vShip.clone().sub(vPlanet);
+            
+            // ALLOW DRIFT: smoothly add the true velocity difference to the relative position
+            state.relativePos.add(relV);
+            
+            const planetRadius = state.capturedBody.mesh.userData.radius || 10;
+            const captureRadius = planetRadius * 8;
+            
+            if (state.relativePos.length() > captureRadius) {
+                // Escaped the capture zone seamlessly through flight
+                state.capturedBody = null;
+                if (skIndicator) skIndicator.style.display = 'none';
+            } else {
+                ship.position.copy(state.capturedBody.pos).add(state.relativePos);
+            }
         }
 
-        if (state.capturedBody) {
-            // Apply captured movement: Ship follows planet position exactly
-            ship.position.copy(state.capturedBody.pos).add(state.relativePos);
-            // Reset throttle to a matched state visually if desired, 
-            // but for now we just suppress movement additive.
-        } else {
+        if (!state.capturedBody) {
             ship.position.addScaledVector(dir, currentSpeed);
             
             // Proximity & Velocity Match Detection
@@ -809,34 +817,32 @@ function animate() {
                 const captureRadius = planetRadius * 8;
                 
                 if (minDist < captureRadius) {
+                    const vPlanet = closest.vel.clone().multiplyScalar(physicsDt);
+                    const relV = vShip.clone().sub(vPlanet);
+                    
                     // Update Target Throttle Guidance
                     if (state.showHoverZones && skTargetThrottle) {
-                        const targetSpeedMag = closest.vel.clone().multiplyScalar(physicsDt).length();
+                        const targetSpeedMag = vPlanet.length();
                         const reqThrottlePct = Math.round((targetSpeedMag / 2.0) * 100);
                         skTargetThrottle.textContent = `${t('targetThrottle')}: ${reqThrottlePct}%`;
                         skTargetThrottle.style.display = 'block';
                         if (skIndicator) skIndicator.style.display = 'block';
                     }
 
-                    const vShip = dir.clone().multiplyScalar(currentSpeed);
-                    const vPlanet = closest.vel.clone().multiplyScalar(physicsDt);
-                    
-                    const relV = vShip.clone().sub(vPlanet);
-                    // If relative velocity magnitude is very low, lock position
+                    // Lock position if matched
                     if (relV.length() < 0.25) { 
                         state.capturedBody = closest;
                         state.relativePos.copy(ship.position).sub(closest.pos);
                         if (skIndicator) skIndicator.style.display = 'block';
-                        if (skTargetThrottle) skTargetThrottle.style.display = 'none'; // Hide guidance when captured
+                        if (skTargetThrottle) skTargetThrottle.style.display = 'none'; 
                     }
                 } else {
-                    // Out of range, hide guidance
                     if (skTargetThrottle) skTargetThrottle.style.display = 'none';
-                    if (skIndicator && !state.capturedBody) skIndicator.style.display = 'none';
+                    if (skIndicator) skIndicator.style.display = 'none';
                 }
             } else {
                 if (skTargetThrottle) skTargetThrottle.style.display = 'none';
-                if (skIndicator && !state.capturedBody) skIndicator.style.display = 'none';
+                if (skIndicator) skIndicator.style.display = 'none';
             }
         }
         // -------------------------------------

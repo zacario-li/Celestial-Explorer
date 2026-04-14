@@ -1,6 +1,6 @@
-import { state } from './state.js?v=5';
-import { t, tName } from './i18n.js?v=5';
-import { planetsData } from './planetsData.js?v=5';
+import { state } from './state.js';
+import { t, tName } from './i18n.js';
+import { planetsData } from './planetsData.js';
 
 export function updateInfoPanel(body) {
     const panel = document.getElementById('info-panel');
