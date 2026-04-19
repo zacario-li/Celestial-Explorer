@@ -16,6 +16,15 @@ export function createSpaceship() {
     const progressEl = document.getElementById('v-sync-progress');
     const overlay = document.getElementById('loading-overlay');
     
+    // Safety Timeout: Hide overlay after 5 seconds even if STL is slow
+    setTimeout(() => {
+        if (overlay && overlay.style.display !== 'none') {
+            console.warn("Loading Timeout: Hiding overlay to enable UI.");
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 600);
+        }
+    }, 5000);
+    
     // Material for the STL model (Absolute Realism Metallic)
     const shipMat = new THREE.MeshStandardMaterial({ 
         color: 0xffa500, // Vibrant Orange

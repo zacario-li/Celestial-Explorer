@@ -5,6 +5,7 @@ export const state = {
     isTransitioning: false,
     isPaused: false,
     virtualTime: 0,
+    simSpeedMultiplier: 100, // Speed up simulation (User requested modification from 400)
     currentLang: 'en',
     isHighVis: false,
     isAutoRotate: true,
@@ -32,5 +33,7 @@ export const state = {
     autopilotStatus: '',
     showAutopilotTrajectory: true,
     timeToIntercept: 0,
-    _prevAutopilotTarget: null
+    _prevAutopilotTarget: null,
+    autopilotPhase: '', // 'BURNING' or 'COASTING'
+    _prevAutopilotPhase: ''
 };

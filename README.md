@@ -21,7 +21,9 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
 - **Chase Camera**: A dynamic follow-camera system for an immersive piloting experience.
 - **追逐摄像机**：动态跟随系统，提供沉浸式的驾驶感。
 - **Interplanetary Travel**: Seamlessly detach from Earth's orbit and fly across the solar system.
+- **AI Autopilot System**: Advanced Lambert solver for realistic orbital transfers. It predicts target positions and uses gravitational arcing for precision arrival and automatic capture.
 - **星际航行**：无缝脱离地球轨道，在全局坐标系中自由探索太阳系。
+- **AI 自动驾驶系统**：基于 Lambert 算法的高级轨道转移系统。支持路径预测、引力弹道航行及自动入轨捕获。
 
 ### ⚛️ Real-Time Physics | 实时物理引擎
 - **Newtonian Gravity**: Realistic orbital calculations for planets, moons, and thousands of asteroids.
@@ -81,6 +83,8 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
 | **Roll (Rotate)** | 翻滚（旋转） | `Q` / `E` | `Q` / `E` |
 | **Pitch (Up/Down)** | 俯仰（上/下） | `Arrow Up` / `Down` | `↑` / `↓` |
 | **Turbo Boost** | 涡轮增压 | `Shift` (Hold) | `Shift` (长按) |
+| **Autopilot** | 自动驾驶 | HUD Button | HUD 按钮 |
+| **Manual Override** | 手动接管 | Any Steering Key | 任意转向键 |
 
 ---
 

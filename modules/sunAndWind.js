@@ -74,7 +74,7 @@ function buildSunTexture(size = 1024) {
     return new THREE.CanvasTexture(cvs);
 }
 
-function makeGlowLayer(radius, color, opacity) {
+export function makeGlowLayer(radius, color, opacity) {
     const geo = new THREE.SphereGeometry(radius, 32, 32);
     const mat = new THREE.MeshBasicMaterial({
         color, transparent: true, opacity,
@@ -171,9 +171,9 @@ export function createSun(scene) {
     const glowSphere = makeGlowLayer(42, 0xff9900, 0.25);
     const glowSphere2 = makeGlowLayer(45, 0xff5500, 0.10);
     const glowSphere3 = makeGlowLayer(49, 0xff2200, 0.04);
-    scene.add(glowSphere);
-    scene.add(glowSphere2);
-    scene.add(glowSphere3);
+    sun.add(glowSphere);
+    sun.add(glowSphere2);
+    sun.add(glowSphere3);
 
     // Solar Wind Particles
     const windGeo = buildWindGeo(SW_COUNT);

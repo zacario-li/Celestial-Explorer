@@ -1,6 +1,6 @@
-import { state } from './state.js';
-import { t, tName } from './i18n.js';
-import { planetsData } from './planetsData.js';
+import { state } from './state.js?v=2';
+import { t, tName } from './i18n.js?v=2';
+import { planetsData } from './planetsData.js?v=2';
 
 export function updateInfoPanel(body) {
     const panel = document.getElementById('info-panel');
@@ -34,62 +34,85 @@ export function updateInfoPanel(body) {
 }
 
 export async function applyLanguage() {
-    document.querySelector('.ui-side-left h1').textContent = t('title');
-    document.querySelector('.ui-side-left p').textContent = t('subtitle');
-    document.querySelector('.nav-title').textContent = t('navTitle');
-    document.getElementById('highvis-button').textContent = t('highvis');
-    document.getElementById('overview-button').textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
-    document.getElementById('asteroid-belt-button').textContent = state.isAsteroidBeltActive ? t('asteroidBeltOn') : t('asteroidBeltOff');
-    document.getElementById('kuiper-belt-button').textContent = state.isKuiperBeltActive ? t('kuiperBeltOn') : t('kuiperBeltOff');
-    document.getElementById('hoverzones-button').textContent = state.showHoverZones ? t('hoverZonesOn') : t('hoverZonesOff');
-    document.getElementById('pilot-button').textContent = state.isFlying ? t('pilotEnd') : t('pilotStart');
-    document.getElementById('pilot-instr').textContent = t('pilotInstructions');
-    const autoLevelBtn = document.getElementById('pilot-autolevel-button');
-    if (autoLevelBtn) autoLevelBtn.textContent = t('pilotAutoLevel');
-    const autopilotBtn = document.getElementById('pilot-autopilot-button');
-    if (autopilotBtn) autopilotBtn.textContent = t('pilotAutopilot');
+    const safeSetText = (id, key) => {
+        const el = document.getElementById(id);
+        if (el) {
+            const txt = t(key);
+            el.textContent = txt;
+        }
+    };
+
+    const safeSetSelectorText = (selector, key) => {
+        const el = document.querySelector(selector);
+        if (el) el.textContent = t(key);
+    };
+
+    safeSetSelectorText('.ui-side-left h1', 'title');
+    safeSetSelectorText('.ui-side-left p', 'subtitle');
+    safeSetSelectorText('.nav-title', 'navTitle');
     
-    const skStatus = document.getElementById('sk-status');
-    if (skStatus) skStatus.textContent = t('stationKeepingActive');
-    const skHint = document.getElementById('sk-hint');
-    if (skHint) skHint.textContent = t('stationKeepingHint');
+    safeSetText('highvis-button', 'highvis');
+    safeSetText('overview-button', state.isOverview ? 'overviewOff' : 'overviewOn');
+    safeSetText('asteroid-belt-button', state.isAsteroidBeltActive ? 'asteroidBeltOn' : 'asteroidBeltOff');
+    safeSetText('kuiper-belt-button', state.isKuiperBeltActive ? 'kuiperBeltOn' : 'kuiperBeltOff');
+    safeSetText('hoverzones-button', state.showHoverZones ? 'hoverZonesOn' : 'hoverZonesOff');
+    safeSetText('pilot-button', state.isFlying ? 'pilotEnd' : 'pilotStart');
+    safeSetText('pilot-instr', 'pilotInstructions');
+    safeSetText('pilot-autolevel-button', 'pilotAutoLevel');
+    safeSetText('pilot-autopilot-button', 'pilotAutopilot');
+    
+    safeSetText('sk-status', 'stationKeepingActive');
+    safeSetText('sk-hint', 'stationKeepingHint');
 
     const apStatus = document.getElementById('ap-status');
     if (apStatus && state.autopilotStatus) {
-        // Status is dynamic e.g. "NAVIGATING TO [Planet]"
         const base = t(state.autopilotStatus);
         const target = state.autopilotTarget ? tName(state.autopilotTarget.name) : '';
-        apStatus.textContent = `${base} ${target}`.trim();
+        const phaseKey = state.autopilotPhase === 'BURNING' ? 'apPhaseBurning' : (state.autopilotPhase === 'COASTING' ? 'apPhaseCoasting' : '');
+        const phaseStr = phaseKey ? ` (${t(phaseKey)})` : '';
+        apStatus.textContent = `${base} ${target}${phaseStr}`.trim();
     }
 
-    document.getElementById('spawn-button').textContent = t('spawnPlanet');
-    document.getElementById('lang-button').textContent = t('langSwitch');
+    safeSetText('spawn-button', 'spawnPlanet');
+    safeSetText('sync-time-button', 'timeSync');
+    safeSetText('set-time-button', 'setTime');
+    safeSetText('lang-button', 'langSwitch');
+
+    const speedLbl = document.getElementById('sim-speed-label');
+    if (speedLbl) speedLbl.textContent = `${t('simSpeed')}: ${state.simSpeedMultiplier}x`;
 
     // Modal UI
-    document.getElementById('modal-title').textContent = t('modalCustomizeTitle');
-    document.getElementById('modal-lbl-template').textContent = t('modalTemplate');
-    document.getElementById('modal-lbl-distance').textContent = t('modalDistance');
-    document.getElementById('modal-lbl-mass').textContent = t('modalMass');
-    document.getElementById('modal-cancel-btn').textContent = t('modalCancel');
-    document.getElementById('modal-machinegun-btn').textContent = t('modalMachineGun');
-    document.getElementById('modal-confirm-btn').textContent = t('modalConfirm');
-    document.getElementById('opt-random').textContent = t('optRandom');
+    safeSetText('modal-title', 'modalCustomizeTitle');
+    safeSetText('modal-lbl-template', 'modalTemplate');
+    safeSetText('modal-lbl-distance', 'modalDistance');
+    safeSetText('modal-lbl-mass', 'modalMass');
+    safeSetText('modal-cancel-btn', 'modalCancel');
+    safeSetText('modal-machinegun-btn', 'modalMachineGun');
+    safeSetText('modal-confirm-btn', 'modalConfirm');
+    safeSetText('opt-random', 'optRandom');
     
-    document.getElementById('autopilot-modal-title').textContent = t('autopilotModalTitle');
-    document.getElementById('autopilot-cancel-btn').textContent = t('autopilotCancel');
-    
-    const pauseBtn = document.getElementById('pause-button');
-    pauseBtn.textContent = state.isPaused ? t('resume') : t('pause');
+    // Time Modal
+    safeSetText('time-modal-title', 'modalTimeTitle');
+    safeSetText('time-modal-confirm', 'modalSet');
+    safeSetText('time-modal-cancel', 'modalCancel');
+    safeSetText('lbl-year', 'year');
+    safeSetText('lbl-month', 'month');
+    safeSetText('lbl-day', 'day');
+    safeSetText('lbl-hour', 'hour');
+    safeSetText('lbl-minute', 'minute');
+    safeSetText('lbl-second', 'second');
 
-    const autoRotateBtn = document.getElementById('autorotate-button');
-    autoRotateBtn.textContent = state.isAutoRotate ? t('autoRotateOn') : t('autoRotateOff');
+    safeSetText('autopilot-modal-title', 'autopilotModalTitle');
+    safeSetText('autopilot-cancel-btn', 'autopilotCancel');
+    
+    safeSetText('pause-button', state.isPaused ? 'resume' : 'pause');
+    safeSetText('autorotate-button', state.isAutoRotate ? 'autoRotateOn' : 'autoRotateOff');
 
     document.querySelectorAll('.nav-item').forEach(item => {
         const engName = item.dataset.engName;
         if (engName) item.textContent = tName(engName);
     });
 
-    // Update Spawn Template Dropdown Options
     const spawnTemplate = document.getElementById('spawn-template');
     if (spawnTemplate) {
         const opts = spawnTemplate.options;
@@ -125,7 +148,6 @@ export function populateAutopilotDestinations(activePlanets, onSelect) {
         
         const distSpan = document.createElement('span');
         distSpan.className = 'dest-dist';
-        // Simple distance from origin in AU-like units
         const dist = Math.round(p.pos.length());
         distSpan.textContent = `${dist} AU`;
 

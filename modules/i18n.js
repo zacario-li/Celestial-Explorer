@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state } from './state.js?v=2';
 
 export const i18n = {
     en: {
@@ -21,21 +21,33 @@ export const i18n = {
         pilotStart: '🚀 PILOT SHIP',
         pilotEnd: '❌ EXIT PILOT',
         pilotAutopilot: '🤖 AUTOPILOT',
-        pilotInstructions: 'W/S: Throttle • Arrows: Pitch/Yaw • Q/E: Roll',
+        pilotInstructions: 'W/S: Forward/Retro Thrust (Newtonian) • Arrows: Pitch/Yaw',
         pilotAutoLevel: '⚖️ AUTO-LEVEL',
         spawnPlanet: '➕ SPAWN PLANET',
+        timeSync: '⏳ TIME SYNC',
+        setTime: '📅 SET CUSTOM TIME',
         modalCustomizeTitle: 'Customize Planet',
+        modalTimeTitle: 'Set Specific Date/Time',
+        year: 'Year',
+        month: 'Month',
+        day: 'Day',
+        hour: 'Hour',
+        minute: 'Min',
+        second: 'Sec',
         modalTemplate: 'Base Template:',
         modalDistance: 'Orbit Distance:',
         modalMass: 'Mass Multiplier:',
         modalCancel: 'CANCEL',
         modalConfirm: 'SPAWN!',
+        modalSet: 'SET TIME',
         modalMachineGun: '🔥 MACHINE GUN SPAWN',
         optRandom: '🎲 Random',
         autopilotModalTitle: 'Select Destination',
         autopilotCancel: 'ABORT',
         apStatusNavigating: 'AUTOPILOT: NAVIGATING TO',
         apStatusApproaching: 'AUTOPILOT: APPROACHING',
+        apPhaseBurning: 'EXECUTING BURN',
+        apPhaseCoasting: 'COASTING',
         apDisengaged: 'AUTOPILOT DISENGAGED (MANUAL OVERRIDE)',
         langSwitch: '🌐 中文',
         mass: 'Mass',
@@ -55,7 +67,11 @@ export const i18n = {
         },
         stationKeepingActive: 'STATION KEEPING ACTIVE',
         stationKeepingHint: 'Press W to Break Lock',
-        targetThrottle: 'TARGET THROTTLE'
+        targetThrottle: 'TARGET THROTTLE',
+        simSpeed: 'SIMULATION SPEED',
+        syncTimeMsg: 'Simulation synced to real-time:',
+        limitReached: 'Simulation limit reached (50 planets max).',
+        ignitionTitle: 'Stellar Ignition!'
     },
     zh: {
         title: '星空探索者',
@@ -77,21 +93,33 @@ export const i18n = {
         pilotStart: '🚀 驾驶飞船',
         pilotEnd: '❌ 退出驾驶',
         pilotAutopilot: '🤖 自动驾驶',
-        pilotInstructions: 'W/S: 油门调节 • 方向键: 俯仰/偏航 • Q/E: 旋转',
+        pilotInstructions: 'W/S: 前行/反向喷燃 (牛顿惯性模式) • 方向键: 俯仰/偏航',
         pilotAutoLevel: '⚖️ 自动校正',
         spawnPlanet: '➕ 生成新行星',
+        timeSync: '⏳ 实时同步',
+        setTime: '📅 设置自定义时间',
         modalCustomizeTitle: '自定义行星',
+        modalTimeTitle: '设定特定日期时间',
+        year: '年',
+        month: '月',
+        day: '日',
+        hour: '时',
+        minute: '分',
+        second: '秒',
         modalTemplate: '基底复制模板：',
         modalDistance: '相对轨道距离：',
         modalMass: '引力质量倍数：',
         modalCancel: '取消',
         modalConfirm: '立即投射！',
+        modalSet: '立即对齐',
         modalMachineGun: '🔥 筋膜枪投放',
         optRandom: '🎲 随机盲盒',
         autopilotModalTitle: '选择目的地',
         autopilotCancel: '返回',
         apStatusNavigating: '自动驾驶：正在前往',
         apStatusApproaching: '自动驾驶：即将抵达',
+        apPhaseBurning: '入轨喷燃中',
+        apPhaseCoasting: '惯性滑行中',
         apDisengaged: '自动驾驶已断开（手动接管）',
         langSwitch: '🌐 English',
         mass: '质量',
@@ -111,15 +139,23 @@ export const i18n = {
         },
         stationKeepingActive: '同步轨道捕获：开启',
         stationKeepingHint: '按 W 键强制脱离',
-        targetThrottle: '目标油门'
+        targetThrottle: '目标油门',
+        simSpeed: '模拟时速倍数',
+        syncTimeMsg: '模拟已实时同步：',
+        limitReached: '达到模拟上限（最多50个行星）。',
+        ignitionTitle: '恒星点火！'
     }
 };
 
-
+// Localization Engine Version: 1.1.2 (Force Reload)
 export function t(key) {
-    return i18n[state.currentLang][key];
+    if (!i18n[state.currentLang]) return key;
+    const res = i18n[state.currentLang][key];
+    // Robust fallback: return key if translation is missing, undefined, null, or empty string
+    return res || key;
 }
 
 export function tName(engName) {
+    if (!i18n[state.currentLang] || !i18n[state.currentLang].names) return engName;
     return i18n[state.currentLang].names[engName] || engName;
 }
