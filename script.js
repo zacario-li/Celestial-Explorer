@@ -1296,9 +1296,9 @@ function animate() {
         const vCrosshair = document.getElementById('v-crosshair');
 
         if (state.shipViewMode === 'cockpit') {
-            // First-Person Cockpit Camera (Hard-Locked)
-            // Recalibrated for the flipped model orientation
-            const camOffset = new THREE.Vector3(1.2, 0.3, 0).applyQuaternion(ship.quaternion);
+            // First-Person Cockpit Camera (Inside the ship)
+            // Adjusted offset inwards to stay inside the cockpit model bounds
+            const camOffset = new THREE.Vector3(0.00, 0.10, 0).applyQuaternion(ship.quaternion);
             camera.position.copy(ship.position.clone().add(camOffset));
             camera.quaternion.copy(ship.quaternion);
             if (vCrosshair) vCrosshair.style.display = 'block';
@@ -1315,7 +1315,8 @@ function animate() {
             }
 
             // Calculate offset based on current orbit angles
-            const r = 15.52; // Maintain consistent distance
+            // Distance significantly reduced to act as a proper chase camera
+            const r = 3.5; 
             const ox = r * Math.sin(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
             const oy = r * Math.sin(state.shipOrbitAngles.phi);
             const oz = r * Math.cos(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
