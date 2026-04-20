@@ -421,13 +421,13 @@ if (simSpeedSlider) {
 }
 
 document.getElementById('spawn-button').addEventListener('click', function () {
-    spawnModal.style.display = 'flex';
-    setTimeout(() => spawnModal.classList.add('active'), 10);
+    spawnModal.classList.add('active');
 });
 
 document.getElementById('modal-cancel-btn').addEventListener('click', function () {
     spawnModal.classList.remove('active');
 });
+
 
 document.getElementById('sync-time-button').addEventListener('click', function () {
     const timeStr = syncPlanetsToDate(); // Now
