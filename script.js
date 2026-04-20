@@ -731,8 +731,37 @@ function syncPlanetsToDate(targetDate = null) {
         'Neptune': { L0: 304.88, motion: 0.0060 }
     };
 
+    const isSyzygy = now.getFullYear() > 9999;
+
     celestialBodies.forEach(body => {
-        if (planetConfig[body.name]) {
+        if (body.isAsteroid) return;
+
+        if (isSyzygy) {
+            // Syzygy Easter Egg: Align all planets and moons
+            const angle = 0;
+            body.angle = angle;
+            body.pos.set(
+                body.orbitRadius * Math.cos(angle),
+                0,
+                body.orbitRadius * Math.sin(angle)
+            );
+            
+            const vMag = Math.sqrt((G * SUN_MASS) / body.orbitRadius);
+            body.vel.set(
+                -vMag * Math.sin(angle),
+                0,
+                vMag * Math.cos(angle)
+            );
+            
+            body.orbitObj.position.copy(body.pos);
+
+            // Align satellites
+            if (body.satellites && body.satellites.length > 0) {
+                body.satellites.forEach(moon => {
+                    moon.orbitObj.rotation.y = 0;
+                });
+            }
+        } else if (planetConfig[body.name]) {
             const config = planetConfig[body.name];
             // Calculate and map to simulation angle (Radians)
             const angle = ((config.L0 + config.motion * diffDays) % 360) * (Math.PI / 180);
@@ -756,6 +785,7 @@ function syncPlanetsToDate(targetDate = null) {
             body.orbitObj.position.copy(body.pos);
         }
     });
+
 
     if (state.focusedBody) updateInfoPanel(state.focusedBody);
 
