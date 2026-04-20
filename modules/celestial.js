@@ -167,10 +167,9 @@ export function createAsteroidsBelt(count, minRadius, maxRadius, physicsBodies, 
 
     // VERY IMPORTANT: Use InstancedMesh to drop 12,000 draw calls down to 1! 
     const sharedGeo = new THREE.DodecahedronGeometry(1, 0); 
-    const sharedMat = new THREE.MeshStandardMaterial({ 
-        color: 0x777777, 
-        roughness: 0.9, 
-        metalness: 0.1 
+    const isKuiper = beltType === 'kuiper';
+    const sharedMat = new THREE.MeshBasicMaterial({ 
+        color: isKuiper ? 0x99ccff : 0xcccccc 
     });
 
     const instancedMesh = new THREE.InstancedMesh(sharedGeo, sharedMat, totalInstances);
