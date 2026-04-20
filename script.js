@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { state } from './modules/state.js?v=2';
 import { planetsData } from './modules/planetsData.js?v=2';
 import { t, tName } from './modules/i18n.js?v=2';
-import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './modules/ui.js?v=2';
+import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './modules/ui.js?v=3';
 import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js?v=2';
 import { createStarfield } from './modules/starfield.js?v=2';
 import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js?v=2';

@@ -139,7 +139,7 @@ export function populateAutopilotDestinations(activePlanets, onSelect) {
     list.innerHTML = '';
 
     activePlanets.forEach(p => {
-        if (p.destroyed) return;
+        if (p.destroyed || p.isAsteroid) return;
         const item = document.createElement('div');
         item.className = 'dest-item';
         
