@@ -8,7 +8,7 @@ import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from '.
 import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js?v=2';
 import { createStarfield } from './modules/starfield.js?v=2';
 import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js?v=2';
-import { createSun, makeGlowLayer } from './modules/sunAndWind.js';
+import { createSun, makeGlowLayer, buildStarTexture } from './modules/sunAndWind.js';
 import { createSpaceship } from './modules/spaceship.js';
 
 // --- SYSTEM INITIALIZATION FLAG ---
@@ -975,16 +975,24 @@ function planTransferOrbit(shipPos, target, T) {
 function igniteStar(body) {
     body.isStar = true;
     body.mesh.userData.isSun = true;
-    body.mesh.userData.name = "Blue Dwarf Star";
+    
+    // Pick a random star type
+    const type = Math.random() > 0.5 ? 'yellow' : 'blue';
+    const isYellow = (type === 'yellow');
+    
+    body.mesh.userData.name = isYellow ? "Yellow Dwarf Star" : "Blue Dwarf Star";
     body.mesh.userData.radius = 40;
 
-    // Visual Transformation - No map to prevent texture loading errors
+    // Visual Transformation
+    const starTex = buildStarTexture(type, 1024);
     const starMat = new THREE.MeshStandardMaterial({
-        color: 0x4488ff,
-        emissive: 0x2266ff,
-        emissiveIntensity: 1.5,
-        roughness: 0.1,
-        metalness: 0.5
+        map: starTex,
+        emissiveMap: starTex,
+        color: isYellow ? 0xffcc44 : 0x44aaff,
+        emissive: isYellow ? 0xff8800 : 0x2266ff,
+        emissiveIntensity: 0.8,
+        roughness: 1.0,
+        metalness: 0.0
     });
     body.mesh.material = starMat;
     
@@ -992,8 +1000,13 @@ function igniteStar(body) {
     body.mesh.scale.setScalar(40 / 5); 
     
     // Add Glows
-    body.mesh.add(makeGlowLayer(42, 0x0088ff, 0.40));
-    body.mesh.add(makeGlowLayer(48, 0x0044ff, 0.15));
+    if (isYellow) {
+        body.mesh.add(makeGlowLayer(42, 0xff9900, 0.25));
+        body.mesh.add(makeGlowLayer(45, 0xff5500, 0.10));
+    } else {
+        body.mesh.add(makeGlowLayer(42, 0x0088ff, 0.40));
+        body.mesh.add(makeGlowLayer(48, 0x0044ff, 0.15));
+    }
     
     showToast(t('ignitionTitle'));
     
@@ -1298,7 +1311,7 @@ function animate() {
         window._spaceship.rotation.z = Math.sin(time * 0.5) * 0.1;
     }
 
-    sun.rotation.y += 0.00148 * (state.isPaused ? 0 : 1);
+    sun.rotation.y += 0.00148 * (physicsDt * 60);
 
     const pulse = 1 + 0.03 * Math.sin(state.virtualTime * 1.2);
     glowSphere.scale.setScalar(pulse);
@@ -1582,7 +1595,7 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
         if (body.isAsteroid) {
             instancedMeshesToUpdate.add(body.instancedMesh);
             const insts = body.instances;
-            const rotInc = body.rotSpeed * notPaused;
+            const rotInc = body.rotSpeed * (physicsDt * 60);
             for (let k = 0; k < insts.length; k++) {
                 const inst = insts[k];
                 _dummyAsteroid.position.copy(body.pos).add(inst.localPos);
@@ -1594,11 +1607,11 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
             }
         } else {
             body.orbitObj.position.copy(body.pos);
-            body.mesh.rotation.y += body.rotSpeed * notPaused;
+            body.mesh.rotation.y += body.rotSpeed * (physicsDt * 60);
             const sats = body.satellites;
             for (let k = 0; k < sats.length; k++) {
-                sats[k].orbitObj.rotation.y += sats[k].speed * notPaused;
-                sats[k].mesh.rotation.y += sats[k].speed * notPaused;
+                sats[k].orbitObj.rotation.y += sats[k].speed * (physicsDt * 60);
+                sats[k].mesh.rotation.y += sats[k].speed * (physicsDt * 60);
             }
         }
     }

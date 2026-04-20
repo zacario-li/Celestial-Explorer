@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-function buildSunTexture(size = 1024) {
+export function buildStarTexture(colorTheme = 'yellow', size = 1024) {
     const cvs = document.createElement('canvas');
     cvs.width = cvs.height = size;
     const ctx2d = cvs.getContext('2d');
@@ -9,11 +9,22 @@ function buildSunTexture(size = 1024) {
         size * 0.5, size * 0.5, 0,
         size * 0.5, size * 0.5, size * 0.5
     );
-    base.addColorStop(0.00, '#fff8a0');
-    base.addColorStop(0.30, '#ffe066');
-    base.addColorStop(0.65, '#ffb300');
-    base.addColorStop(0.88, '#e05000');
-    base.addColorStop(1.00, '#7a1a00');
+
+    if (colorTheme === 'yellow') {
+        base.addColorStop(0.00, '#fff8a0');
+        base.addColorStop(0.30, '#ffe066');
+        base.addColorStop(0.65, '#ffb300');
+        base.addColorStop(0.88, '#e05000');
+        base.addColorStop(1.00, '#7a1a00');
+    } else {
+        // Blue Dwarf theme
+        base.addColorStop(0.00, '#e0f0ff');
+        base.addColorStop(0.30, '#aaccff');
+        base.addColorStop(0.65, '#4488ff');
+        base.addColorStop(0.88, '#2244aa');
+        base.addColorStop(1.00, '#112255');
+    }
+
     ctx2d.fillStyle = base;
     ctx2d.fillRect(0, 0, size, size);
 
@@ -22,8 +33,13 @@ function buildSunTexture(size = 1024) {
         const gx = rng(0, size), gy = rng(0, size);
         const gr = rng(8, 28);
         const g = ctx2d.createRadialGradient(gx, gy, 0, gx, gy, gr);
-        g.addColorStop(0, 'rgba(255,250,180,0.22)');
-        g.addColorStop(1, 'rgba(255,200,0,0)');
+        if (colorTheme === 'yellow') {
+            g.addColorStop(0, 'rgba(255,250,180,0.22)');
+            g.addColorStop(1, 'rgba(255,200,0,0)');
+        } else {
+            g.addColorStop(0, 'rgba(200,230,255,0.25)');
+            g.addColorStop(1, 'rgba(0,100,255,0)');
+        }
         ctx2d.fillStyle = g;
         ctx2d.beginPath();
         ctx2d.arc(gx, gy, gr, 0, Math.PI * 2);
@@ -40,7 +56,11 @@ function buildSunTexture(size = 1024) {
         const sr = rng(10, 30);
 
         const umbra = ctx2d.createRadialGradient(sx, sy, 0, sx, sy, sr * 0.5);
-        umbra.addColorStop(0, 'rgba(10,5,0,0.95)');
+        if (colorTheme === 'yellow') {
+            umbra.addColorStop(0, 'rgba(10,5,0,0.95)');
+        } else {
+            umbra.addColorStop(0, 'rgba(0,5,20,0.95)');
+        }
         umbra.addColorStop(1, 'rgba(10,5,0,0)');
         ctx2d.fillStyle = umbra;
         ctx2d.beginPath();
@@ -48,7 +68,11 @@ function buildSunTexture(size = 1024) {
         ctx2d.fill();
 
         const penumbra = ctx2d.createRadialGradient(sx, sy, sr * 0.4, sx, sy, sr);
-        penumbra.addColorStop(0, 'rgba(60,25,0,0.7)');
+        if (colorTheme === 'yellow') {
+            penumbra.addColorStop(0, 'rgba(60,25,0,0.7)');
+        } else {
+            penumbra.addColorStop(0, 'rgba(0,50,150,0.7)');
+        }
         penumbra.addColorStop(1, 'rgba(60,25,0,0)');
         ctx2d.fillStyle = penumbra;
         ctx2d.beginPath();
@@ -63,8 +87,13 @@ function buildSunTexture(size = 1024) {
         const fy = size * 0.5 + Math.sin(angle) * r;
         const fr = rng(4, 12);
         const fg = ctx2d.createRadialGradient(fx, fy, 0, fx, fy, fr);
-        fg.addColorStop(0, 'rgba(255,255,220,0.4)');
-        fg.addColorStop(1, 'rgba(255,200,100,0)');
+        if (colorTheme === 'yellow') {
+            fg.addColorStop(0, 'rgba(255,255,220,0.4)');
+            fg.addColorStop(1, 'rgba(255,200,100,0)');
+        } else {
+            fg.addColorStop(0, 'rgba(220,240,255,0.5)');
+            fg.addColorStop(1, 'rgba(100,180,255,0)');
+        }
         ctx2d.fillStyle = fg;
         ctx2d.beginPath();
         ctx2d.arc(fx, fy, fr, 0, Math.PI * 2);
@@ -145,7 +174,7 @@ function buildWindGeo(count) {
 }
 
 export function createSun(scene) {
-    const sunTexture = buildSunTexture(1024);
+    const sunTexture = buildStarTexture('yellow', 1024);
     const sunGeo = new THREE.SphereGeometry(SUN_R, 128, 128);
     const sunMat = new THREE.MeshStandardMaterial({
         map: sunTexture,
