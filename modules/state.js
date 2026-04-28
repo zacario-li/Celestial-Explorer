@@ -8,7 +8,7 @@ export const state = {
     simSpeedMultiplier: 100, // Speed up simulation (User requested modification from 400)
     currentLang: 'en',
     isHighVis: false,
-    isAutoRotate: true,
+    isAutoRotate: false,
     isOverview: false,
     previousBody: null,
     isAsteroidBeltActive: false,
@@ -33,7 +33,8 @@ export const state = {
     autopilotStatus: '',
     showAutopilotTrajectory: true,
     timeToIntercept: 0,
+    autopilotVReq: new THREE.Vector3(),
     _prevAutopilotTarget: null,
-    autopilotPhase: '', // 'BURNING' or 'COASTING'
+    autopilotPhase: '', // 'PLANNING', 'ALIGNING', 'BURNING', 'COASTING'
     _prevAutopilotPhase: ''
 };

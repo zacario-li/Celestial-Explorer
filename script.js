@@ -1,15 +1,26 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import { state } from './modules/state.js?v=2';
-import { planetsData } from './modules/planetsData.js?v=2';
-import { t, tName } from './modules/i18n.js?v=2';
-import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './modules/ui.js?v=3';
-import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js?v=2';
-import { createStarfield } from './modules/starfield.js?v=2';
-import { createPlanet, createMoon, createAsteroidsBelt, G, SUN_MASS } from './modules/celestial.js?v=2';
-import { createSun, makeGlowLayer, buildStarTexture } from './modules/sunAndWind.js';
+import { state } from './modules/state.js';
+import { planetsData } from './modules/planetsData.js';
+import { t, tName } from './modules/i18n.js';
+import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './modules/ui.js';
+import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js';
+import { createStarfield } from './modules/starfield.js';
+import { PhysicsEngine } from './modules/physics/physicsEngine.js';
+import { Planet } from './modules/celestial/planet.js';
+import { Moon } from './modules/celestial/moon.js';
+import { AsteroidBelt } from './modules/celestial/asteroidBelt.js';
+import { createSun, igniteStar } from './modules/celestial/sun.js';
+import { createSaturnRings } from './modules/celestial/saturnRings.js';
 import { createSpaceship } from './modules/spaceship.js';
+
+// Modular UI
+import { initPauseButton } from './modules/ui/buttons/pauseButton.js';
+import { initLangButton } from './modules/ui/buttons/langButton.js';
+import { initPilotButton } from './modules/ui/buttons/pilotButton.js';
+import { initOverviewButton } from './modules/ui/buttons/overviewButton.js';
+import { initAsteroidBeltButton } from './modules/ui/buttons/asteroidBeltButton.js';
 
 // --- SYSTEM INITIALIZATION FLAG ---
 window.SIM_READY = true;
@@ -29,11 +40,14 @@ camera.add(headlight);
 scene.add(camera); // Must add camera to scene to let children render properly
 // ----------------------------------------
 
-// Interaction vars
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const targetVec = new THREE.Vector3();
-const physicsBodies = [];
+
+// --- MODULAR INITIALIZATION ---
+const physicsEngine = new PhysicsEngine();
+window.physicsEngine = physicsEngine; // For global access if needed
+window.igniteStar = igniteStar; // For the physics engine's ignition logic
 
 // Pilot Input State
 const keys = {};
@@ -132,220 +146,10 @@ window.addEventListener('dblclick', (event) => {
     updateTextureResolution();
 });
 
-// Handle UI Buttons
-function updatePauseButtonVisuals() {
-    const btn = document.getElementById('pause-button');
-    if (!btn) return;
-    btn.textContent = state.isPaused ? t('resume') : t('pause');
-    btn.style.borderColor = state.isPaused ? '#ff4f4f' : '#4fa6ff';
-    if (state.isPaused) {
-        btn.style.background = 'rgba(255, 79, 79, 0.2)';
-    } else {
-        btn.style.background = 'rgba(255, 255, 255, 0.05)';
-    }
-}
+// UI Components Initialized via Modules
+import { initAllButtons } from './modules/ui/buttons/buttonInitializer.js';
+import { initSpawnManager } from './modules/celestial/spawnManager.js';
 
-document.getElementById('pause-button').addEventListener('click', function () {
-    state.isPaused = !state.isPaused;
-    updatePauseButtonVisuals();
-});
-
-function showToast(message) {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
-
-    container.appendChild(toast);
-
-    // Fade out and remove
-    setTimeout(() => {
-        toast.classList.add('fade-out');
-        setTimeout(() => toast.remove(), 600);
-    }, 4000);
-}
-
-document.getElementById('autorotate-button').addEventListener('click', function () {
-    state.isAutoRotate = !state.isAutoRotate;
-    this.textContent = state.isAutoRotate ? t('autoRotateOn') : t('autoRotateOff');
-});
-
-document.getElementById('highvis-button').addEventListener('click', function () {
-    state.isHighVis = !state.isHighVis;
-    this.classList.toggle('active', state.isHighVis);
-    highVisLight.intensity = state.isHighVis ? 2.5 : 0;
-});
-
-document.getElementById('overview-button').addEventListener('click', function () {
-    if (!state.isOverview) {
-        state.previousBody = state.focusedBody;
-        state.focusedBody = null;
-        state.isOverview = true;
-        state.isTransitioning = true;
-        updateInfoPanel(null);
-    } else {
-        state.focusedBody = state.previousBody || scene.children.find(c => c.userData && c.userData.isSun);
-        state.isTransitioning = true;
-        updateInfoPanel(state.focusedBody);
-    }
-    updateTextureResolution();
-    this.textContent = state.isOverview ? t('overviewOff') : t('overviewOn');
-});
-
-document.getElementById('asteroid-belt-button').addEventListener('click', function () {
-    state.isAsteroidBeltActive = !state.isAsteroidBeltActive;
-    this.textContent = state.isAsteroidBeltActive ? t('asteroidBeltOn') : t('asteroidBeltOff');
-    if (asteroidBeltMesh) asteroidBeltMesh.visible = state.isAsteroidBeltActive;
-    markBodiesDirty();
-});
-
-document.getElementById('kuiper-belt-button').addEventListener('click', function () {
-    state.isKuiperBeltActive = !state.isKuiperBeltActive;
-    this.textContent = state.isKuiperBeltActive ? t('kuiperBeltOn') : t('kuiperBeltOff');
-    if (kuiperBeltMesh) kuiperBeltMesh.visible = state.isKuiperBeltActive;
-    markBodiesDirty();
-});
-
-document.getElementById('hoverzones-button').addEventListener('click', function () {
-    state.showHoverZones = !state.showHoverZones;
-    this.textContent = state.showHoverZones ? t('hoverZonesOn') : t('hoverZonesOff');
-    this.classList.toggle('active', state.showHoverZones);
-
-    // Update all existing capture meshes immediately
-    celestialBodies.forEach(b => {
-        if (b.captureMesh) b.captureMesh.visible = state.showHoverZones;
-    });
-});
-
-// --- AUTOPILOT DESTINATION SELECTION ---
-const autoModal = document.getElementById('autopilot-modal');
-
-document.getElementById('pilot-autopilot-button').addEventListener('click', function () {
-    state.isAutopilotModalActive = true;
-    autoModal.classList.add('active');
-    populateAutopilotDestinations(celestialBodies, (planet) => {
-        console.log(`AUTOPILOT: Target set to ${planet.name}`);
-        state.autopilotTarget = planet;
-        state.isAutopilotActive = true;
-        state.autopilotStatus = 'apStatusNavigating';
-        state.isAutopilotModalActive = false;
-        autoModal.classList.remove('active');
-
-        const apIndicator = document.getElementById('autopilot-indicator');
-        if (apIndicator) apIndicator.style.display = 'block';
-        applyLanguage();
-    });
-});
-
-document.getElementById('autopilot-cancel-btn').addEventListener('click', () => {
-    state.isAutopilotModalActive = false;
-    autoModal.classList.remove('active');
-});
-
-// Close autopilot modal on outside click
-autoModal.addEventListener('click', (e) => {
-    if (e.target === autoModal) {
-        state.isAutopilotModalActive = false;
-        autoModal.classList.remove('active');
-    }
-});
-
-// --- SHIP ORBIT INSPECTION HANDLERS ---
-let lastPointerPos = { x: 0, y: 0 };
-
-window.addEventListener('pointerdown', (e) => {
-    if (state.isFlying && state.shipViewMode === 'chase') {
-        state.isOrbitingShip = true;
-        lastPointerPos = { x: e.clientX, y: e.clientY };
-    }
-});
-
-window.addEventListener('pointermove', (e) => {
-    if (state.isOrbitingShip) {
-        const deltaX = e.clientX - lastPointerPos.x;
-        const deltaY = e.clientY - lastPointerPos.y;
-
-        // Update angles (Radiant sensitivity)
-        if (!state.shipOrbitAngles) state.shipOrbitAngles = { theta: Math.PI, phi: 0.26 };
-        state.shipOrbitAngles.theta -= deltaX * 0.005;
-        state.shipOrbitAngles.phi = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, state.shipOrbitAngles.phi + deltaY * 0.005));
-
-        lastPointerPos = { x: e.clientX, y: e.clientY };
-        state.lastOrbitTime = Date.now();
-    }
-});
-
-window.addEventListener('pointerup', () => {
-    state.isOrbitingShip = false;
-    state.lastOrbitTime = Date.now();
-});
-// ----------------------------------------
-
-document.getElementById('lang-button').addEventListener('click', async function () {
-    state.currentLang = state.currentLang === 'en' ? 'zh' : 'en';
-    await applyLanguage();
-});
-
-document.getElementById('pilot-button').addEventListener('click', function () {
-    state.isFlying = !state.isFlying;
-    const hud = document.getElementById('pilot-hud');
-    const vController = document.getElementById('v-controller');
-    const vCrosshair = document.getElementById('v-crosshair');
-
-    if (state.isFlying) {
-        hud.style.display = 'block';
-        if (vController) vController.style.display = 'block';
-        if (vCrosshair) vCrosshair.style.display = 'block';
-        controls.enabled = false;
-
-        // Disconnect from planets
-        state.focusedBody = null;
-        state.isTransitioning = false;
-        updateInfoPanel(null);
-
-        this.textContent = t('pilotEnd');
-        this.style.background = 'rgba(0, 255, 255, 0.2)';
-        this.style.borderColor = '#00ffff';
-
-        // --- PILOT HEADLIGHT DISCONNECTED ---
-        headlight.intensity = 0; // Absolute darkness on back side
-        // ------------------------------------
-
-        // Detach from Earth orbit and move to global scene
-        if (window._spaceship) {
-            window._spaceship.getWorldPosition(targetVec);
-            scene.add(window._spaceship);
-            window._spaceship.position.copy(targetVec);
-
-            // Clear current velocity when starting flight
-            state.shipVelocity.set(0, 0, 0);
-        }
-    } else {
-        hud.style.display = 'none';
-        if (vController) vController.style.display = 'none';
-        if (vCrosshair) vCrosshair.style.display = 'none';
-        state.shipThrottle = 0; // RESET THROTTLE ON EXIT
-        controls.enabled = true;
-        this.textContent = t('pilotStart');
-        this.style.background = 'rgba(255, 255, 255, 0.05)';
-        this.style.borderColor = '#4fa6ff';
-
-        // --- DEACTIVATE HEADLIGHT ---
-        headlight.intensity = 0;
-        // ---------------------------
-
-        // Return to standard focus logic
-        if (state.focusedBody) {
-            state.isTransitioning = true;
-        }
-    }
-});
-
-document.getElementById('pilot-autolevel-button').addEventListener('click', function () {
-    state.isAutoLeveling = !state.isAutoLeveling;
-});
 
 // Virtual Controller Input Binding
 function bindVKey(id, keyCode) {
@@ -451,6 +255,14 @@ document.getElementById('set-time-button').addEventListener('click', function() 
 
 document.getElementById('time-modal-cancel').addEventListener('click', function() {
     document.getElementById('time-modal').classList.remove('active');
+});
+
+document.getElementById('settings-button').addEventListener('click', function() {
+    document.getElementById('settings-modal').classList.add('active');
+});
+
+document.getElementById('settings-close-btn').addEventListener('click', function() {
+    document.getElementById('settings-modal').classList.remove('active');
 });
 
 document.getElementById('time-modal-confirm').addEventListener('click', function() {
@@ -591,6 +403,7 @@ const BASE_TEX_URL = 'https://raw.githubusercontent.com/jeromeetienne/threex.pla
 const pTexPaths = {
     'Mercury': { high: 'textures/planets/mercury.jpg', low: 'textures/planets/low/mercury.jpg', ultra: 'textures/planets/ultralow/mercury.jpg' },
     'Venus': { high: 'textures/planets/venus.jpg', low: 'textures/planets/low/venus.jpg', ultra: 'textures/planets/ultralow/venus.jpg' },
+    'VenusAtm': { high: 'textures/planets/venus_atm.jpg', low: 'textures/planets/venus_atm.jpg', ultra: 'textures/planets/venus_atm.jpg' },
     'Earth': { high: 'textures/planets/earth.jpg', low: 'textures/planets/low/earth.jpg', ultra: 'textures/planets/ultralow/earth.jpg' },
     'Mars': { high: BASE_TEX_URL + 'marsmap1k.jpg', low: BASE_TEX_URL + 'marsmap1k.jpg', ultra: BASE_TEX_URL + 'marsmap1k.jpg' },
     'Jupiter': { high: 'textures/planets/jupiter.jpg', low: 'textures/planets/low/jupiter.jpg', ultra: 'textures/planets/ultralow/jupiter.jpg' },
@@ -691,6 +504,10 @@ function updateTextureResolution() {
         // Fetch/Load for Planet
         if (!body.isStar) {
             getOrLoadTexture(body.textureKey || body.name, 'planet', pTier, body.mesh.material);
+            if (body.atmMesh) {
+                getOrLoadTexture('VenusAtm', 'planet', pTier, body.atmMesh.material);
+                body.atmMesh.visible = state.showVenusAtmosphere;
+            }
         }
 
         // Fetch/Load for Moons
@@ -796,115 +613,52 @@ function syncPlanetsToDate(targetDate = null) {
 
 // Navigation Setup
 const navList = document.getElementById('nav-list');
-const sunNavItem = document.createElement('div');
-sunNavItem.className = 'nav-item active';
-sunNavItem.dataset.engName = 'The Sun';
-sunNavItem.textContent = tName('The Sun');
-sunNavItem.onclick = () => {
-    state.focusedBody = sun;
-    state.previousBody = sun;
-    state.isOverview = false;
-    state.isTransitioning = true;
-    updateInfoPanel(sun);
-    updateTextureResolution();
-    document.getElementById('overview-button').textContent = t('overviewOn');
-};
-navList.appendChild(sunNavItem);
-
-// Planets Setup
-planetsData.forEach(d => {
-    const planet = createPlanet(d.r, d.c, d.name, d.dist, d.speed, d.rotSpeed, d.mass, d.massRel, d.radius, d.density, d.massValue, d.angle || 0, physicsBodies, scene, d.name);
-
+function addNavItem(name, mesh, engName) {
     const navItem = document.createElement('div');
     navItem.className = 'nav-item';
-    navItem.dataset.engName = d.name;
-    navItem.textContent = tName(d.name);
+    if (engName === 'The Sun') navItem.className += ' active';
+    navItem.dataset.engName = engName;
+    navItem.textContent = name;
     navItem.onclick = () => {
-        state.focusedBody = planet.mesh;
-        state.previousBody = planet.mesh;
+        state.focusedBody = mesh;
+        state.previousBody = mesh;
         state.isOverview = false;
         state.isTransitioning = true;
-        updateInfoPanel(planet.mesh);
+        updateInfoPanel(mesh);
         updateTextureResolution();
         document.getElementById('overview-button').textContent = t('overviewOn');
     };
     navList.appendChild(navItem);
+}
 
+addNavItem(tName('The Sun'), sun, 'The Sun');
+
+// Celestial Initialization via Modular Classes
+planetsData.forEach(d => {
+    const planet = new Planet(d, physicsEngine, scene);
     celestialBodies.push(planet);
     if (d.name === 'Earth') earthRef = planet;
 
+    addNavItem(tName(d.name), planet.mesh, d.name);
+
     if (d.moons) {
         d.moons.forEach(m => {
-            const moon = createMoon(m.r, m.c, m.name, m.dist, m.speed, m.m, m.mr, m.ir, m.d, m.name);
-            planet.satelliteAnchor.add(moon.orbitObj);
-
-            planet.satellites.push(moon);
+            const moon = new Moon(m, planet);
+            if (d.name === 'Saturn') moon.orbitObj.position.y = 0;
         });
     }
 
-    // Saturn's Rings
     if (d.name === 'Saturn') {
-        const ringGeo = new THREE.RingGeometry(21, 35, 64);
-        ringGeo.rotateX(-Math.PI / 2);
-
-        const size = 1024;
-        const rCvs = document.createElement('canvas');
-        rCvs.width = size;
-        rCvs.height = size;
-        const rCtx = rCvs.getContext('2d');
-        const cx = size / 2, cy = size / 2;
-        const unit = (size / 2) / 35;
-
-        rCtx.clearRect(0, 0, size, size);
-
-        for (let r = 21; r <= 35; r += 0.03) {
-            if (r > 29.5 && r < 31.5) {
-                if (Math.random() > 0.1) continue;
-            }
-            rCtx.beginPath();
-            rCtx.arc(cx, cy, r * unit, 0, Math.PI * 2);
-
-            let alpha = 0.5;
-            let color = '210, 200, 180';
-
-            if (r >= 21 && r < 24) {
-                alpha = 0.1 + Math.random() * 0.2;
-                color = '168, 148, 120';
-            } else if (r >= 24 && r <= 29.5) {
-                alpha = 0.6 + Math.random() * 0.35;
-                if (Math.random() < 0.2) color = '240, 230, 210';
-                if (Math.random() < 0.05) alpha = 0.15;
-            } else if (r >= 31.5) {
-                alpha = 0.4 + Math.random() * 0.3;
-                color = '190, 180, 160';
-                if (r > 33.5 && r < 33.8) alpha = 0.05;
-            }
-
-            rCtx.strokeStyle = `rgba(${color}, ${alpha})`;
-            rCtx.lineWidth = unit * 0.05;
-            rCtx.stroke();
-        }
-
-        const ringTex = new THREE.CanvasTexture(rCvs);
-        const ringMat = new THREE.MeshBasicMaterial({
-            map: ringTex,
-            color: 0xffffff,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: 1.0
-        });
-        const saturnRing = new THREE.Mesh(ringGeo, ringMat);
-        planet.mesh.add(saturnRing);
+        createSaturnRings(planet.mesh);
     }
 });
 
-// Generate Asteroid Belt (Between Mars and Jupiter)
-const asteroidBeltMesh = createAsteroidsBelt(4000, 550, 750, physicsBodies, scene, celestialBodies, 'asteroid');
-if (asteroidBeltMesh) asteroidBeltMesh.visible = state.isAsteroidBeltActive;
+const asteroidBelt = new AsteroidBelt(4000, 550, 750, 'asteroid', physicsEngine, scene);
+const kuiperBelt = new AsteroidBelt(8000, 3200, 5000, 'kuiper', physicsEngine, scene);
 
-// Generate Kuiper Belt (Beyond Neptune)
-const kuiperBeltMesh = createAsteroidsBelt(8000, 3200, 5000, physicsBodies, scene, celestialBodies, 'kuiper');
-if (kuiperBeltMesh) kuiperBeltMesh.visible = state.isKuiperBeltActive;
+// UI Manager
+initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBelt.instancedMesh, kuiperBelt.instancedMesh, celestialBodies);
+initSpawnManager(physicsEngine, scene, celestialBodies, navList);
 
 // Earth Atmosphere & Spaceship
 if (earthRef) {
@@ -1001,52 +755,13 @@ function planTransferOrbit(shipPos, target, T) {
     };
 }
 
-// --- Stellar Ignition Logic ---
-function igniteStar(body) {
-    body.isStar = true;
-    body.mesh.userData.isSun = true;
-    
-    // Pick a random star type
-    const type = Math.random() > 0.5 ? 'yellow' : 'blue';
-    const isYellow = (type === 'yellow');
-    
-    body.mesh.userData.name = isYellow ? "Yellow Dwarf Star" : "Blue Dwarf Star";
-    body.mesh.userData.radius = 40;
-
-    // Visual Transformation
-    const starTex = buildStarTexture(type, 1024);
-    const starMat = new THREE.MeshStandardMaterial({
-        map: starTex,
-        emissiveMap: starTex,
-        color: isYellow ? 0xffcc44 : 0x44aaff,
-        emissive: isYellow ? 0xff8800 : 0x2266ff,
-        emissiveIntensity: 0.8,
-        roughness: 1.0,
-        metalness: 0.0
-    });
-    body.mesh.material = starMat;
-    
-    // Scale to Sun Size
-    body.mesh.scale.setScalar(40 / 5); 
-    
-    // Add Glows
-    if (isYellow) {
-        body.mesh.add(makeGlowLayer(42, 0xff9900, 0.25));
-        body.mesh.add(makeGlowLayer(45, 0xff5500, 0.10));
-    } else {
-        body.mesh.add(makeGlowLayer(42, 0x0088ff, 0.40));
-        body.mesh.add(makeGlowLayer(48, 0x0044ff, 0.15));
-    }
-    
-    showToast(t('ignitionTitle'));
-    
-    // Pulse effect target (for UI)
-    updateInfoPanel(body.mesh);
-}
 
 // Main Animation Loop
 function animate() {
     requestAnimationFrame(animate);
+
+    const nPlanets = activePlanets.length;
+    const nAsteroids = activeAsteroids.length;
 
     const timeRaw = clock.getElapsedTime();
     const realDt = Math.min(timeRaw - _prevTime, 0.05);
@@ -1057,6 +772,11 @@ function animate() {
 
     const simSpeedMultiplier = state.simSpeedMultiplier;
     const physicsDt = (state.isPaused ? 0 : realDt) * simSpeedMultiplier;
+
+    // True time scale for scripted celestial rotations & moon orbits.
+    // The Moon script speed is 0.013. We need it to take 30 days (2592000s) to perform one full orbit (2*PI radians) at 1x time multiplier.
+    // 0.013 * 2592000 * trueScale = 2*PI  =>  trueScale = 2*PI / (0.013 * 30 * 24 * 3600)
+    const scriptedDt = physicsDt * ((Math.PI * 2) / (0.013 * 30 * 24 * 3600));
 
     // Flight Physics & Chase Cam
     if (state.isFlying && window._spaceship) {
@@ -1117,81 +837,123 @@ function animate() {
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
 
         // --- AUTOPILOT NAVIGATION LOGIC ---
+        // --- AUTOPILOT NAVIGATION LOGIC (Predictive Trajectory Mode) ---
         if (state.isAutopilotActive && state.autopilotTarget) {
             const target = state.autopilotTarget;
             const dist = ship.position.distanceTo(target.pos);
-            const planetRadius = target.mesh.userData.radius || 10;
+            const planetRadius = target.mesh.userData.radius || 0.04;
             const captureRadius = planetRadius * 8;
 
-            // 1. Initial Setup / Re-target
-            // Initialize transfer time based on current distance
-            if (!state.timeToIntercept || state.autopilotTarget !== state._prevAutopilotTarget) {
-                state.timeToIntercept = dist / 1.5;
-                state._prevAutopilotTarget = target;
-                state.shipThrottle = 0; // Turn off manual throttle (we are coasting after impulsive burn)
-
-                const apIndicator = document.getElementById('autopilot-indicator');
-                if (apIndicator) apIndicator.style.display = 'block';
-            }
-
-            state.timeToIntercept -= physicsDt;
-
-            // 2. SIMPLE PURSUIT GUIDANCE (Beginner Mode)
-            // Instead of complex Newtonian orbits, we point at the target and burn.
-            // Since we have damping (Stop-on-Release), this feels like a drone.
-            let targetStatus = 'apStatusNavigating';
-
-            // Check arrival condition
+            // 1. ARRIVAL CHECK
             if (dist < captureRadius) {
-                // Arrived
                 state.isAutopilotActive = false;
                 state.shipThrottle = 0;
-
-                // Engage Station-Keeping
                 const skIndicator = document.getElementById('station-keeping-indicator');
                 if (skIndicator) skIndicator.style.display = 'block';
                 state.capturedBody = target;
                 state.relativePos.copy(ship.position).sub(target.pos);
                 state.shipVelocity.copy(target.vel);
-
                 const apIndicator = document.getElementById('autopilot-indicator');
                 if (apIndicator) apIndicator.style.display = 'none';
                 if (apPathLine.visible) apPathLine.visible = false;
+                if (rendezvousGhost.visible) rendezvousGhost.visible = false;
             } else {
-                if (dist < captureRadius * 3) targetStatus = 'apStatusApproaching';
-
-                state.autopilotPhase = 'BURNING';
-                state.shipThrottle = 1.0; // AI "presses the engine button"
-
-                // --- POINT AT TARGET ---
-                // We point at current position (for simplicity in Beginner Mode)
-                const toTarget = _diff.copy(target.pos).sub(ship.position).normalize();
-                
-                const targetMat = new THREE.Matrix4();
-                const targetUp = new THREE.Vector3(0, 1, 0);
-                const targetX = toTarget;
-                const targetZ = new THREE.Vector3().crossVectors(targetX, targetUp).normalize();
-                const targetY = new THREE.Vector3().crossVectors(targetZ, targetX).normalize();
-
-                if (targetX.lengthSq() > 0.001 && targetZ.lengthSq() > 0.001) {
-                    targetMat.makeBasis(targetX, targetY, targetZ);
-                    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetMat);
-                    ship.quaternion.slerp(targetQuat, 0.1); 
+                // 2. PHASE MANAGEMENT
+                if (!state.autopilotPhase || state.autopilotTarget !== state._prevAutopilotTarget) {
+                    state.autopilotPhase = 'PLANNING';
+                    state._prevAutopilotTarget = target;
+                    state.shipThrottle = 0;
                 }
 
-                // Visual target line
-                if (state.showAutopilotTrajectory) {
-                    apPathGeometry.setFromPoints([ship.position, target.pos]);
-                    apPathLine.visible = true;
+                if (state.autopilotPhase === 'PLANNING') {
+                    // Estimate travel time (approximate 1.5 units/s average speed)
+                    state.timeToIntercept = dist / 1.5; 
+                    
+                    const plan = planTransferOrbit(ship.position, target, state.timeToIntercept);
+                    state.autopilotVReq.copy(plan.v0);
+                    
+                    // Show planned trajectory
+                    if (state.showAutopilotTrajectory) {
+                        apPathGeometry.setFromPoints(plan.points);
+                        apPathLine.visible = true;
+                        rendezvousGhost.position.copy(plan.rendezvous);
+                        rendezvousGhost.visible = true;
+                    }
+                    
+                    state.autopilotPhase = 'ALIGNING';
                 }
-            }
 
+                if (state.autopilotPhase === 'ALIGNING') {
+                    const deltaV = _diff.copy(state.autopilotVReq).sub(state.shipVelocity);
+                    if (deltaV.length() < 0.0001) {
+                        state.autopilotPhase = 'COASTING';
+                    } else {
+                        // Point ship in direction of deltaV
+                        const toDir = deltaV.normalize();
+                        const targetMat = new THREE.Matrix4();
+                        const targetUp = new THREE.Vector3(0, 1, 0);
+                        const targetX = toDir;
+                        const targetZ = new THREE.Vector3().crossVectors(targetX, targetUp).normalize();
+                        const targetY = new THREE.Vector3().crossVectors(targetZ, targetX).normalize();
+
+                        if (targetX.lengthSq() > 0.001 && targetZ.lengthSq() > 0.001) {
+                            targetMat.makeBasis(targetX, targetY, targetZ);
+                            const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetMat);
+                            ship.quaternion.slerp(targetQuat, 0.05); 
+                            
+                            // If alignment is close enough, start burn
+                            if (ship.quaternion.angleTo(targetQuat) < 0.1) {
+                                state.autopilotPhase = 'BURNING';
+                            }
+                        }
+                    }
+                }
+
+                if (state.autopilotPhase === 'BURNING') {
+                    const deltaV = _diff.copy(state.autopilotVReq).sub(state.shipVelocity);
+                    const currentDir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
+                    
+                    // Check if we are still pointing in the right direction
+                    const alignment = currentDir.dot(deltaV.normalize());
+                    
+                    if (deltaV.length() < 0.0005 || alignment < 0) {
+                        // Burn complete or overshot
+                        state.shipThrottle = 0;
+                        state.autopilotPhase = 'COASTING';
+                    } else {
+                        state.shipThrottle = 1.0;
+                    }
+                }
+
+                if (state.autopilotPhase === 'COASTING') {
+                    state.shipThrottle = 0;
+                    
+                    // Periodic course correction (every 5 seconds of virtual time)
+                    if (Math.floor(state.virtualTime) % 5 === 0 && Math.abs(state.virtualTime - Math.floor(state.virtualTime)) < physicsDt) {
+                         // Quick re-plan if still far
+                         if (dist > captureRadius * 5) {
+                             const plan = planTransferOrbit(ship.position, target, state.timeToIntercept);
+                             state.autopilotVReq.copy(plan.v0);
+                             // If correction is significant, re-align
+                             if (_diff.copy(state.autopilotVReq).sub(state.shipVelocity).length() > 0.001) {
+                                 state.autopilotPhase = 'ALIGNING';
+                             }
+                         }
+                    }
+                }
+
+                // ETA Countdown (Accounts for simulation speed)
+                state.timeToIntercept -= physicsDt;
+
+                // Update HUD Status
+                const targetStatus = dist < captureRadius * 3 ? 'apStatusApproaching' : 'apStatusNavigating';
                 if (state.autopilotStatus !== targetStatus || state._prevAutopilotPhase !== state.autopilotPhase) {
                     state.autopilotStatus = targetStatus;
                     state._prevAutopilotPhase = state.autopilotPhase;
                     applyLanguage();
                 }
-            } else {
+            }
+        } else {
             // Cleanup visuals & state cache when autopilot evaluates as OFF
             if (apPathLine.visible) apPathLine.visible = false;
             if (rendezvousGhost.visible) rendezvousGhost.visible = false;
@@ -1235,7 +997,7 @@ function animate() {
 
             if (closest) {
                 // Radius-based capture zone (8x radius)
-                const planetRadius = closest.mesh.userData.radius || 10;
+                const planetRadius = closest.mesh.userData.radius || 0.04;
                 const captureRadius = planetRadius * 8;
 
                 if (minDist < captureRadius) {
@@ -1254,7 +1016,7 @@ function animate() {
 
                     const relV = vShip.clone().sub(vPlanet);
                     // If relative velocity magnitude is very low, lock position
-                    if (relV.length() < 0.1) {
+                    if (relV.length() < 0.0004) {
                         state.capturedBody = closest;
                         state.relativePos.copy(ship.position).sub(closest.pos);
                         if (skIndicator) skIndicator.style.display = 'block';
@@ -1297,7 +1059,6 @@ function animate() {
 
         if (state.shipViewMode === 'cockpit') {
             // First-Person Cockpit Camera (Inside the ship)
-            // Adjusted offset inwards to stay inside the cockpit model bounds
             const camOffset = new THREE.Vector3(0.00, 0.05, 0).applyQuaternion(ship.quaternion);
             camera.position.copy(ship.position.clone().add(camOffset));
             camera.quaternion.copy(ship.quaternion);
@@ -1315,7 +1076,6 @@ function animate() {
             }
 
             // Calculate offset based on current orbit angles
-            // Distance significantly reduced to act as a proper close-up chase camera
             const r = 1.2; 
             const ox = r * Math.sin(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
             const oy = r * Math.sin(state.shipOrbitAngles.phi);
@@ -1342,7 +1102,7 @@ function animate() {
         window._spaceship.rotation.z = Math.sin(time * 0.5) * 0.1;
     }
 
-    sun.rotation.y += 0.00148 * (physicsDt * 60);
+    sun.rotation.y += 0.00148 * scriptedDt;
 
     const pulse = 1 + 0.03 * Math.sin(state.virtualTime * 1.2);
     glowSphere.scale.setScalar(pulse);
@@ -1352,209 +1112,8 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
     starField.rotation.y = state.virtualTime * 0.0005;
     starField.rotation.x = state.virtualTime * 0.0002;
 
-    refreshActiveBodyLists();
-    const sunBody = physicsBodies.find(b => b.isSun);
-    if (!sunBody) return; // Safety
-
-    // Physics: substeps for better stability at higher time scales
-    const subSteps = state.isPaused ? 0 : (state.simSpeedMultiplier > 1 ? 45 : 1);
-    const subDt = physicsDt / (subSteps || 1);
-
-    const nPlanets = activePlanets.length;
-    const nAsteroids = activeAsteroids.length;
-
-    for (let s = 0; s < subSteps; s++) {
-        // 1. Planets: Sun gravity + mutual interactions + asteroid interactions
-        for (let i = 0; i < nPlanets; i++) {
-            const pA = activePlanets[i];
-            if (!pA || pA.destroyed || !pA.pos) continue;
-            // --- Gravity: Bodies vs Sun ---
-            _diff.subVectors(sunBody.pos, pA.pos);
-            const rSqA = _diff.lengthSq();
-            const pRad = pA.mesh.userData.radius || 5;
-            const sunRad = 40;
-            const collisionDist = sunRad + pRad;
-
-            if (rSqA > collisionDist * collisionDist) {
-                // Mutual gravity between planet/star and the Sun
-                const fCommon = (G * sunBody.physMass * pA.physMass / rSqA);
-                const aDir = _diff.normalize();
-                
-                // Pull planet towards Sun
-                pA.vel.addScaledVector(aDir, (fCommon / pA.physMass) * subDt);
-                // Pull Sun towards planet (Mutual Attraction)
-                sunBody.vel.addScaledVector(aDir, -(fCommon / sunBody.physMass) * subDt);
-            } else if (!pA.isStar) {
-                // Planets/Asteroids are consumed by the Sun
-                pA.destroyed = true; markBodiesDirty(); continue;
-            } else {
-                // Star-Star collision: they should merge or destroy (let's merge)
-                pA.destroyed = true; markBodiesDirty(); continue;
-            }
-
-            // Planet-planet
-            for (let j = i + 1; j < nPlanets; j++) {
-                const pB = activePlanets[j];
-                if (!pB || pB.destroyed || !pB.pos) continue;
-                _diff.subVectors(pB.pos, pA.pos);
-                const dSq = _diff.lengthSq();
-                const rA = pA.mesh.userData.radius || 5;
-                const rB = pB.mesh.userData.radius || 5;
-                const minD = rA + rB;
-                if (dSq < minD * minD) {
-                    // Collision merge
-                    let heavier = pA.physMass >= pB.physMass ? pA : pB;
-                    let lighter = pA.physMass >= pB.physMass ? pB : pA;
-                    const totalMass = heavier.physMass + lighter.physMass;
-                    _diff.copy(lighter.vel).multiplyScalar(lighter.physMass);
-                    heavier.vel.multiplyScalar(heavier.physMass).add(_diff).divideScalar(totalMass);
-                    heavier.physMass = totalMass;
-                    
-                    // Stellar Ignition Check (Threshold: 80x Jupiter Mass)
-                    const JUPITER_MASS = 317.8;
-                    if (totalMass > JUPITER_MASS * 80 && !heavier.isStar && !heavier.isSun) {
-                        igniteStar(heavier);
-                    }
-
-                    const mR = Math.pow(totalMass / (totalMass - lighter.physMass), 0.33);
-                    if (!heavier.isStar) {
-                        heavier.mesh.scale.multiplyScalar(mR);
-                        heavier.mesh.userData.radius = (heavier.mesh.userData.radius || 5) * mR;
-                    }
-                    lighter.destroyed = true; markBodiesDirty();
-                } else {
-                    _forceDir.copy(_diff).normalize();
-                    // Biased interaction reduced to 10x and added softening (dSq + 25) for stability
-                    const sharedForce = (G * 10 * pB.physMass * pA.physMass / (dSq + 25)) * subDt;
-                    pA.vel.addScaledVector(_forceDir, sharedForce / pA.physMass);
-                    pB.vel.addScaledVector(_forceDir, -sharedForce / pB.physMass);
-                }
-            }
-
-            // Planet-asteroid
-            for (let j = 0; j < nAsteroids; j++) {
-                const aB = activeAsteroids[j];
-                if (!aB || aB.destroyed || !aB.pos) continue;
-                _diff.subVectors(aB.pos, pA.pos);
-                const dSq = _diff.lengthSq();
-                const minD = (pA.mesh.userData.radius || 5) + 2; // Asteroids are smaller now
-                if (dSq < minD * minD) {
-                    let heavier = pA.physMass >= aB.physMass ? pA : aB;
-                    let lighter = pA.physMass >= aB.physMass ? aB : pA;
-                    const totalMass = heavier.physMass + lighter.physMass;
-                    _diff.copy(lighter.vel).multiplyScalar(lighter.physMass);
-                    heavier.vel.multiplyScalar(heavier.physMass).add(_diff).divideScalar(totalMass);
-                    heavier.physMass = totalMass;
-                    const mR = Math.pow(totalMass / (totalMass - lighter.physMass), 0.33);
-                    if (heavier.isAsteroid) {
-                        const insts = heavier.instances;
-                        for (let ii = 0; ii < insts.length; ii++) insts[ii].scale *= mR;
-                    } else {
-                        heavier.mesh.scale.multiplyScalar(mR);
-                        heavier.mesh.userData.radius = (heavier.mesh.userData.radius || 5) * mR;
-                    }
-                    lighter.destroyed = true; markBodiesDirty();
-                } else {
-                    _forceDir.copy(_diff).normalize();
-                    pA.vel.addScaledVector(_forceDir, (G * 15 * aB.physMass / dSq) * subDt);
-                    aB.vel.addScaledVector(_forceDir, -(G * 15 * pA.physMass / dSq) * subDt);
-                }
-            }
-        }
-
-        // 2. Asteroids: Sun gravity only (O(N) — no asteroid-asteroid)
-        for (let i = 0; i < nAsteroids; i++) {
-            const a = activeAsteroids[i];
-            if (a.destroyed) continue;
-            const rSq = a.pos.lengthSq();
-            // Asteroids visually radius is 1.0 (sharedGeo), but we'll use 2.0 for safer Sun collision
-            const asteroidSunThreshold = (40 + 2) * (40 + 2);
-            if (rSq > asteroidSunThreshold) {
-                _sunDir.copy(a.pos).negate().normalize();
-                a.vel.addScaledVector(_sunDir, (G * SUN_MASS / rSq) * subDt);
-            } else {
-                a.destroyed = true; markBodiesDirty();
-            }
-        }
-
-        // 2.5. Spaceship: Gravitational pull from Sun + Planets (One-way)
-        if (state.isFlying && window._spaceship && !state.capturedBody) {
-            const sPos = window._spaceship.position;
-            const rSq = sPos.lengthSq();
-            // Sun Pull
-            if (rSq > (40 * 40)) {
-                _sunDir.copy(sPos).negate().normalize();
-                state.shipVelocity.addScaledVector(_sunDir, (G * SUN_MASS / rSq) * subDt);
-            }
-            // Planet Pulls
-            for (let i = 0; i < nPlanets; i++) {
-                const p = activePlanets[i];
-                if (p.destroyed) continue;
-                _diff.subVectors(p.pos, sPos);
-                const dSq = _diff.lengthSq() + 50; // Softening
-                _forceDir.copy(_diff).normalize();
-                state.shipVelocity.addScaledVector(_forceDir, (G * p.physMass / dSq) * subDt);
-            }
-
-            // --- BEGINNER MODE: STOP-ON-RELEASE DAMPING ---
-            // If no throttle is applied, dampen velocity over time (Drone-like powered flight)
-            if (state.shipThrottle === 0) {
-                const dragFactor = Math.pow(0.5, subDt / 50.0);
-                state.shipVelocity.multiplyScalar(dragFactor);
-            }
-
-            // --- Engine Thrust (Newtonian but 1x Scaled for Beginner Mode) ---
-            if (state.shipThrottle !== 0) {
-                const turbo = keys['ShiftLeft'] ? 2.5 : 1;
-                // Human-scale acceleration: we use the real (clock) time delta, 
-                // but divide by subSteps so it's applied correctly over the frame.
-                const realAccelTime = realDt / (subSteps || 1); 
-                const thrustPower = 10.0 * turbo; 
-                const shipDir = new THREE.Vector3(1, 0, 0).applyQuaternion(window._spaceship.quaternion);
-                state.shipVelocity.addScaledVector(shipDir, state.shipThrottle * thrustPower * realAccelTime);
-            }
-        }
-
-        // 3. Positional integration
-        for (let i = 0; i < physicsBodies.length; i++) {
-            const b = physicsBodies[i];
-            if (!b.destroyed) {
-                b.pos.addScaledVector(b.vel, subDt);
-                // Only apply local mesh position if there's no parent orbitObj handling the world position.
-                // Planets/Moons use orbitObj; the Sun and other standalone bodies use mesh.position.
-                if (b.mesh && !b.orbitObj) {
-                    b.mesh.position.copy(b.pos);
-                }
-            }
-        }
-
-        if (state.isFlying && window._spaceship && !state.capturedBody) {
-            // INTEGRATION FIX: 
-            // If the user wants the ship to move at "normal" speed while planets zoom at 400x,
-            // we must use the real (unscaled) time step for position too.
-            // HOWEVER, if the user wants the ship to be PART of the high-speed system, we use subDt.
-            // Based on "Spaceship speed is still 400x", they likely want it to be 1x (human speed).
-            window._spaceship.position.addScaledVector(state.shipVelocity, realDt / (subSteps || 1));
-
-            // 3.5. Ship-Planet Collision (Reset flight if hitting surface)
-            for (let i = 0; i < nPlanets; i++) {
-                const p = activePlanets[i];
-                if (p.destroyed) continue;
-                const distSq = window._spaceship.position.distanceToSquared(p.pos);
-                const r = p.mesh.userData.radius || 5;
-                if (distSq < r * r) {
-                    state.isFlying = false;
-                    state.shipVelocity.set(0, 0, 0);
-                    // Schedule UI button toggle back to normal
-                    setTimeout(() => {
-                        const btn = document.getElementById('pilot-button');
-                        if (btn && btn.textContent.toLowerCase().includes('exit')) btn.click();
-                    }, 0);
-                    break;
-                }
-            }
-        }
-    }
+    // Modular Physics Engine
+    physicsEngine.update(physicsDt, realDt);
 
     // Cleanup destroyed bodies (consumed by collision)
     let hasDestroyed = false;
@@ -1602,7 +1161,7 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
     const camDistSq = camera.position.distanceToSquared(controls.target);
     const isCamCorrupt = isNaN(camera.position.x) || isNaN(camera.position.y) || isNaN(camera.position.z);
     
-    if (isCamCorrupt || camDistSq < 100 || camDistSq > 100000000) {
+    if (isCamCorrupt || camDistSq < 0.01 || camDistSq > 100000000) {
         console.warn("Camera Safeguard: Resetting position to safe coordinates.");
         camera.position.set(0, 300, 500);
         controls.target.set(0, 0, 0);
@@ -1624,9 +1183,10 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
         }
 
         if (body.isAsteroid) {
+            if (scriptedDt === 0) continue; // Skip rendering update if paused
             instancedMeshesToUpdate.add(body.instancedMesh);
             const insts = body.instances;
-            const rotInc = body.rotSpeed * (physicsDt * 60);
+            const rotInc = body.rotSpeed * scriptedDt;
             for (let k = 0; k < insts.length; k++) {
                 const inst = insts[k];
                 _dummyAsteroid.position.copy(body.pos).add(inst.localPos);
@@ -1638,11 +1198,11 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
             }
         } else {
             body.orbitObj.position.copy(body.pos);
-            body.mesh.rotation.y += body.rotSpeed * (physicsDt * 60);
+            body.mesh.rotation.y += body.rotSpeed * scriptedDt;
             const sats = body.satellites;
             for (let k = 0; k < sats.length; k++) {
-                sats[k].orbitObj.rotation.y += sats[k].speed * (physicsDt * 60);
-                sats[k].mesh.rotation.y += sats[k].speed * (physicsDt * 60);
+                sats[k].orbitObj.rotation.y += sats[k].speed * scriptedDt;
+                sats[k].mesh.rotation.y += sats[k].speed * scriptedDt;
             }
         }
     }
@@ -1734,6 +1294,7 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+applyLanguage();
 updateTextureResolution();
 syncPlanetsToDate();
 animate();

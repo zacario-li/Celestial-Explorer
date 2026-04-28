@@ -1,6 +1,6 @@
-import { state } from './state.js?v=2';
-import { t, tName } from './i18n.js?v=2';
-import { planetsData } from './planetsData.js?v=2';
+import { state } from './state.js';
+import { t, tName } from './i18n.js';
+import { planetsData } from './planetsData.js';
 
 export function updateInfoPanel(body) {
     const panel = document.getElementById('info-panel');
@@ -68,14 +68,24 @@ export async function applyLanguage() {
     if (apStatus && state.autopilotStatus) {
         const base = t(state.autopilotStatus);
         const target = state.autopilotTarget ? tName(state.autopilotTarget.name) : '';
-        const phaseKey = state.autopilotPhase === 'BURNING' ? 'apPhaseBurning' : (state.autopilotPhase === 'COASTING' ? 'apPhaseCoasting' : '');
+        
+        let phaseKey = '';
+        switch(state.autopilotPhase) {
+            case 'PLANNING': phaseKey = 'apPhasePlanning'; break;
+            case 'ALIGNING': phaseKey = 'apPhaseAligning'; break;
+            case 'BURNING': phaseKey = 'apPhaseBurning'; break;
+            case 'COASTING': phaseKey = 'apPhaseCoasting'; break;
+        }
+        
         const phaseStr = phaseKey ? ` (${t(phaseKey)})` : '';
-        apStatus.textContent = `${base} ${target}${phaseStr}`.trim();
+        const timeStr = state.timeToIntercept > 0 ? `<br><small>${t('apTimeRemaining')}: ${Math.ceil(state.timeToIntercept)}s</small>` : '';
+        apStatus.innerHTML = `${base} ${target}${phaseStr}${timeStr}`.trim();
     }
 
     safeSetText('spawn-button', 'spawnPlanet');
     safeSetText('sync-time-button', 'timeSync');
     safeSetText('set-time-button', 'setTime');
+    safeSetText('settings-button', 'settingsBtn');
     safeSetText('lang-button', 'langSwitch');
 
     const speedLbl = document.getElementById('sim-speed-label');
@@ -102,11 +112,16 @@ export async function applyLanguage() {
     safeSetText('lbl-minute', 'minute');
     safeSetText('lbl-second', 'second');
 
+    // Settings Modal
+    safeSetText('settings-modal-title', 'settingsModalTitle');
+    safeSetText('settings-close-btn', 'settingsClose');
+
     safeSetText('autopilot-modal-title', 'autopilotModalTitle');
     safeSetText('autopilot-cancel-btn', 'autopilotCancel');
     
     safeSetText('pause-button', state.isPaused ? 'resume' : 'pause');
     safeSetText('autorotate-button', state.isAutoRotate ? 'autoRotateOn' : 'autoRotateOff');
+    safeSetText('venus-atm-button', state.showVenusAtmosphere ? 'venusAtmOn' : 'venusAtmOff');
 
     document.querySelectorAll('.nav-item').forEach(item => {
         const engName = item.dataset.engName;
@@ -148,7 +163,7 @@ export function populateAutopilotDestinations(activePlanets, onSelect) {
         
         const distSpan = document.createElement('span');
         distSpan.className = 'dest-dist';
-        const dist = Math.round(p.pos.length());
+        const dist = p.pos.length().toFixed(2);
         distSpan.textContent = `${dist} AU`;
 
         item.appendChild(nameSpan);

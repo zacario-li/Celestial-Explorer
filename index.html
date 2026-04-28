@@ -5,18 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Solar System Simulation</title>
-    <link rel="stylesheet" href="style.css?v=10">
-    <!-- Import maps polyfill -->
-    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-          "three/loaders/STLLoader": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js"
-        }
-      }
-    </script>
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 
 <body>
@@ -33,30 +22,6 @@
         <div id="loading-subtext" style="margin-top:1.5rem; font-size:0.8rem; opacity:0.6; letter-spacing: 2px;">LINKING
             HIGH-FIDELITY ASSETS</div>
 
-        <!-- Emergency Bypass (Hidden by default, shown after 5s) -->
-        <div id="loading-troubleshooter"
-            style="display: none; margin-top: 2rem; animation: slideUp 0.6s ease; background: rgba(255, 79, 79, 0.15); padding: 20px; border-radius: 12px; border: 1px solid #ff4f4f; max-width: 550px;">
-            <div
-                style="color: #ff4f4f; font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px;">
-                ⚠️ Action Required: Browser Security Block ⚠️</div>
-            <p style="color: #ffffff; font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.6; text-align: left;">
-                Your browser is blocking the 3D engine because you opened the file directly. To enable the <b>Orange
-                    Spaceship</b> and <b>Full 3D Visuals</b>, please follow these steps:
-            </p>
-            <div
-                style="text-align: left; margin-bottom: 20px; font-size: 0.85rem; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
-                1. Open your project folder.<br>
-                2. Find the green icon: <code
-                    style="color: #00ffff; background: #1a1a1a; padding: 2px 5px; border-radius: 3px;">Start_Simulation.command</code><br>
-                3. <b>Double-click it</b> to start (if macOS warns you, <b>Right-click -> Open</b> instead).<br>
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="document.getElementById('loading-overlay').style.display='none'"
-                    style="background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-size: 0.75rem;">
-                    Bypass Anyway (Blank Screen Possible)
-                </button>
-            </div>
-        </div>
     </div>
 
     <div id="error-log"
@@ -77,16 +42,11 @@
         // --- SMART TROUBLESHOOTER (Checks if Modules/CORS are blocked) ---
         setTimeout(() => {
             if (!window.SIM_READY) {
-                console.error("Simulation engine failed to initialize (CORS/Module block likely).");
-                const troubleshooter = document.getElementById('loading-troubleshooter');
+                console.error("Simulation engine failed to initialize.");
                 const subtext = document.getElementById('loading-subtext');
-                const progress = document.getElementById('v-sync-progress').parentElement;
-
-                if (troubleshooter) troubleshooter.style.display = 'block';
                 if (subtext) subtext.style.color = '#ff4f4f';
-                if (subtext) subtext.innerText = 'PROTOCOL ERROR: HYPERDRIVE LINK BLOCKED';
+                if (subtext) subtext.innerText = 'PROTOCOL ERROR: ENGINE FAILURE';
             } else {
-                // Success! The module loaded and set SIM_READY.
                 console.log("Simulation engine initialized successfully.");
             }
         }, 4000);
@@ -109,17 +69,13 @@
     <!-- Right Data & Controls UI -->
     <div id="ui-right" class="ui-side-right">
         <button id="pause-button" class="pause-btn">⏸ PAUSE</button>
-        <button id="autorotate-button" class="pause-btn" style="margin-top: 10px;">🔄 AUTO-PAN: ON</button>
-        <button id="highvis-button" class="pause-btn" style="margin-top: 10px;">☀️ HIGH-VIS</button>
+        <button id="settings-button" class="pause-btn" style="margin-top: 10px;">⚙️ SETTINGS</button>
         <button id="overview-button" class="pause-btn" style="margin-top: 10px;">🌌 OVERVIEW</button>
         <button id="asteroid-belt-button" class="pause-btn" style="margin-top: 10px;">☄️ ASTEROID BELT: ON</button>
         <button id="kuiper-belt-button" class="pause-btn" style="margin-top: 10px;">❄️ KUIPER BELT: ON</button>
-        <button id="hoverzones-button" class="pause-btn" style="margin-top: 10px;">👾 HOVER ZONES: OFF</button>
         <button id="pilot-button" class="pause-btn" style="margin-top: 10px;">🚀 PILOT SHIP</button>
         <button id="spawn-button" class="pause-btn" style="margin-top: 10px;">➕ SPAWN PLANET</button>
-        <button id="sync-time-button" class="pause-btn" style="margin-top: 10px;">⏳ TIME SYNC</button>
         <button id="set-time-button" class="pause-btn" style="margin-top: 10px;">📅 SET CUSTOM TIME</button>
-        <button id="lang-button" class="pause-btn lang-btn" style="margin-top: 10px;">🌐 中文</button>
         
         <!-- Simulation Speed Slider -->
         <div class="modal-group" style="padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;">
@@ -304,7 +260,25 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=sync_final_v5"></script>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; max-height: 80vh; display: flex; flex-direction: column;">
+            <h2 id="settings-modal-title">Settings</h2>
+            <div class="modal-group" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <button id="autorotate-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">🔄 AUTO-PAN: OFF</button>
+                <button id="highvis-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">☀️ HIGH-VIS</button>
+                <button id="sync-time-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">⏳ TIME SYNC</button>
+                <button id="hoverzones-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">👾 HOVER ZONES: OFF</button>
+                <button id="venus-atm-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">☁️ VENUS ATMOSPHERE: ON</button>
+                <button id="lang-button" class="pause-btn lang-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">🌐 中文</button>
+            </div>
+            <div class="modal-actions" style="margin-top: 25px;">
+                <button id="settings-close-btn" class="pause-btn modal-btn" style="background: rgba(79, 166, 255, 0.2); border-color: #4fa6ff; width: 100%;">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="bundle.js"></script>
 </body>
 
 </html>

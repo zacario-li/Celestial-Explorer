@@ -14,7 +14,7 @@ export function createStarfield() {
         const y = THREE.MathUtils.randFloatSpread(20000);
         const z = THREE.MathUtils.randFloatSpread(20000);
         
-        if (Math.abs(x) < 600 && Math.abs(y) < 600 && Math.abs(z) < 600) continue;
+        if (Math.abs(x) < 2.4 && Math.abs(y) < 2.4 && Math.abs(z) < 2.4) continue;
         
         starsVertices.push(x, y, z);
 
@@ -42,7 +42,7 @@ export function createStarfield() {
     const starTex = new THREE.CanvasTexture(starCvs);
 
     const starsMaterial = new THREE.PointsMaterial({ 
-        size: 7.0, 
+        size: 0.028, 
         map: starTex,
         vertexColors: true, 
         transparent: true, 
