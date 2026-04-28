@@ -22857,10 +22857,16 @@
   // modules/celestial/sun.js
   function createSun(scene2) {
     const sunGeo = new SphereGeometry(40, 64, 64);
-    const sunMat = new MeshBasicMaterial({ color: 16777215 });
+    const sunMat = new MeshBasicMaterial({ color: 16775392 });
     const sun = new Mesh(sunGeo, sunMat);
-    sun.userData = { isSun: true, isFocusable: true, name: "Sun", radius: 40 };
+    sun.userData = { isSun: true, isFocusable: true, name: "Sun", radius: 40, mass: "1.989 \xD7 10\xB3\u2070 kg", infoRadius: "696,340 km", density: "1.41 g/cm\xB3", massRel: "~ 332,946 Earth Masses" };
     scene2.add(sun);
+    const texLoader = new TextureLoader();
+    texLoader.load("textures/planets/sun.jpg", (tex) => {
+      tex.colorSpace = SRGBColorSpace;
+      sunMat.map = tex;
+      sunMat.needsUpdate = true;
+    });
     const glowSphere = makeGlowLayer(41.5, 16755200, 0.4);
     const glowSphere2 = makeGlowLayer(43, 16763904, 0.2);
     const glowSphere3 = makeGlowLayer(46, 16776960, 0.1);
