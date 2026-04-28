@@ -61,7 +61,7 @@ export class Planet {
             name: this.name, 
             mass: this.data.mass, 
             massRel: this.data.massRel, 
-            infoRadius: this.data.infoRadius, 
+            infoRadius: this.data.radius, 
             density: this.data.density,
             textureKey: this.textureKey
         };

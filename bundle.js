@@ -22394,7 +22394,7 @@
               if (b.beltType === "asteroid" && !state.isAsteroidBeltActive) continue;
               if (b.beltType === "kuiper" && !state.isKuiperBeltActive) continue;
               this.activeAsteroids.push(b);
-            } else {
+            } else if (!b.isSun) {
               this.activePlanets.push(b);
             }
           }
@@ -22598,7 +22598,7 @@
             name: this.name,
             mass: this.data.mass,
             massRel: this.data.massRel,
-            infoRadius: this.data.infoRadius,
+            infoRadius: this.data.radius,
             density: this.data.density,
             textureKey: this.textureKey
           };
