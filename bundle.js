@@ -21665,7 +21665,7 @@
         isTransitioning: false,
         isPaused: false,
         virtualTime: 0,
-        simSpeedMultiplier: 100,
+        simSpeedMultiplier: 1e4,
         // Speed up simulation (User requested modification from 400)
         currentLang: "en",
         isHighVis: false,

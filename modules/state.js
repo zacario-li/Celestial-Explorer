@@ -5,7 +5,7 @@ export const state = {
     isTransitioning: false,
     isPaused: false,
     virtualTime: 0,
-    simSpeedMultiplier: 100, // Speed up simulation (User requested modification from 400)
+    simSpeedMultiplier: 10000, // Speed up simulation (User requested modification from 400)
     currentLang: 'en',
     isHighVis: false,
     isAutoRotate: false,
