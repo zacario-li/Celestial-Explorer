@@ -22349,11 +22349,11 @@
   });
 
   // modules/physics/constants.js
-  var G2, SUN_MASS2, JUPITER_MASS, STELLAR_IGNITION_THRESHOLD;
+  var G, SUN_MASS, JUPITER_MASS, STELLAR_IGNITION_THRESHOLD;
   var init_constants = __esm({
     "modules/physics/constants.js"() {
-      G2 = 15e-6 / 250 ** 3;
-      SUN_MASS2 = 1e6;
+      G = 15e-6 / 250 ** 3;
+      SUN_MASS = 1e6;
       JUPITER_MASS = 317.8;
       STELLAR_IGNITION_THRESHOLD = JUPITER_MASS * 80;
     }
@@ -22417,7 +22417,7 @@
               const sunRad = 0.16;
               const collisionDist = sunRad + pRad;
               if (rSqA > collisionDist * collisionDist) {
-                const fCommon = G2 * sunBody.physMass * pA.physMass / rSqA;
+                const fCommon = G * sunBody.physMass * pA.physMass / rSqA;
                 const aDir = this._diff.normalize();
                 pA.vel.addScaledVector(aDir, fCommon / pA.physMass * subDt);
                 sunBody.vel.addScaledVector(aDir, -(fCommon / sunBody.physMass) * subDt);
@@ -22442,7 +22442,7 @@
                   this.handleCollision(pA, pB);
                 } else {
                   this._forceDir.copy(this._diff).normalize();
-                  const sharedForce = G2 * 10 * pB.physMass * pA.physMass / (dSq + 25) * subDt;
+                  const sharedForce = G * 10 * pB.physMass * pA.physMass / (dSq + 25) * subDt;
                   pA.vel.addScaledVector(this._forceDir, sharedForce / pA.physMass);
                   pB.vel.addScaledVector(this._forceDir, -sharedForce / pB.physMass);
                 }
@@ -22487,7 +22487,7 @@
           const rSq = sPos.lengthSq();
           if (rSq > 1600) {
             this._sunDir.copy(sPos).negate().normalize();
-            state.shipVelocity.addScaledVector(this._sunDir, G2 * SUN_MASS2 / rSq * subDt);
+            state.shipVelocity.addScaledVector(this._sunDir, G * SUN_MASS / rSq * subDt);
           }
           for (let i = 0; i < this.activePlanets.length; i++) {
             const p = this.activePlanets[i];
@@ -22495,7 +22495,7 @@
             this._diff.subVectors(p.pos, sPos);
             const dSq = this._diff.lengthSq() + 50;
             this._forceDir.copy(this._diff).normalize();
-            state.shipVelocity.addScaledVector(this._forceDir, G2 * p.physMass / dSq * subDt);
+            state.shipVelocity.addScaledVector(this._forceDir, G * p.physMass / dSq * subDt);
           }
           if (state.shipThrottle === 0 && !state.isAutopilotActive) {
             const dragFactor = Math.pow(0.5, subDt / 50);
@@ -22530,7 +22530,7 @@
             const rSq = a.pos.lengthSq();
             if (rSq > 1764) {
               this._sunDir.copy(a.pos).negate().normalize();
-              a.vel.addScaledVector(this._sunDir, G2 * SUN_MASS2 / rSq * physicsDt);
+              a.vel.addScaledVector(this._sunDir, G * SUN_MASS / rSq * physicsDt);
             } else {
               a.destroyed = true;
               this.bodiesListDirty = true;
@@ -22574,7 +22574,7 @@
             this.orbitRadius * Math.sin(this.angle)
           );
           this.orbitObj.position.copy(this.pos);
-          const vMag = Math.sqrt(G2 * SUN_MASS2 / this.orbitRadius);
+          const vMag = Math.sqrt(G * SUN_MASS / this.orbitRadius);
           this.vel = new Vector3(
             -vMag * Math.sin(this.angle),
             0,
@@ -22796,7 +22796,7 @@
           for (let k = 0; k < clusterCount; k++) {
             const orbitRadius = this.minRadius + Math.random() * (this.maxRadius - this.minRadius);
             const initialAngle = k / clusterCount * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
-            const circularSpeed = Math.sqrt(G2 * SUN_MASS2 / orbitRadius);
+            const circularSpeed = Math.sqrt(G * SUN_MASS / orbitRadius);
             const speed = circularSpeed * (0.98 + Math.random() * 0.04);
             const clusterVisualRadius = 10;
             const instances = [];
@@ -23528,6 +23528,7 @@
       init_sceneSetup();
       init_starfield();
       init_physicsEngine();
+      init_constants();
       init_planet();
       init_moon();
       init_asteroidBelt();
@@ -23596,11 +23597,24 @@
       var rendezvousGhost = new Mesh(ghostGeo, ghostMat);
       rendezvousGhost.visible = false;
       scene.add(rendezvousGhost);
-      var activePlanets = [];
-      var activeAsteroids = [];
-      var bodiesListDirty = true;
-      function markBodiesDirty() {
-        bodiesListDirty = true;
+      function showToast(message, duration = 3e3) {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
+        const toast = document.createElement("div");
+        toast.textContent = message;
+        toast.style.cssText = "background:rgba(0,0,0,0.8);color:#00ffff;padding:10px 20px;border-radius:8px;border:1px solid #00ffff;font-family:monospace;font-size:0.85rem;opacity:1;transition:opacity 0.5s ease;pointer-events:none;";
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          setTimeout(() => toast.remove(), 500);
+        }, duration);
+      }
+      function updatePauseButtonVisuals() {
+        const btn = document.getElementById("pause-button");
+        if (!btn) return;
+        btn.textContent = state.isPaused ? t("resume") : t("pause");
+        btn.style.borderColor = state.isPaused ? "#ff4f4f" : "#4fa6ff";
+        btn.style.background = state.isPaused ? "rgba(255,79,79,0.2)" : "rgba(255,255,255,0.05)";
       }
       window.addEventListener("dblclick", (event) => {
         mouse.x = event.clientX / window.innerWidth * 2 - 1;
@@ -23754,87 +23768,6 @@
         updatePauseButtonVisuals();
         showToast(`${t("syncTimeMsg")} ${timeStr}`);
       });
-      var MAX_USER_PLANETS = 50;
-      function spawnSinglePlanet(isSilent = false) {
-        const currentCount = celestialBodies.filter((b) => !b.isAsteroid).length;
-        if (currentCount >= MAX_USER_PLANETS) {
-          showToast(t("limitReached"));
-          return;
-        }
-        let baseData;
-        if (spawnTemplate.value === "Random") {
-          baseData = planetsData[Math.floor(Math.random() * planetsData.length)];
-        } else {
-          baseData = planetsData[parseInt(spawnTemplate.value)];
-        }
-        const jitterDist = isSilent ? (Math.random() - 0.5) * 40 : 0;
-        const jitterAngle = isSilent ? (Math.random() - 0.5) * 0.15 : 0;
-        const dist = parseFloat(spawnDistance.value) + jitterDist;
-        const massMult = parseFloat(spawnMass.value) * (isSilent ? 0.9 + Math.random() * 0.2 : 1);
-        const spawnId = Math.floor(Math.random() * 9e4) + 1e4;
-        const spawnName = baseData.name + "-" + spawnId;
-        const newSpeed = baseData.speed * Math.sqrt(baseData.dist / dist) * (0.85 + Math.random() * 0.3);
-        const newAngle = Math.random() * Math.PI * 2 + jitterAngle;
-        const newMassValue = baseData.massValue * massMult;
-        const planet = createPlanet(
-          baseData.r,
-          baseData.c,
-          spawnName,
-          dist,
-          newSpeed,
-          baseData.rotSpeed,
-          `Custom: ${massMult.toFixed(1)}x Mass`,
-          baseData.massRel,
-          baseData.radius,
-          baseData.density,
-          newMassValue,
-          newAngle,
-          physicsBodies,
-          scene,
-          baseData.name
-        );
-        if (massMult !== 1) {
-          const scaleVal = Math.pow(massMult, 0.3333);
-          planet.mesh.scale.setScalar(scaleVal);
-          planet.mesh.userData.radius = baseData.r * scaleVal;
-        }
-        celestialBodies.push(planet);
-        markBodiesDirty();
-        const navItem = document.createElement("div");
-        navItem.className = "nav-item";
-        navItem.dataset.engName = spawnName;
-        navItem.textContent = spawnName;
-        navItem.onclick = () => {
-          state.focusedBody = planet.mesh;
-          state.previousBody = planet.mesh;
-          state.isOverview = false;
-          state.isTransitioning = true;
-          updateInfoPanel(planet.mesh);
-          updateTextureResolution();
-          document.getElementById("overview-button").textContent = t("overviewOn");
-        };
-        navList.appendChild(navItem);
-        if (!isSilent) {
-          navItem.click();
-        }
-      }
-      document.getElementById("modal-confirm-btn").addEventListener("click", function() {
-        spawnModal.classList.remove("active");
-        spawnSinglePlanet(false);
-      });
-      document.getElementById("modal-machinegun-btn").addEventListener("click", function() {
-        spawnModal.classList.remove("active");
-        let firedCount = 0;
-        const totalToFire = 100;
-        const sprayInterval = setInterval(() => {
-          spawnSinglePlanet(true);
-          firedCount++;
-          if (firedCount >= totalToFire) {
-            clearInterval(sprayInterval);
-            console.log("Machine Gun Spawn Sequence Complete.");
-          }
-        }, 50);
-      });
       var starField = createStarfield();
       scene.add(starField);
       var { sun, glowSphere, glowSphere2, glowSphere3, solarWind } = createSun(scene);
@@ -23847,7 +23780,7 @@
         isSun: true,
         destroyed: false
       };
-      physicsBodies.push(sunBody);
+      physicsEngine.addBody(sunBody);
       updateInfoPanel(state.focusedBody);
       var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       var texLoader = new TextureLoader();
@@ -24132,8 +24065,8 @@
       }
       function animate() {
         requestAnimationFrame(animate);
-        const nPlanets = activePlanets.length;
-        const nAsteroids = activeAsteroids.length;
+        const nPlanets = physicsEngine.activePlanets.length;
+        const nAsteroids = physicsEngine.activeAsteroids.length;
         const timeRaw = clock.getElapsedTime();
         const realDt = Math.min(timeRaw - _prevTime, 0.05);
         _prevTime = timeRaw;
@@ -24420,10 +24353,11 @@
             }
             celestialBodies.splice(i, 1);
           }
-          for (let i = physicsBodies.length - 1; i >= 0; i--) {
-            if (physicsBodies[i].destroyed) physicsBodies.splice(i, 1);
+          const pb = physicsEngine.physicsBodies;
+          for (let i = pb.length - 1; i >= 0; i--) {
+            if (pb[i].destroyed) pb.splice(i, 1);
           }
-          markBodiesDirty();
+          physicsEngine.markDirty();
         }
         const camDistSq = camera.position.distanceToSquared(controls.target);
         const isCamCorrupt = isNaN(camera.position.x) || isNaN(camera.position.y) || isNaN(camera.position.z);
@@ -24490,7 +24424,7 @@
             state.focusedBody.layers.enable(1);
           }
         }
-        solarWind.update(dt);
+        if (solarWind.update) solarWind.update(dt);
         if (!state.isFlying) {
           if (state.focusedBody) {
             state.focusedBody.getWorldPosition(targetVec);

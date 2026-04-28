@@ -8,6 +8,7 @@ import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from '.
 import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js';
 import { createStarfield } from './modules/starfield.js';
 import { PhysicsEngine } from './modules/physics/physicsEngine.js';
+import { G, SUN_MASS } from './modules/physics/constants.js';
 import { Planet } from './modules/celestial/planet.js';
 import { Moon } from './modules/celestial/moon.js';
 import { AsteroidBelt } from './modules/celestial/asteroidBelt.js';
@@ -98,29 +99,24 @@ const rendezvousGhost = new THREE.Mesh(ghostGeo, ghostMat);
 rendezvousGhost.visible = false;
 scene.add(rendezvousGhost);
 
-// Living lists — mutated in-place, never re-filtered
-let activePlanets = [];
-let activeAsteroids = [];
-let bodiesListDirty = true;
+// showToast helper
+function showToast(message, duration = 3000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = 'background:rgba(0,0,0,0.8);color:#00ffff;padding:10px 20px;border-radius:8px;border:1px solid #00ffff;font-family:monospace;font-size:0.85rem;opacity:1;transition:opacity 0.5s ease;pointer-events:none;';
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, duration);
+}
 
-function markBodiesDirty() { bodiesListDirty = true; }
-function refreshActiveBodyLists() {
-    if (!bodiesListDirty) return;
-    activePlanets = [];
-    activeAsteroids = [];
-    for (let i = 0; i < physicsBodies.length; i++) {
-        const b = physicsBodies[i];
-        if (b.destroyed || !b.pos || !b.vel) continue;
-
-        if (b.isAsteroid) {
-            if (b.beltType === 'asteroid' && !state.isAsteroidBeltActive) continue;
-            if (b.beltType === 'kuiper' && !state.isKuiperBeltActive) continue;
-            activeAsteroids.push(b);
-        } else {
-            activePlanets.push(b);
-        }
-    }
-    bodiesListDirty = false;
+// updatePauseButtonVisuals helper
+function updatePauseButtonVisuals() {
+    const btn = document.getElementById('pause-button');
+    if (!btn) return;
+    btn.textContent = state.isPaused ? t('resume') : t('pause');
+    btn.style.borderColor = state.isPaused ? '#ff4f4f' : '#4fa6ff';
+    btn.style.background = state.isPaused ? 'rgba(255,79,79,0.2)' : 'rgba(255,255,255,0.05)';
 }
 
 // Handle Double Clicks for Focus Mode
@@ -282,95 +278,7 @@ document.getElementById('time-modal-confirm').addEventListener('click', function
     showToast(`${t('syncTimeMsg')} ${timeStr}`);
 });
 
-const MAX_USER_PLANETS = 50;
-
-function spawnSinglePlanet(isSilent = false) {
-    // Limit check (excluding asteroids)
-    const currentCount = celestialBodies.filter(b => !b.isAsteroid).length;
-    if (currentCount >= MAX_USER_PLANETS) {
-        showToast(t('limitReached'));
-        return;
-    }
-
-    // Read values from modal
-    let baseData;
-    if (spawnTemplate.value === 'Random') {
-        baseData = planetsData[Math.floor(Math.random() * planetsData.length)];
-    } else {
-        baseData = planetsData[parseInt(spawnTemplate.value)];
-    }
-
-    // Add small random jitter for machine gun spray effect if silent
-    const jitterDist = isSilent ? (Math.random() - 0.5) * 40 : 0;
-    const jitterAngle = isSilent ? (Math.random() - 0.5) * 0.15 : 0;
-
-    const dist = parseFloat(spawnDistance.value) + jitterDist;
-    const massMult = parseFloat(spawnMass.value) * (isSilent ? (0.9 + Math.random() * 0.2) : 1);
-
-    // Generate specs
-    const spawnId = Math.floor(Math.random() * 90000) + 10000;
-    const spawnName = baseData.name + '-' + spawnId;
-
-    const newSpeed = baseData.speed * Math.sqrt(baseData.dist / dist) * (0.85 + Math.random() * 0.3);
-    const newAngle = (Math.random() * Math.PI * 2) + jitterAngle;
-    const newMassValue = baseData.massValue * massMult;
-
-    const planet = createPlanet(
-        baseData.r, baseData.c, spawnName, dist, newSpeed,
-        baseData.rotSpeed, `Custom: ${massMult.toFixed(1)}x Mass`, baseData.massRel, baseData.radius,
-        baseData.density, newMassValue, newAngle, physicsBodies, scene, baseData.name
-    );
-
-    if (massMult !== 1.0) {
-        const scaleVal = Math.pow(massMult, 0.3333);
-        planet.mesh.scale.setScalar(scaleVal);
-        planet.mesh.userData.radius = baseData.r * scaleVal;
-    }
-
-    celestialBodies.push(planet);
-    markBodiesDirty();
-
-    // Add navigation list item
-    const navItem = document.createElement('div');
-    navItem.className = 'nav-item';
-    navItem.dataset.engName = spawnName;
-    navItem.textContent = spawnName;
-    navItem.onclick = () => {
-        state.focusedBody = planet.mesh;
-        state.previousBody = planet.mesh;
-        state.isOverview = false;
-        state.isTransitioning = true;
-        updateInfoPanel(planet.mesh);
-        updateTextureResolution();
-        document.getElementById('overview-button').textContent = t('overviewOn');
-    };
-    navList.appendChild(navItem);
-
-    if (!isSilent) {
-        navItem.click();
-    }
-}
-
-document.getElementById('modal-confirm-btn').addEventListener('click', function () {
-    spawnModal.classList.remove('active');
-    spawnSinglePlanet(false);
-});
-
-document.getElementById('modal-machinegun-btn').addEventListener('click', function () {
-    spawnModal.classList.remove('active');
-
-    let firedCount = 0;
-    const totalToFire = 100; // 20 per sec for 5 sec
-
-    const sprayInterval = setInterval(() => {
-        spawnSinglePlanet(true);
-        firedCount++;
-        if (firedCount >= totalToFire) {
-            clearInterval(sprayInterval);
-            console.log("Machine Gun Spawn Sequence Complete.");
-        }
-    }, 50); // 20 per second
-});
+// NOTE: Spawn logic is handled by initSpawnManager (called after celestialBodies is populated)
 
 // Environment setup
 const starField = createStarfield();
@@ -389,7 +297,7 @@ const sunBody = {
     isSun: true,
     destroyed: false
 };
-physicsBodies.push(sunBody);
+physicsEngine.addBody(sunBody);
 updateInfoPanel(state.focusedBody);
 
 // Mobile detection
@@ -760,8 +668,8 @@ function planTransferOrbit(shipPos, target, T) {
 function animate() {
     requestAnimationFrame(animate);
 
-    const nPlanets = activePlanets.length;
-    const nAsteroids = activeAsteroids.length;
+    const nPlanets = physicsEngine.activePlanets.length;
+    const nAsteroids = physicsEngine.activeAsteroids.length;
 
     const timeRaw = clock.getElapsedTime();
     const realDt = Math.min(timeRaw - _prevTime, 0.05);
@@ -1151,10 +1059,11 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
             }
             celestialBodies.splice(i, 1);
         }
-        for (let i = physicsBodies.length - 1; i >= 0; i--) {
-            if (physicsBodies[i].destroyed) physicsBodies.splice(i, 1);
+        const pb = physicsEngine.physicsBodies;
+        for (let i = pb.length - 1; i >= 0; i--) {
+            if (pb[i].destroyed) pb.splice(i, 1);
         }
-        markBodiesDirty();
+        physicsEngine.markDirty();
     }
 
     // Self-healing for corrupted camera (NaN or extreme proximity/distance)
@@ -1235,7 +1144,7 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
         }
     }
 
-    solarWind.update(dt);
+    if (solarWind.update) solarWind.update(dt);
 
     // Only follow targets if NOT flying
     if (!state.isFlying) {
