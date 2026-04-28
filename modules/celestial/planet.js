@@ -16,6 +16,9 @@ export class Planet {
         this.physMass = data.massValue || 1.0;
         this.angle = data.angle || 0;
         this.textureKey = data.textureKey || data.name;
+        this.inc = (data.inc || 0) * (Math.PI / 180);
+        this.lan = (data.lan || 0) * (Math.PI / 180);
+        this.tilt = (data.tilt || 0) * (Math.PI / 180);
 
         this.mesh = this.createMesh();
         this.orbitObj = this.createOrbitObject();
@@ -31,6 +34,8 @@ export class Planet {
             0,
             this.orbitRadius * Math.sin(this.angle)
         );
+        this.pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.inc);
+        this.pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.lan);
         this.orbitObj.position.copy(this.pos);
 
         const vMag = Math.sqrt((G * SUN_MASS) / this.orbitRadius);
@@ -39,6 +44,8 @@ export class Planet {
             0,
             vMag * Math.cos(this.angle)
         );
+        this.vel.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.inc);
+        this.vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.lan);
 
         this.destroyed = false;
         this.satellites = [];
@@ -70,7 +77,13 @@ export class Planet {
 
     createOrbitObject() {
         const obj = new THREE.Object3D();
-        obj.add(this.mesh);
+        
+        this.tiltGroup = new THREE.Object3D();
+        this.tiltGroup.rotation.order = 'ZYX';
+        this.tiltGroup.rotation.z = this.tilt;
+        this.tiltGroup.add(this.mesh);
+        
+        obj.add(this.tiltGroup);
         this.scene.add(obj);
         return obj;
     }
@@ -92,7 +105,11 @@ export class Planet {
             opacity: finalOpacity 
         });
         const line = new THREE.Mesh(ringGeo, ringMat);
-        line.position.y = -0.2;
+        
+        line.rotation.order = 'YXZ';
+        line.rotation.y = this.lan;
+        line.rotation.x = this.inc;
+        
         line.renderOrder = 999;
         this.scene.add(line);
         return line;

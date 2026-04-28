@@ -12,9 +12,36 @@ export class Moon {
         this.speed = data.speed;
         this.textureKey = data.textureKey || data.name;
 
+        this.inc = (data.inc || 0) * (Math.PI / 180);
+        this.lan = (data.lan || 0) * (Math.PI / 180);
+        this.tilt = (data.tilt || 0) * (Math.PI / 180);
+
         this.mesh = this.createMesh();
-        this.orbitObj = this.createOrbitObject();
+        
+        this.orbitObj = new THREE.Object3D();
+        
+        this.planeGroup = new THREE.Object3D();
+        this.planeGroup.rotation.order = 'YXZ';
+        this.planeGroup.rotation.y = this.lan;
+        this.planeGroup.rotation.x = this.inc;
+        this.orbitObj.add(this.planeGroup);
+        
+        this.spinGroup = new THREE.Object3D();
+        this.planeGroup.add(this.spinGroup);
+        
+        this.translationGroup = new THREE.Object3D();
+        this.translationGroup.position.x = this.orbitRadius;
+        this.spinGroup.add(this.translationGroup);
+        
+        this.tiltGroup = new THREE.Object3D();
+        this.tiltGroup.rotation.order = 'ZYX';
+        this.tiltGroup.rotation.z = this.tilt;
+        this.translationGroup.add(this.tiltGroup);
+        
+        this.tiltGroup.add(this.mesh);
+
         this.orbitLine = this.createOrbitLine();
+        this.planeGroup.add(this.orbitLine);
 
         this.planet.satelliteAnchor.add(this.orbitObj);
         this.planet.satellites.push(this);
@@ -38,14 +65,7 @@ export class Moon {
             density: this.data.d,
             textureKey: this.textureKey
         };
-        mesh.position.x = this.orbitRadius;
         return mesh;
-    }
-
-    createOrbitObject() {
-        const obj = new THREE.Object3D();
-        obj.add(this.mesh);
-        return obj;
     }
 
     createOrbitLine() {
@@ -58,8 +78,6 @@ export class Moon {
             transparent: true, 
             opacity: 0.15 
         });
-        const line = new THREE.Mesh(ringGeo, ringMat);
-        this.orbitObj.add(line); 
-        return line;
+        return new THREE.Mesh(ringGeo, ringMat);
     }
 }

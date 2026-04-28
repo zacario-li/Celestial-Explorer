@@ -21722,6 +21722,9 @@
           density: "5.43 g/cm\xB3",
           massValue: 0.055,
           angle: 4.36,
+          inc: 7,
+          lan: 48.33,
+          tilt: 0.034,
           moons: []
         },
         {
@@ -21737,6 +21740,9 @@
           density: "5.24 g/cm\xB3",
           massValue: 0.815,
           angle: 0.87,
+          inc: 3.39,
+          lan: 76.68,
+          tilt: 177.36,
           moons: []
         },
         {
@@ -21752,8 +21758,11 @@
           density: "5.51 g/cm\xB3",
           massValue: 1,
           angle: 3.14,
+          inc: 0,
+          lan: 0,
+          tilt: 23.44,
           moons: [
-            { name: "The Moon", r: 2, c: 11184810, dist: 28, speed: 0.013, m: "7.347 \xD7 10\xB2\xB2 kg", mr: "~ 0.0123 Earths", ir: "1,737 km", d: "3.34 g/cm\xB3" }
+            { name: "The Moon", r: 2, c: 11184810, dist: 28, speed: 0.013, m: "7.347 \xD7 10\xB2\xB2 kg", mr: "~ 0.0123 Earths", ir: "1,737 km", d: "3.34 g/cm\xB3", inc: 5.14, lan: 125.08, tilt: 1.54 }
           ]
         },
         {
@@ -21769,9 +21778,12 @@
           density: "3.93 g/cm\xB3",
           massValue: 0.107,
           angle: 2.09,
+          inc: 1.85,
+          lan: 49.56,
+          tilt: 25.19,
           moons: [
-            { name: "Phobos", r: 0.4, c: 8947848, dist: 8, speed: 0.04, m: "1.065 \xD7 10\xB9\u2076 kg", mr: "< 0.0001 Earths", ir: "11.1 km", d: "1.87 g/cm\xB3" },
-            { name: "Deimos", r: 0.3, c: 6710886, dist: 12, speed: 0.02, m: "1.476 \xD7 10\xB9\u2075 kg", mr: "< 0.0001 Earths", ir: "6.2 km", d: "1.47 g/cm\xB3" }
+            { name: "Phobos", r: 0.4, c: 8947848, dist: 8, speed: 0.04, m: "1.065 \xD7 10\xB9\u2076 kg", mr: "< 0.0001 Earths", ir: "11.1 km", d: "1.87 g/cm\xB3", inc: 1.09, lan: 0, tilt: 0 },
+            { name: "Deimos", r: 0.3, c: 6710886, dist: 12, speed: 0.02, m: "1.476 \xD7 10\xB9\u2075 kg", mr: "< 0.0001 Earths", ir: "6.2 km", d: "1.47 g/cm\xB3", inc: 0.93, lan: 0, tilt: 0 }
           ]
         },
         {
@@ -21787,11 +21799,14 @@
           density: "1.33 g/cm\xB3",
           massValue: 317.8,
           angle: 1.22,
+          inc: 1.3,
+          lan: 100.46,
+          tilt: 3.13,
           moons: [
-            { name: "Io", r: 1.5, c: 16773120, dist: 30, speed: 0.03, m: "8.9 \xD7 10\xB2\xB2 kg", mr: "~ 0.015 Earths", ir: "1,821 km", d: "3.53 g/cm\xB3" },
-            { name: "Europa", r: 1.4, c: 13421772, dist: 38, speed: 0.02, m: "4.8 \xD7 10\xB2\xB2 kg", mr: "~ 0.008 Earths", ir: "1,560 km", d: "3.01 g/cm\xB3" },
-            { name: "Ganymede", r: 2.2, c: 11184810, dist: 48, speed: 0.014, m: "1.48 \xD7 10\xB2\xB3 kg", mr: "~ 0.025 Earths", ir: "2,634 km", d: "1.94 g/cm\xB3" },
-            { name: "Callisto", r: 1.9, c: 8947848, dist: 60, speed: 8e-3, m: "1.07 \xD7 10\xB2\xB3 kg", mr: "~ 0.018 Earths", ir: "2,410 km", d: "1.83 g/cm\xB3" }
+            { name: "Io", r: 1.5, c: 16773120, dist: 30, speed: 0.03, m: "8.9 \xD7 10\xB2\xB2 kg", mr: "~ 0.015 Earths", ir: "1,821 km", d: "3.53 g/cm\xB3", inc: 0.05, lan: 0, tilt: 0 },
+            { name: "Europa", r: 1.4, c: 13421772, dist: 38, speed: 0.02, m: "4.8 \xD7 10\xB2\xB2 kg", mr: "~ 0.008 Earths", ir: "1,560 km", d: "3.01 g/cm\xB3", inc: 0.47, lan: 0, tilt: 0 },
+            { name: "Ganymede", r: 2.2, c: 11184810, dist: 48, speed: 0.014, m: "1.48 \xD7 10\xB2\xB3 kg", mr: "~ 0.025 Earths", ir: "2,634 km", d: "1.94 g/cm\xB3", inc: 0.2, lan: 0, tilt: 0 },
+            { name: "Callisto", r: 1.9, c: 8947848, dist: 60, speed: 8e-3, m: "1.07 \xD7 10\xB2\xB3 kg", mr: "~ 0.018 Earths", ir: "2,410 km", d: "1.83 g/cm\xB3", inc: 0.19, lan: 0, tilt: 0 }
           ]
         },
         {
@@ -21807,14 +21822,17 @@
           density: "0.69 g/cm\xB3",
           massValue: 95.2,
           angle: 5.93,
+          inc: 2.49,
+          lan: 113.66,
+          tilt: 26.73,
           moons: [
-            { name: "Mimas", r: 0.4, c: 11184810, dist: 22, speed: 0.04, m: "3.7 \xD7 10\xB9\u2079 kg", mr: "< 0.0001 Earths", ir: "198 km", d: "1.14 g/cm\xB3" },
-            { name: "Enceladus", r: 0.5, c: 15658734, dist: 28, speed: 0.03, m: "1.08 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "252 km", d: "1.61 g/cm\xB3" },
-            { name: "Tethys", r: 0.7, c: 13421772, dist: 35, speed: 0.024, m: "6.1 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "531 km", d: "0.98 g/cm\xB3" },
-            { name: "Dione", r: 0.8, c: 12303291, dist: 43, speed: 0.018, m: "1.1 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "561 km", d: "1.47 g/cm\xB3" },
-            { name: "Rhea", r: 1.1, c: 11184810, dist: 52, speed: 0.014, m: "2.3 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "763 km", d: "1.23 g/cm\xB3" },
-            { name: "Titan", r: 2.1, c: 16561180, dist: 65, speed: 0.01, m: "1.34 \xD7 10\xB2\xB3 kg", mr: "~ 0.022 Earths", ir: "2,575 km", d: "1.88 g/cm\xB3" },
-            { name: "Iapetus", r: 1, c: 8947848, dist: 85, speed: 6e-3, m: "1.8 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "734 km", d: "1.08 g/cm\xB3" }
+            { name: "Mimas", r: 0.4, c: 11184810, dist: 22, speed: 0.04, m: "3.7 \xD7 10\xB9\u2079 kg", mr: "< 0.0001 Earths", ir: "198 km", d: "1.14 g/cm\xB3", inc: 1.57, lan: 0, tilt: 0 },
+            { name: "Enceladus", r: 0.5, c: 15658734, dist: 28, speed: 0.03, m: "1.08 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "252 km", d: "1.61 g/cm\xB3", inc: 0.01, lan: 0, tilt: 0 },
+            { name: "Tethys", r: 0.7, c: 13421772, dist: 35, speed: 0.024, m: "6.1 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "531 km", d: "0.98 g/cm\xB3", inc: 1.12, lan: 0, tilt: 0 },
+            { name: "Dione", r: 0.8, c: 12303291, dist: 43, speed: 0.018, m: "1.1 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "561 km", d: "1.47 g/cm\xB3", inc: 0.02, lan: 0, tilt: 0 },
+            { name: "Rhea", r: 1.1, c: 11184810, dist: 52, speed: 0.014, m: "2.3 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "763 km", d: "1.23 g/cm\xB3", inc: 0.33, lan: 0, tilt: 0 },
+            { name: "Titan", r: 2.1, c: 16561180, dist: 65, speed: 0.01, m: "1.34 \xD7 10\xB2\xB3 kg", mr: "~ 0.022 Earths", ir: "2,575 km", d: "1.88 g/cm\xB3", inc: 0.35, lan: 0, tilt: 0 },
+            { name: "Iapetus", r: 1, c: 8947848, dist: 85, speed: 6e-3, m: "1.8 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "734 km", d: "1.08 g/cm\xB3", inc: 15.47, lan: 0, tilt: 0 }
           ]
         },
         {
@@ -21830,10 +21848,13 @@
           density: "1.27 g/cm\xB3",
           massValue: 14.5,
           angle: 0.96,
+          inc: 0.77,
+          lan: 74.01,
+          tilt: 97.77,
           moons: [
-            { name: "Ariel", r: 0.8, c: 11184810, dist: 20, speed: 0.02, m: "1.3 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "579 km", d: "1.67 g/cm\xB3" },
-            { name: "Titania", r: 1, c: 11184810, dist: 28, speed: 0.016, m: "3.5 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "788 km", d: "1.71 g/cm\xB3" },
-            { name: "Oberon", r: 0.9, c: 10066329, dist: 36, speed: 0.012, m: "3.0 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "761 km", d: "1.63 g/cm\xB3" }
+            { name: "Ariel", r: 0.8, c: 11184810, dist: 20, speed: 0.02, m: "1.3 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "579 km", d: "1.67 g/cm\xB3", inc: 0.26, lan: 0, tilt: 0 },
+            { name: "Titania", r: 1, c: 11184810, dist: 28, speed: 0.016, m: "3.5 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "788 km", d: "1.71 g/cm\xB3", inc: 0.34, lan: 0, tilt: 0 },
+            { name: "Oberon", r: 0.9, c: 10066329, dist: 36, speed: 0.012, m: "3.0 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "761 km", d: "1.63 g/cm\xB3", inc: 0.06, lan: 0, tilt: 0 }
           ]
         },
         {
@@ -21849,8 +21870,11 @@
           density: "1.64 g/cm\xB3",
           massValue: 17.1,
           angle: 6.1,
+          inc: 1.77,
+          lan: 131.78,
+          tilt: 28.32,
           moons: [
-            { name: "Triton", r: 1.3, c: 14540253, dist: 25, speed: 0.018, m: "2.1 \xD7 10\xB2\xB2 kg", mr: "~ 0.0035 Earths", ir: "1,353 km", d: "2.06 g/cm\xB3" }
+            { name: "Triton", r: 1.3, c: 14540253, dist: 25, speed: 0.018, m: "2.1 \xD7 10\xB2\xB2 kg", mr: "~ 0.0035 Earths", ir: "1,353 km", d: "2.06 g/cm\xB3", inc: 156.88, lan: 0, tilt: 0 }
           ]
         },
         {
@@ -21866,8 +21890,11 @@
           density: "1.85 g/cm\xB3",
           massValue: 2e-3,
           angle: 2.5,
+          inc: 17.16,
+          lan: 110.29,
+          tilt: 122.53,
           moons: [
-            { name: "Charon", r: 1.2, c: 11184810, dist: 15, speed: 0.024, m: "1.58 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "606 km", d: "1.71 g/cm\xB3" }
+            { name: "Charon", r: 1.2, c: 11184810, dist: 15, speed: 0.024, m: "1.58 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "606 km", d: "1.71 g/cm\xB3", inc: 0, lan: 0, tilt: 0 }
           ]
         },
         {
@@ -21883,6 +21910,9 @@
           density: "2.16 g/cm\xB3",
           massValue: 2e-4,
           angle: 4,
+          inc: 10.59,
+          lan: 80.33,
+          tilt: 4,
           moons: []
         },
         {
@@ -21898,6 +21928,9 @@
           density: "3.46 g/cm\xB3",
           massValue: 0.05,
           angle: 5.5,
+          inc: 7.14,
+          lan: 103.85,
+          tilt: 29,
           moons: []
         }
       ];
@@ -22561,6 +22594,9 @@
           this.physMass = data.massValue || 1;
           this.angle = data.angle || 0;
           this.textureKey = data.textureKey || data.name;
+          this.inc = (data.inc || 0) * (Math.PI / 180);
+          this.lan = (data.lan || 0) * (Math.PI / 180);
+          this.tilt = (data.tilt || 0) * (Math.PI / 180);
           this.mesh = this.createMesh();
           this.orbitObj = this.createOrbitObject();
           this.orbitLine = this.createOrbitLine();
@@ -22573,6 +22609,8 @@
             0,
             this.orbitRadius * Math.sin(this.angle)
           );
+          this.pos.applyAxisAngle(new Vector3(1, 0, 0), this.inc);
+          this.pos.applyAxisAngle(new Vector3(0, 1, 0), this.lan);
           this.orbitObj.position.copy(this.pos);
           const vMag = Math.sqrt(G * SUN_MASS / this.orbitRadius);
           this.vel = new Vector3(
@@ -22580,6 +22618,8 @@
             0,
             vMag * Math.cos(this.angle)
           );
+          this.vel.applyAxisAngle(new Vector3(1, 0, 0), this.inc);
+          this.vel.applyAxisAngle(new Vector3(0, 1, 0), this.lan);
           this.destroyed = false;
           this.satellites = [];
           this.physicsEngine.addBody(this);
@@ -22606,7 +22646,11 @@
         }
         createOrbitObject() {
           const obj = new Object3D();
-          obj.add(this.mesh);
+          this.tiltGroup = new Object3D();
+          this.tiltGroup.rotation.order = "ZYX";
+          this.tiltGroup.rotation.z = this.tilt;
+          this.tiltGroup.add(this.mesh);
+          obj.add(this.tiltGroup);
           this.scene.add(obj);
           return obj;
         }
@@ -22625,7 +22669,9 @@
             opacity: finalOpacity
           });
           const line = new Mesh(ringGeo, ringMat);
-          line.position.y = -0.2;
+          line.rotation.order = "YXZ";
+          line.rotation.y = this.lan;
+          line.rotation.x = this.inc;
           line.renderOrder = 999;
           this.scene.add(line);
           return line;
@@ -22710,9 +22756,28 @@
           this.orbitRadius = data.dist;
           this.speed = data.speed;
           this.textureKey = data.textureKey || data.name;
+          this.inc = (data.inc || 0) * (Math.PI / 180);
+          this.lan = (data.lan || 0) * (Math.PI / 180);
+          this.tilt = (data.tilt || 0) * (Math.PI / 180);
           this.mesh = this.createMesh();
-          this.orbitObj = this.createOrbitObject();
+          this.orbitObj = new Object3D();
+          this.planeGroup = new Object3D();
+          this.planeGroup.rotation.order = "YXZ";
+          this.planeGroup.rotation.y = this.lan;
+          this.planeGroup.rotation.x = this.inc;
+          this.orbitObj.add(this.planeGroup);
+          this.spinGroup = new Object3D();
+          this.planeGroup.add(this.spinGroup);
+          this.translationGroup = new Object3D();
+          this.translationGroup.position.x = this.orbitRadius;
+          this.spinGroup.add(this.translationGroup);
+          this.tiltGroup = new Object3D();
+          this.tiltGroup.rotation.order = "ZYX";
+          this.tiltGroup.rotation.z = this.tilt;
+          this.translationGroup.add(this.tiltGroup);
+          this.tiltGroup.add(this.mesh);
           this.orbitLine = this.createOrbitLine();
+          this.planeGroup.add(this.orbitLine);
           this.planet.satelliteAnchor.add(this.orbitObj);
           this.planet.satellites.push(this);
         }
@@ -22734,13 +22799,7 @@
             density: this.data.d,
             textureKey: this.textureKey
           };
-          mesh.position.x = this.orbitRadius;
           return mesh;
-        }
-        createOrbitObject() {
-          const obj = new Object3D();
-          obj.add(this.mesh);
-          return obj;
         }
         createOrbitLine() {
           const segments = Math.max(128, Math.floor(this.orbitRadius * 20));
@@ -22752,9 +22811,7 @@
             transparent: true,
             opacity: 0.15
           });
-          const line = new Mesh(ringGeo, ringMat);
-          this.orbitObj.add(line);
-          return line;
+          return new Mesh(ringGeo, ringMat);
         }
       };
     }
@@ -23921,38 +23978,58 @@
           if (isSyzygy) {
             const angle = 0;
             body.angle = angle;
-            body.pos.set(
+            const pos = new Vector3(
               body.orbitRadius * Math.cos(angle),
               0,
               body.orbitRadius * Math.sin(angle)
             );
+            if (body.inc !== void 0) {
+              pos.applyAxisAngle(new Vector3(1, 0, 0), body.inc);
+              pos.applyAxisAngle(new Vector3(0, 1, 0), body.lan);
+            }
+            body.pos.copy(pos);
             const vMag = Math.sqrt(G * SUN_MASS / body.orbitRadius);
-            body.vel.set(
+            const vel = new Vector3(
               -vMag * Math.sin(angle),
               0,
               vMag * Math.cos(angle)
             );
+            if (body.inc !== void 0) {
+              vel.applyAxisAngle(new Vector3(1, 0, 0), body.inc);
+              vel.applyAxisAngle(new Vector3(0, 1, 0), body.lan);
+            }
+            body.vel.copy(vel);
             body.orbitObj.position.copy(body.pos);
             if (body.satellites && body.satellites.length > 0) {
               body.satellites.forEach((moon) => {
-                moon.orbitObj.rotation.y = 0;
+                moon.spinGroup.rotation.y = 0;
               });
             }
           } else if (planetConfig[body.name]) {
             const config = planetConfig[body.name];
             const angle = (config.L0 + config.motion * diffDays) % 360 * (Math.PI / 180);
             body.angle = angle;
-            body.pos.set(
+            const pos = new Vector3(
               body.orbitRadius * Math.cos(angle),
               0,
               body.orbitRadius * Math.sin(angle)
             );
+            if (body.inc !== void 0) {
+              pos.applyAxisAngle(new Vector3(1, 0, 0), body.inc);
+              pos.applyAxisAngle(new Vector3(0, 1, 0), body.lan);
+            }
+            body.pos.copy(pos);
             const vMag = Math.sqrt(G * SUN_MASS / body.orbitRadius);
-            body.vel.set(
+            const vel = new Vector3(
               -vMag * Math.sin(angle),
               0,
               vMag * Math.cos(angle)
             );
+            if (body.inc !== void 0) {
+              vel.applyAxisAngle(new Vector3(1, 0, 0), body.inc);
+              vel.applyAxisAngle(new Vector3(0, 1, 0), body.lan);
+            }
+            body.vel.copy(vel);
             body.orbitObj.position.copy(body.pos);
           }
         });
@@ -24016,7 +24093,7 @@
       }
       celestialBodies.forEach((body) => {
         if (!body.isAsteroid) {
-          body.orbitObj.rotation.y = Math.random() * Math.PI * 2;
+          body.mesh.rotation.y = Math.random() * Math.PI * 2;
         }
       });
       var clock = new Clock();
@@ -24403,7 +24480,7 @@
             body.mesh.rotation.y += body.rotSpeed * scriptedDt;
             const sats = body.satellites;
             for (let k = 0; k < sats.length; k++) {
-              sats[k].orbitObj.rotation.y += sats[k].speed * scriptedDt;
+              sats[k].spinGroup.rotation.y += sats[k].speed * scriptedDt;
               sats[k].mesh.rotation.y += sats[k].speed * scriptedDt;
             }
           }

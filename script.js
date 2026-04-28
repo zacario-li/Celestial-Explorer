@@ -465,25 +465,35 @@ function syncPlanetsToDate(targetDate = null) {
             // Syzygy Easter Egg: Align all planets and moons
             const angle = 0;
             body.angle = angle;
-            body.pos.set(
+            const pos = new THREE.Vector3(
                 body.orbitRadius * Math.cos(angle),
                 0,
                 body.orbitRadius * Math.sin(angle)
             );
+            if (body.inc !== undefined) {
+                pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inc);
+                pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), body.lan);
+            }
+            body.pos.copy(pos);
             
             const vMag = Math.sqrt((G * SUN_MASS) / body.orbitRadius);
-            body.vel.set(
+            const vel = new THREE.Vector3(
                 -vMag * Math.sin(angle),
                 0,
                 vMag * Math.cos(angle)
             );
+            if (body.inc !== undefined) {
+                vel.applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inc);
+                vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), body.lan);
+            }
+            body.vel.copy(vel);
             
             body.orbitObj.position.copy(body.pos);
 
             // Align satellites
             if (body.satellites && body.satellites.length > 0) {
                 body.satellites.forEach(moon => {
-                    moon.orbitObj.rotation.y = 0;
+                    moon.spinGroup.rotation.y = 0;
                 });
             }
         } else if (planetConfig[body.name]) {
@@ -492,19 +502,29 @@ function syncPlanetsToDate(targetDate = null) {
             const angle = ((config.L0 + config.motion * diffDays) % 360) * (Math.PI / 180);
             
             body.angle = angle;
-            body.pos.set(
+            const pos = new THREE.Vector3(
                 body.orbitRadius * Math.cos(angle),
                 0,
                 body.orbitRadius * Math.sin(angle)
             );
+            if (body.inc !== undefined) {
+                pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inc);
+                pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), body.lan);
+            }
+            body.pos.copy(pos);
             
             // Recompute velocity to maintain stable orbit at new position
             const vMag = Math.sqrt((G * SUN_MASS) / body.orbitRadius);
-            body.vel.set(
+            const vel = new THREE.Vector3(
                 -vMag * Math.sin(angle),
                 0,
                 vMag * Math.cos(angle)
             );
+            if (body.inc !== undefined) {
+                vel.applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inc);
+                vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), body.lan);
+            }
+            body.vel.copy(vel);
             
             // Sync visual representation
             body.orbitObj.position.copy(body.pos);
@@ -594,7 +614,7 @@ if (earthRef) {
 // Randomize starting rotations
 celestialBodies.forEach(body => {
     if (!body.isAsteroid) {
-        body.orbitObj.rotation.y = Math.random() * Math.PI * 2;
+        body.mesh.rotation.y = Math.random() * Math.PI * 2;
     }
 });
 
@@ -1110,7 +1130,7 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
             body.mesh.rotation.y += body.rotSpeed * scriptedDt;
             const sats = body.satellites;
             for (let k = 0; k < sats.length; k++) {
-                sats[k].orbitObj.rotation.y += sats[k].speed * scriptedDt;
+                sats[k].spinGroup.rotation.y += sats[k].speed * scriptedDt;
                 sats[k].mesh.rotation.y += sats[k].speed * scriptedDt;
             }
         }
