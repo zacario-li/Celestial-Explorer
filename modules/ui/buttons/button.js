@@ -12,7 +12,7 @@ export class Button {
         this.options = options; // e.g. stateKey, labels, background colors
 
         this.element.addEventListener('click', (e) => {
-            if (this.onClick) this.onClick(e);
+            if (this.onClick) this.onClick.call(this.element, e);
             this.update();
         });
 

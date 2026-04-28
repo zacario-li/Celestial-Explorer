@@ -23290,7 +23290,7 @@
           this.onClick = onClick;
           this.options = options;
           this.element.addEventListener("click", (e) => {
-            if (this.onClick) this.onClick(e);
+            if (this.onClick) this.onClick.call(this.element, e);
             this.update();
           });
           this.update();
@@ -23452,10 +23452,13 @@
 
   // modules/ui/buttons/toggles.js
   function initHighVisButton() {
-    return new Button("highvis-button", function() {
+    return new Button("highvis-button", () => {
       state.isHighVis = !state.isHighVis;
-      this.classList.toggle("active", state.isHighVis);
       highVisLight.intensity = state.isHighVis ? 2.5 : 0;
+    }, {
+      stateKey: "isHighVis",
+      stateObject: state,
+      activeClass: "active"
     });
   }
   function initAutoRotateButton() {
@@ -23468,16 +23471,16 @@
     });
   }
   function initHoverZonesButton(celestialBodies) {
-    return new Button("hoverzones-button", function() {
+    return new Button("hoverzones-button", () => {
       state.showHoverZones = !state.showHoverZones;
-      this.classList.toggle("active", state.showHoverZones);
       celestialBodies.forEach((b) => {
         if (b.captureMesh) b.captureMesh.visible = state.showHoverZones;
       });
     }, {
       stateKey: "showHoverZones",
       stateObject: state,
-      labels: { on: "hoverZonesOn", off: "hoverZonesOff" }
+      labels: { on: "hoverZonesOn", off: "hoverZonesOff" },
+      activeClass: "active"
     });
   }
   function initVenusAtmButton(celestialBodies) {
@@ -23511,8 +23514,20 @@
     }
   });
 
+  // modules/ui/buttons/syncTimeButton.js
+  function initSyncTimeButton(syncFn) {
+    return new Button("sync-time-button", () => {
+      if (syncFn) syncFn();
+    });
+  }
+  var init_syncTimeButton = __esm({
+    "modules/ui/buttons/syncTimeButton.js"() {
+      init_button();
+    }
+  });
+
   // modules/ui/buttons/buttonInitializer.js
-  function initAllButtons(scene2, camera2, controls, headlight, targetVec, physicsEngine, asteroidBeltMesh, kuiperBeltMesh, celestialBodies) {
+  function initAllButtons(scene2, camera2, controls, headlight, targetVec, physicsEngine, asteroidBeltMesh, kuiperBeltMesh, celestialBodies, options = {}) {
     initPauseButton();
     initLangButton();
     initPilotButton(scene2, camera2, controls, headlight, targetVec);
@@ -23523,6 +23538,7 @@
     initAutoRotateButton();
     initHoverZonesButton(celestialBodies);
     initVenusAtmButton(celestialBodies);
+    initSyncTimeButton(options.syncFn);
   }
   var init_buttonInitializer = __esm({
     "modules/ui/buttons/buttonInitializer.js"() {
@@ -23532,6 +23548,7 @@
       init_overviewButton();
       init_asteroidBeltButton();
       init_toggles();
+      init_syncTimeButton();
     }
   });
 
@@ -24073,7 +24090,12 @@
       });
       var asteroidBelt = new AsteroidBelt(4e3, 550, 750, "asteroid", physicsEngine, scene);
       var kuiperBelt = new AsteroidBelt(8e3, 3200, 5e3, "kuiper", physicsEngine, scene);
-      initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBelt.instancedMesh, kuiperBelt.instancedMesh, celestialBodies);
+      initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBelt.instancedMesh, kuiperBelt.instancedMesh, celestialBodies, {
+        syncFn: () => {
+          const timeStr = syncPlanetsToDate();
+          showToast(`${t("syncTimeMsg")} ${timeStr}`);
+        }
+      });
       initSpawnManager(physicsEngine, scene, celestialBodies, navList);
       if (earthRef) {
         const earthAtmoGeo = new SphereGeometry(8.8, 32, 32);

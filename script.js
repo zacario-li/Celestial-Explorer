@@ -585,7 +585,12 @@ const asteroidBelt = new AsteroidBelt(4000, 550, 750, 'asteroid', physicsEngine,
 const kuiperBelt = new AsteroidBelt(8000, 3200, 5000, 'kuiper', physicsEngine, scene);
 
 // UI Manager
-initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBelt.instancedMesh, kuiperBelt.instancedMesh, celestialBodies);
+initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBelt.instancedMesh, kuiperBelt.instancedMesh, celestialBodies, {
+    syncFn: () => {
+        const timeStr = syncPlanetsToDate();
+        showToast(`${t('syncTimeMsg')} ${timeStr}`);
+    }
+});
 initSpawnManager(physicsEngine, scene, celestialBodies, navList);
 
 // Earth Atmosphere & Spaceship

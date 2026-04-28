@@ -4,10 +4,13 @@ import { highVisLight } from '../../sceneSetup.js';
 import { applyLanguage } from '../../ui.js';
 
 export function initHighVisButton() {
-    return new Button('highvis-button', function() {
+    return new Button('highvis-button', () => {
         state.isHighVis = !state.isHighVis;
-        this.classList.toggle('active', state.isHighVis);
         highVisLight.intensity = state.isHighVis ? 2.5 : 0;
+    }, {
+        stateKey: 'isHighVis',
+        stateObject: state,
+        activeClass: 'active'
     });
 }
 
@@ -22,16 +25,16 @@ export function initAutoRotateButton() {
 }
 
 export function initHoverZonesButton(celestialBodies) {
-    return new Button('hoverzones-button', function() {
+    return new Button('hoverzones-button', () => {
         state.showHoverZones = !state.showHoverZones;
-        this.classList.toggle('active', state.showHoverZones);
         celestialBodies.forEach(b => {
             if (b.captureMesh) b.captureMesh.visible = state.showHoverZones;
         });
     }, {
         stateKey: 'showHoverZones',
         stateObject: state,
-        labels: { on: 'hoverZonesOn', off: 'hoverZonesOff' }
+        labels: { on: 'hoverZonesOn', off: 'hoverZonesOff' },
+        activeClass: 'active'
     });
 }
 

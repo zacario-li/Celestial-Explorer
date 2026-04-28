@@ -10,8 +10,9 @@ import {
     initVenusAtmButton, 
     initKuiperBeltButton 
 } from './toggles.js';
+import { initSyncTimeButton } from './syncTimeButton.js';
 
-export function initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBeltMesh, kuiperBeltMesh, celestialBodies) {
+export function initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBeltMesh, kuiperBeltMesh, celestialBodies, options = {}) {
     initPauseButton();
     initLangButton();
     initPilotButton(scene, camera, controls, headlight, targetVec);
@@ -22,4 +23,5 @@ export function initAllButtons(scene, camera, controls, headlight, targetVec, ph
     initAutoRotateButton();
     initHoverZonesButton(celestialBodies);
     initVenusAtmButton(celestialBodies);
+    initSyncTimeButton(options.syncFn);
 }
