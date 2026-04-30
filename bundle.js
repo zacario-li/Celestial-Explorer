@@ -22823,11 +22823,6 @@
           } else {
             this.mesh.scale.set(1, 1, 1);
           }
-          if (this.satellites) {
-            this.satellites.forEach((moon) => {
-              if (moon.updateScale) moon.updateScale(isRealistic);
-            });
-          }
         }
       };
     }
@@ -23619,6 +23614,7 @@
       if (sunWrapper && sunWrapper.updateScale) {
         sunWrapper.updateScale(state.isRealisticScale);
       }
+      state.isTransitioning = true;
     }, {
       stateKey: "isRealisticScale",
       stateObject: state,
@@ -24681,8 +24677,10 @@
           camera.position.add(_targetDelta);
           if (state.isTransitioning) {
             controls.autoRotate = false;
-            const radius = state.focusedBody ? state.focusedBody.userData.radius || 10 : 40;
-            const dist = state.isOverview ? 6e3 : Math.max(radius * 3.5, 12);
+            const mesh = state.focusedBody;
+            const radius = mesh ? mesh.userData.radius * mesh.scale.x || 10 : 40;
+            const minDist = state.isRealisticScale ? radius * 2.5 : 12;
+            const dist = state.isOverview ? 6e3 : Math.max(radius * 3.5, minDist);
             _camDir.subVectors(camera.position, controls.target).normalize();
             if (state.isOverview && Math.abs(_camDir.y) < 0.3) {
               _camDir.y = 0.5;

@@ -71,6 +71,7 @@ export function initRealisticScaleButton(celestialBodies, sunWrapper) {
         if (sunWrapper && sunWrapper.updateScale) {
             sunWrapper.updateScale(state.isRealisticScale);
         }
+        state.isTransitioning = true;
     }, {
         stateKey: 'isRealisticScale',
         stateObject: state,

@@ -1219,8 +1219,10 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
 
         if (state.isTransitioning) {
             controls.autoRotate = false;
-            const radius = state.focusedBody ? (state.focusedBody.userData.radius || 10) : 40;
-            const dist = state.isOverview ? 6000 : Math.max(radius * 3.5, 12);
+            const mesh = state.focusedBody;
+            const radius = mesh ? (mesh.userData.radius * mesh.scale.x || 10) : 40;
+            const minDist = state.isRealisticScale ? radius * 2.5 : 12;
+            const dist = state.isOverview ? 6000 : Math.max(radius * 3.5, minDist);
 
             _camDir.subVectors(camera.position, controls.target).normalize();
 
