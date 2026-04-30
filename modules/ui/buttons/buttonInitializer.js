@@ -8,7 +8,8 @@ import {
     initAutoRotateButton, 
     initHoverZonesButton, 
     initVenusAtmButton, 
-    initKuiperBeltButton 
+    initKuiperBeltButton,
+    initRealisticScaleButton
 } from './toggles.js';
 import { initSyncTimeButton } from './syncTimeButton.js';
 
@@ -23,5 +24,6 @@ export function initAllButtons(scene, camera, controls, headlight, targetVec, ph
     initAutoRotateButton();
     initHoverZonesButton(celestialBodies);
     initVenusAtmButton(celestialBodies);
+    initRealisticScaleButton(celestialBodies, options.sunWrapper);
     initSyncTimeButton(options.syncFn);
 }

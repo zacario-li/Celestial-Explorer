@@ -19,6 +19,8 @@ export class Planet {
         this.inc = (data.inc || 0) * (Math.PI / 180);
         this.lan = (data.lan || 0) * (Math.PI / 180);
         this.tilt = (data.tilt || 0) * (Math.PI / 180);
+        this.ecc = data.ecc || 0;
+        this.w = (data.w || 0) * (Math.PI / 180);
 
         this.mesh = this.createMesh();
         this.orbitObj = this.createOrbitObject();
@@ -28,22 +30,36 @@ export class Planet {
         this.captureMesh = this.createCaptureMesh();
         this.atmMesh = this.createAtmosphere();
 
-        // Physics State
-        this.pos = new THREE.Vector3(
-            this.orbitRadius * Math.cos(this.angle),
-            0,
-            this.orbitRadius * Math.sin(this.angle)
-        );
+        // Physics State (Elliptical Initial State)
+        const a = this.orbitRadius;
+        const e = this.ecc;
+        
+        // Initial Mean Anomaly (using data.angle as a fallback for M if L0 isn't available, 
+        // though script.js usually handles the real sync)
+        const M = this.angle; 
+        
+        // Simple Kepler solver for initial state
+        let E = M;
+        for (let i = 0; i < 6; i++) {
+            E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+        }
+
+        const x_orb = a * (Math.cos(E) - e);
+        const z_orb = a * Math.sqrt(1 - e * e) * Math.sin(E);
+        
+        this.pos = new THREE.Vector3(x_orb, 0, z_orb);
+        this.pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.w);
         this.pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.inc);
         this.pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.lan);
         this.orbitObj.position.copy(this.pos);
 
-        const vMag = Math.sqrt((G * SUN_MASS) / this.orbitRadius);
+        const vFactor = Math.sqrt((G * SUN_MASS) / a) / (1 - e * Math.cos(E));
         this.vel = new THREE.Vector3(
-            -vMag * Math.sin(this.angle),
+            -vFactor * Math.sin(E),
             0,
-            vMag * Math.cos(this.angle)
+            vFactor * Math.sqrt(1 - e * e) * Math.cos(E)
         );
+        this.vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.w);
         this.vel.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.inc);
         this.vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.lan);
 
@@ -89,27 +105,36 @@ export class Planet {
     }
 
     createOrbitLine() {
-        const baseThickness = 1.0 / 250;
-        const thicknessScale = Math.max(0, (this.orbitRadius / 12) * 0.006);
-        const finalThickness = baseThickness + thicknessScale;
-        const finalOpacity = Math.min(0.15, 0.05 + (this.orbitRadius / 20));
-        
-        const segments = Math.max(128, Math.floor(this.orbitRadius * 1.5));
-        const ringGeo = new THREE.RingGeometry(this.orbitRadius - (finalThickness/2), this.orbitRadius + (finalThickness/2), segments);
-        ringGeo.rotateX(-Math.PI / 2);
-        
-        const ringMat = new THREE.MeshBasicMaterial({ 
+        const a = this.orbitRadius;
+        const e = this.ecc;
+        const segments = Math.max(128, Math.floor(this.orbitRadius * 0.8));
+        const points = [];
+
+        for (let i = 0; i <= segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            // Ellipse parameterization: r = a(1-e^2)/(1+e*cos(theta))
+            // But it's easier to use eccentric anomaly E:
+            // x = a(cosE - e), y = a*sqrt(1-e^2)*sinE
+            const x = a * (Math.cos(theta) - e);
+            const z = a * Math.sqrt(1 - e * e) * Math.sin(theta);
+            
+            const p = new THREE.Vector3(x, 0, z);
+            p.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.w);
+            p.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.inc);
+            p.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.lan);
+            points.push(p);
+        }
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const opacity = Math.min(0.25, 0.08 + (this.orbitRadius / 2500));
+        const material = new THREE.LineBasicMaterial({ 
             color: 0xffffff, 
-            side: THREE.DoubleSide, 
             transparent: true, 
-            opacity: finalOpacity 
+            opacity: opacity,
+            depthWrite: false 
         });
-        const line = new THREE.Mesh(ringGeo, ringMat);
         
-        line.rotation.order = 'YXZ';
-        line.rotation.y = this.lan;
-        line.rotation.x = this.inc;
-        
+        const line = new THREE.Line(geometry, material);
         line.renderOrder = 999;
         this.scene.add(line);
         return line;
@@ -141,7 +166,14 @@ export class Planet {
 
     createSatelliteAnchor() {
         const anchor = new THREE.Object3D();
-        this.orbitObj.add(anchor);
+        // For Saturn and other planets with axial tilt, major moons usually orbit 
+        // in the equatorial plane. Earth is a notable exception where the 
+        // Moon orbits closer to the ecliptic plane.
+        if (this.name === 'Earth') {
+            this.orbitObj.add(anchor);
+        } else {
+            this.tiltGroup.add(anchor);
+        }
         return anchor;
     }
 
@@ -181,5 +213,14 @@ export class Planet {
         this.mesh.add(depthMask);
         
         return atmMesh;
+    }
+
+    updateScale(isRealistic) {
+        if (isRealistic && this.data.realR) {
+            const factor = this.data.realR / this.radius;
+            this.mesh.scale.set(factor, factor, factor);
+        } else {
+            this.mesh.scale.set(1, 1, 1);
+        }
     }
 }

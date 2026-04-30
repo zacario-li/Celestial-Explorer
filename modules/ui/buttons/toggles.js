@@ -61,3 +61,19 @@ export function initKuiperBeltButton(mesh, physicsEngine) {
         labels: { on: 'kuiperBeltOn', off: 'kuiperBeltOff' }
     });
 }
+
+export function initRealisticScaleButton(celestialBodies, sunWrapper) {
+    return new Button('realistic-scale-button', () => {
+        state.isRealisticScale = !state.isRealisticScale;
+        celestialBodies.forEach(body => {
+            if (body.updateScale) body.updateScale(state.isRealisticScale);
+        });
+        if (sunWrapper && sunWrapper.updateScale) {
+            sunWrapper.updateScale(state.isRealisticScale);
+        }
+    }, {
+        stateKey: 'isRealisticScale',
+        stateObject: state,
+        labels: { on: 'realisticScaleOn', off: 'realisticScaleOff' }
+    });
+}

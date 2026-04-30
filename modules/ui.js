@@ -122,6 +122,7 @@ export async function applyLanguage() {
     safeSetText('pause-button', state.isPaused ? 'resume' : 'pause');
     safeSetText('autorotate-button', state.isAutoRotate ? 'autoRotateOn' : 'autoRotateOff');
     safeSetText('venus-atm-button', state.showVenusAtmosphere ? 'venusAtmOn' : 'venusAtmOff');
+    safeSetText('realistic-scale-button', state.isRealisticScale ? 'realisticScaleOn' : 'realisticScaleOff');
 
     document.querySelectorAll('.nav-item').forEach(item => {
         const engName = item.dataset.engName;

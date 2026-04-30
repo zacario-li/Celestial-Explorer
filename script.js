@@ -438,6 +438,14 @@ function updateTextureResolution() {
 const celestialBodies = [];
 let earthRef = null;
 
+function keplerSolver(M, e, iter = 8) {
+    let E = M;
+    for (let i = 0; i < iter; i++) {
+        E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    }
+    return E;
+}
+
 function syncPlanetsToDate(targetDate = null) {
     const now = targetDate || new Date();
     console.log(`SYNC: Aligning planets with date/time: ${now.toString()}`);
@@ -445,16 +453,6 @@ function syncPlanetsToDate(targetDate = null) {
     const J2000 = new Date('2000-01-01T12:00:00Z');
     const diffDays = (now - J2000) / (1000 * 60 * 60 * 24);
 
-    const planetConfig = {
-        'Mercury': { L0: 252.25, motion: 4.0923 },
-        'Venus':   { L0: 181.98, motion: 1.6021 },
-        'Earth':   { L0: 100.46, motion: 0.9856 },
-        'Mars':    { L0: 355.45, motion: 0.5241 },
-        'Jupiter': { L0: 34.40,  motion: 0.0831 },
-        'Saturn':  { L0: 49.94,  motion: 0.0335 },
-        'Uranus':  { L0: 313.23, motion: 0.0117 },
-        'Neptune': { L0: 304.88, motion: 0.0060 }
-    };
 
     const isSyzygy = now.getFullYear() > 9999;
 
@@ -496,30 +494,47 @@ function syncPlanetsToDate(targetDate = null) {
                     moon.spinGroup.rotation.y = 0;
                 });
             }
-        } else if (planetConfig[body.name]) {
-            const config = planetConfig[body.name];
-            // Calculate and map to simulation angle (Radians)
-            const angle = ((config.L0 + config.motion * diffDays) % 360) * (Math.PI / 180);
+        } else if (body.data.L0 !== undefined) {
+            const config = body.data;
+            const ecc = config.ecc || 0;
+            const w = (config.w || 0) * (Math.PI / 180);
             
-            body.angle = angle;
-            const pos = new THREE.Vector3(
-                body.orbitRadius * Math.cos(angle),
-                0,
-                body.orbitRadius * Math.sin(angle)
-            );
+            // Calculate Mean Longitude (L) in radians
+            const L = ((config.L0 + config.motion * diffDays) % 360) * (Math.PI / 180);
+            
+            // Mean Anomaly (M) = L - w
+            const M = L - w;
+            
+            // Solve Kepler's Equation for Eccentric Anomaly (E)
+            const E = keplerSolver(M, ecc);
+            
+            // Orbital Plane Coordinates
+            const a = body.orbitRadius;
+            const x_orb = a * (Math.cos(E) - ecc);
+            const z_orb = a * Math.sqrt(1 - ecc * ecc) * Math.sin(E);
+            
+            // Position Vector
+            const pos = new THREE.Vector3(x_orb, 0, z_orb);
+            
+            // Apply rotations: w (Perihelion), inc (Inclination), lan (Ascending Node)
+            pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), w); // Rotate to Perihelion
             if (body.inc !== undefined) {
                 pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inc);
                 pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), body.lan);
             }
             body.pos.copy(pos);
             
-            // Recompute velocity to maintain stable orbit at new position
-            const vMag = Math.sqrt((G * SUN_MASS) / body.orbitRadius);
+            // Recompute velocity for elliptical orbit
+            // v = sqrt(GM/a) * 1/(1-e*cosE) * [-sinE, 0, sqrt(1-e^2)*cosE]
+            const vFactor = Math.sqrt((G * SUN_MASS) / a) / (1 - ecc * Math.cos(E));
             const vel = new THREE.Vector3(
-                -vMag * Math.sin(angle),
+                -vFactor * Math.sin(E),
                 0,
-                vMag * Math.cos(angle)
+                vFactor * Math.sqrt(1 - ecc * ecc) * Math.cos(E)
             );
+            
+            // Apply same rotations to velocity vector
+            vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), w);
             if (body.inc !== undefined) {
                 vel.applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inc);
                 vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), body.lan);
@@ -585,11 +600,29 @@ const asteroidBelt = new AsteroidBelt(4000, 550, 750, 'asteroid', physicsEngine,
 const kuiperBelt = new AsteroidBelt(8000, 3200, 5000, 'kuiper', physicsEngine, scene);
 
 // UI Manager
+const sunWrapper = {
+    updateScale: (isRealistic) => {
+        if (isRealistic) {
+            const factor = 0.011625; // 0.465 / 40
+            sun.scale.set(factor, factor, factor);
+            glowSphere.scale.set(factor, factor, factor);
+            glowSphere2.scale.set(factor, factor, factor);
+            glowSphere3.scale.set(factor, factor, factor);
+        } else {
+            sun.scale.set(1, 1, 1);
+            glowSphere.scale.set(1, 1, 1);
+            glowSphere2.scale.set(1, 1, 1);
+            glowSphere3.scale.set(1, 1, 1);
+        }
+    }
+};
+
 initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBelt.instancedMesh, kuiperBelt.instancedMesh, celestialBodies, {
     syncFn: () => {
         const timeStr = syncPlanetsToDate();
         showToast(`${t('syncTimeMsg')} ${timeStr}`);
-    }
+    },
+    sunWrapper: sunWrapper
 });
 initSpawnManager(physicsEngine, scene, celestialBodies, navList);
 

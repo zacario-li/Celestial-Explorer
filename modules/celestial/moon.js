@@ -80,4 +80,18 @@ export class Moon {
         });
         return new THREE.Mesh(ringGeo, ringMat);
     }
+
+    updateScale(isRealistic) {
+        if (isRealistic && this.data.realR && this.data.realDist) {
+            const rFactor = this.data.realR / this.radius;
+            this.mesh.scale.set(rFactor, rFactor, rFactor);
+            this.translationGroup.position.x = this.data.realDist;
+            const distFactor = this.data.realDist / this.orbitRadius;
+            this.orbitLine.scale.set(distFactor, distFactor, distFactor);
+        } else {
+            this.mesh.scale.set(1, 1, 1);
+            this.translationGroup.position.x = this.orbitRadius;
+            this.orbitLine.scale.set(1, 1, 1);
+        }
+    }
 }
