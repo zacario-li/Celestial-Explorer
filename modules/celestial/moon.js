@@ -55,6 +55,8 @@ export class Moon {
             metalness: 0.1
         });
         const mesh = new THREE.Mesh(geo, mat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         mesh.userData = { 
             isFocusable: true, 
             radius: this.radius, 

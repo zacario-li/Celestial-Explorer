@@ -215,8 +215,9 @@ const simSpeedLabel = document.getElementById('sim-speed-label');
 if (simSpeedSlider) {
     simSpeedSlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
-        state.simSpeedMultiplier = val;
-        if (simSpeedLabel) simSpeedLabel.textContent = `${t('simSpeed')}: ${val}x`;
+        const actualSpeed = Math.floor(Math.pow(10, val / 100));
+        state.simSpeedMultiplier = actualSpeed;
+        if (simSpeedLabel) simSpeedLabel.textContent = `${t('simSpeed')}: ${actualSpeed}x`;
     });
 }
 
@@ -556,7 +557,8 @@ function syncPlanetsToDate(targetDate = null) {
 
 // Navigation Setup
 const navList = document.getElementById('nav-list');
-function addNavItem(name, mesh, engName) {
+
+function createNavItem(name, mesh, engName) {
     const navItem = document.createElement('div');
     navItem.className = 'nav-item';
     if (engName === 'The Sun') navItem.className += ' active';
@@ -571,7 +573,59 @@ function addNavItem(name, mesh, engName) {
         updateTextureResolution();
         document.getElementById('overview-button').textContent = t('overviewOn');
     };
-    navList.appendChild(navItem);
+    return navItem;
+}
+
+function addNavItem(name, mesh, engName, parentContainer = navList, hasMoons = false) {
+    if (hasMoons) {
+        const group = document.createElement('div');
+        group.className = 'nav-group';
+        group.style.display = 'flex';
+        group.style.flexDirection = 'column';
+        
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        
+        const item = createNavItem(name, mesh, engName);
+        item.style.flex = '1';
+        header.appendChild(item);
+        
+        const toggleBtn = document.createElement('button');
+        toggleBtn.textContent = '>';
+        toggleBtn.style.background = 'none';
+        toggleBtn.style.border = 'none';
+        toggleBtn.style.color = '#4fa6ff';
+        toggleBtn.style.cursor = 'pointer';
+        toggleBtn.style.padding = '0 10px';
+        toggleBtn.style.fontSize = '1.2rem';
+        toggleBtn.style.outline = 'none';
+        
+        const moonsContainer = document.createElement('div');
+        moonsContainer.className = 'nav-moons';
+        moonsContainer.style.display = 'none';
+        moonsContainer.style.paddingLeft = '15px';
+        moonsContainer.style.flexDirection = 'column';
+        
+        toggleBtn.onclick = (e) => {
+            e.stopPropagation();
+            const isHidden = moonsContainer.style.display === 'none';
+            moonsContainer.style.display = isHidden ? 'flex' : 'none';
+            toggleBtn.textContent = isHidden ? '<' : '>';
+            toggleBtn.style.color = isHidden ? '#fff' : '#4fa6ff';
+            toggleBtn.style.textShadow = isHidden ? '0 0 5px #fff' : 'none';
+        };
+        
+        header.appendChild(toggleBtn);
+        group.appendChild(header);
+        group.appendChild(moonsContainer);
+        parentContainer.appendChild(group);
+        return moonsContainer;
+    } else {
+        const item = createNavItem(name, mesh, engName);
+        parentContainer.appendChild(item);
+        return null;
+    }
 }
 
 addNavItem(tName('The Sun'), sun, 'The Sun');
@@ -582,12 +636,23 @@ planetsData.forEach(d => {
     celestialBodies.push(planet);
     if (d.name === 'Earth') earthRef = planet;
 
-    addNavItem(tName(d.name), planet.mesh, d.name);
+    const hasMoons = d.moons && d.moons.length > 0;
+    const moonsContainer = addNavItem(tName(d.name), planet.mesh, d.name, navList, hasMoons);
 
     if (d.moons) {
         d.moons.forEach(m => {
             const moon = new Moon(m, planet);
             if (d.name === 'Saturn') moon.orbitObj.position.y = 0;
+            
+            if (moonsContainer) {
+                const moonItem = createNavItem(tName(m.name), moon.mesh, m.name);
+                moonItem.style.fontSize = '0.85rem';
+                moonItem.style.padding = '5px 10px';
+                moonItem.style.opacity = '0.8';
+                moonItem.style.borderLeft = '1px solid #4fa6ff';
+                moonItem.style.marginLeft = '5px';
+                moonsContainer.appendChild(moonItem);
+            }
         });
     }
 

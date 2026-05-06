@@ -43,12 +43,12 @@ export const planetsData = [
         name: 'Saturn',  r: 17, realR: 0.0389, c: 0xe3d294, dist: 1500, speed: 0.00003, rotSpeed: 0.0880, 
         mass: '5.683 × 10²⁶ kg', massRel: '~ 95.2 Earths', radius: '58,232 km', density: '0.69 g/cm³',
         massValue: 95.2, angle: 5.93, inc: 2.49, lan: 113.66, tilt: 26.73, moons: [
-            { name: 'Mimas', r: 0.4, realR: 0.00013, c: 0xaaaaaa, dist: 22, realDist: 0.124, speed: 0.040, m: '3.7 × 10¹⁹ kg', mr: '< 0.0001 Earths', ir: '198 km', d: '1.14 g/cm³', inc: 0.00, lan: 0, tilt: 0 },
-            { name: 'Enceladus', r: 0.5, realR: 0.00016, c: 0xeeeeee, dist: 28, realDist: 0.159, speed: 0.030, m: '1.08 × 10²⁰ kg', mr: '< 0.0001 Earths', ir: '252 km', d: '1.61 g/cm³', inc: 0.00, lan: 0, tilt: 0 },
-            { name: 'Tethys', r: 0.7, realR: 0.00035, c: 0xcccccc, dist: 35, realDist: 0.196, speed: 0.024, m: '6.1 × 10²⁰ kg', mr: '< 0.0001 Earths', ir: '531 km', d: '0.98 g/cm³', inc: 0.00, lan: 0, tilt: 0 },
-            { name: 'Dione', r: 0.8, realR: 0.00037, c: 0xbbbbbb, dist: 43, realDist: 0.252, speed: 0.018, m: '1.1 × 10²¹ kg', mr: '< 0.001 Earths', ir: '561 km', d: '1.47 g/cm³', inc: 0.00, lan: 0, tilt: 0 },
-            { name: 'Rhea', r: 1.1, realR: 0.00051, c: 0xaaaaaa, dist: 52, realDist: 0.352, speed: 0.014, m: '2.3 × 10²¹ kg', mr: '< 0.001 Earths', ir: '763 km', d: '1.23 g/cm³', inc: 0.00, lan: 0, tilt: 0 },
-            { name: 'Titan', r: 2.1, realR: 0.00172, c: 0xfcb41c, dist: 65, realDist: 0.816, speed: 0.010, m: '1.34 × 10²³ kg', mr: '~ 0.022 Earths', ir: '2,575 km', d: '1.88 g/cm³', inc: 0.00, lan: 0, tilt: 0 },
+            { name: 'Mimas', r: 0.4, realR: 0.00013, c: 0xaaaaaa, dist: 22, realDist: 0.0801, speed: 0.040, m: '3.7 × 10¹⁹ kg', mr: '< 0.0001 Earths', ir: '198 km', d: '1.14 g/cm³', inc: 1.57, lan: 0, tilt: 0 },
+            { name: 'Enceladus', r: 0.5, realR: 0.00016, c: 0xeeeeee, dist: 28, realDist: 0.159, speed: 0.030, m: '1.08 × 10²⁰ kg', mr: '< 0.0001 Earths', ir: '252 km', d: '1.61 g/cm³', inc: 0.01, lan: 0, tilt: 0 },
+            { name: 'Tethys', r: 0.7, realR: 0.00035, c: 0xcccccc, dist: 35, realDist: 0.196, speed: 0.024, m: '6.1 × 10²⁰ kg', mr: '< 0.0001 Earths', ir: '531 km', d: '0.98 g/cm³', inc: 1.12, lan: 0, tilt: 0 },
+            { name: 'Dione', r: 0.8, realR: 0.00037, c: 0xbbbbbb, dist: 43, realDist: 0.252, speed: 0.018, m: '1.1 × 10²¹ kg', mr: '< 0.001 Earths', ir: '561 km', d: '1.47 g/cm³', inc: 0.02, lan: 0, tilt: 0 },
+            { name: 'Rhea', r: 1.1, realR: 0.00051, c: 0xaaaaaa, dist: 52, realDist: 0.352, speed: 0.014, m: '2.3 × 10²¹ kg', mr: '< 0.001 Earths', ir: '763 km', d: '1.23 g/cm³', inc: 0.33, lan: 0, tilt: 0 },
+            { name: 'Titan', r: 2.1, realR: 0.00172, c: 0xfcb41c, dist: 65, realDist: 0.816, speed: 0.010, m: '1.34 × 10²³ kg', mr: '~ 0.022 Earths', ir: '2,575 km', d: '1.88 g/cm³', inc: 0.35, lan: 0, tilt: 0 },
             { name: 'Iapetus', r: 1.0, realR: 0.00049, c: 0x888888, dist: 85, realDist: 2.379, speed: 0.006, m: '1.8 × 10²¹ kg', mr: '< 0.001 Earths', ir: '734 km', d: '1.08 g/cm³', inc: 15.47, lan: 0, tilt: 0 }
         ],
         ecc: 0.0542, w: 92.43, L0: 49.94, motion: 0.0335

@@ -21665,7 +21665,7 @@
         isTransitioning: false,
         isPaused: false,
         virtualTime: 0,
-        simSpeedMultiplier: 1e4,
+        simSpeedMultiplier: 1,
         // Speed up simulation (User requested modification from 400)
         currentLang: "en",
         isHighVis: false,
@@ -21852,12 +21852,12 @@
           lan: 113.66,
           tilt: 26.73,
           moons: [
-            { name: "Mimas", r: 0.4, realR: 13e-5, c: 11184810, dist: 22, realDist: 0.124, speed: 0.04, m: "3.7 \xD7 10\xB9\u2079 kg", mr: "< 0.0001 Earths", ir: "198 km", d: "1.14 g/cm\xB3", inc: 0, lan: 0, tilt: 0 },
-            { name: "Enceladus", r: 0.5, realR: 16e-5, c: 15658734, dist: 28, realDist: 0.159, speed: 0.03, m: "1.08 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "252 km", d: "1.61 g/cm\xB3", inc: 0, lan: 0, tilt: 0 },
-            { name: "Tethys", r: 0.7, realR: 35e-5, c: 13421772, dist: 35, realDist: 0.196, speed: 0.024, m: "6.1 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "531 km", d: "0.98 g/cm\xB3", inc: 0, lan: 0, tilt: 0 },
-            { name: "Dione", r: 0.8, realR: 37e-5, c: 12303291, dist: 43, realDist: 0.252, speed: 0.018, m: "1.1 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "561 km", d: "1.47 g/cm\xB3", inc: 0, lan: 0, tilt: 0 },
-            { name: "Rhea", r: 1.1, realR: 51e-5, c: 11184810, dist: 52, realDist: 0.352, speed: 0.014, m: "2.3 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "763 km", d: "1.23 g/cm\xB3", inc: 0, lan: 0, tilt: 0 },
-            { name: "Titan", r: 2.1, realR: 172e-5, c: 16561180, dist: 65, realDist: 0.816, speed: 0.01, m: "1.34 \xD7 10\xB2\xB3 kg", mr: "~ 0.022 Earths", ir: "2,575 km", d: "1.88 g/cm\xB3", inc: 0, lan: 0, tilt: 0 },
+            { name: "Mimas", r: 0.4, realR: 13e-5, c: 11184810, dist: 22, realDist: 0.0801, speed: 0.04, m: "3.7 \xD7 10\xB9\u2079 kg", mr: "< 0.0001 Earths", ir: "198 km", d: "1.14 g/cm\xB3", inc: 1.57, lan: 0, tilt: 0 },
+            { name: "Enceladus", r: 0.5, realR: 16e-5, c: 15658734, dist: 28, realDist: 0.159, speed: 0.03, m: "1.08 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "252 km", d: "1.61 g/cm\xB3", inc: 0.01, lan: 0, tilt: 0 },
+            { name: "Tethys", r: 0.7, realR: 35e-5, c: 13421772, dist: 35, realDist: 0.196, speed: 0.024, m: "6.1 \xD7 10\xB2\u2070 kg", mr: "< 0.0001 Earths", ir: "531 km", d: "0.98 g/cm\xB3", inc: 1.12, lan: 0, tilt: 0 },
+            { name: "Dione", r: 0.8, realR: 37e-5, c: 12303291, dist: 43, realDist: 0.252, speed: 0.018, m: "1.1 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "561 km", d: "1.47 g/cm\xB3", inc: 0.02, lan: 0, tilt: 0 },
+            { name: "Rhea", r: 1.1, realR: 51e-5, c: 11184810, dist: 52, realDist: 0.352, speed: 0.014, m: "2.3 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "763 km", d: "1.23 g/cm\xB3", inc: 0.33, lan: 0, tilt: 0 },
+            { name: "Titan", r: 2.1, realR: 172e-5, c: 16561180, dist: 65, realDist: 0.816, speed: 0.01, m: "1.34 \xD7 10\xB2\xB3 kg", mr: "~ 0.022 Earths", ir: "2,575 km", d: "1.88 g/cm\xB3", inc: 0.35, lan: 0, tilt: 0 },
             { name: "Iapetus", r: 1, realR: 49e-5, c: 8947848, dist: 85, realDist: 2.379, speed: 6e-3, m: "1.8 \xD7 10\xB2\xB9 kg", mr: "< 0.001 Earths", ir: "734 km", d: "1.08 g/cm\xB3", inc: 15.47, lan: 0, tilt: 0 }
           ],
           ecc: 0.0542,
@@ -22372,6 +22372,8 @@
       });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = PCFSoftShadowMap;
       document.getElementById("canvas-container").appendChild(renderer.domElement);
       camera.position.set(0, 300 / 250, 500 / 250);
       mainLight = new DirectionalLight(16777215, 1.5);
@@ -22382,6 +22384,12 @@
       hemisphereLight = new HemisphereLight(16777215, 4473924, 0.6);
       scene.add(hemisphereLight);
       sunLight = new PointLight(16777215, 3, 5e3 / 250, 0);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
+      sunLight.shadow.camera.near = 10;
+      sunLight.shadow.camera.far = 5e3;
+      sunLight.shadow.bias = -1e-3;
       scene.add(sunLight);
       highVisLight = new AmbientLight(16777215, 0);
       highVisLight.layers.set(1);
@@ -22701,6 +22709,8 @@
             metalness: 0.1
           });
           const mesh = new Mesh(geo, mat);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
           mesh.userData = {
             isFocusable: true,
             radius: this.radius,
@@ -22823,6 +22833,13 @@
           } else {
             this.mesh.scale.set(1, 1, 1);
           }
+          if (this.satellites) {
+            this.satellites.forEach((moon) => {
+              if (moon.updateScale) {
+                moon.updateScale(isRealistic);
+              }
+            });
+          }
         }
       };
     }
@@ -22876,6 +22893,8 @@
             metalness: 0.1
           });
           const mesh = new Mesh(geo, mat);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
           mesh.userData = {
             isFocusable: true,
             radius: this.radius,
@@ -23088,14 +23107,18 @@
       rCtx.stroke();
     }
     const ringTex = new CanvasTexture(rCvs);
-    const ringMat = new MeshBasicMaterial({
+    const ringMat = new MeshStandardMaterial({
       map: ringTex,
       color: 16777215,
       side: DoubleSide,
       transparent: true,
-      opacity: 1
+      opacity: 1,
+      roughness: 0.8,
+      metalness: 0.1
     });
     const saturnRing = new Mesh(ringGeo, ringMat);
+    saturnRing.castShadow = true;
+    saturnRing.receiveShadow = true;
     planetMesh.add(saturnRing);
   }
   var init_saturnRings = __esm({
@@ -23916,8 +23939,9 @@
       if (simSpeedSlider) {
         simSpeedSlider.addEventListener("input", (e) => {
           const val = parseInt(e.target.value);
-          state.simSpeedMultiplier = val;
-          if (simSpeedLabel) simSpeedLabel.textContent = `${t("simSpeed")}: ${val}x`;
+          const actualSpeed = Math.floor(Math.pow(10, val / 100));
+          state.simSpeedMultiplier = actualSpeed;
+          if (simSpeedLabel) simSpeedLabel.textContent = `${t("simSpeed")}: ${actualSpeed}x`;
         });
       }
       document.getElementById("spawn-button").addEventListener("click", function() {
@@ -24173,7 +24197,7 @@
         return `${now2.getFullYear()}-${pad(now2.getMonth() + 1)}-${pad(now2.getDate())} ${pad(now2.getHours())}:${pad(now2.getMinutes())}:${pad(now2.getSeconds())}`;
       }
       var navList = document.getElementById("nav-list");
-      function addNavItem(name, mesh, engName) {
+      function createNavItem(name, mesh, engName) {
         const navItem = document.createElement("div");
         navItem.className = "nav-item";
         if (engName === "The Sun") navItem.className += " active";
@@ -24188,18 +24212,73 @@
           updateTextureResolution();
           document.getElementById("overview-button").textContent = t("overviewOn");
         };
-        navList.appendChild(navItem);
+        return navItem;
+      }
+      function addNavItem(name, mesh, engName, parentContainer = navList, hasMoons = false) {
+        if (hasMoons) {
+          const group = document.createElement("div");
+          group.className = "nav-group";
+          group.style.display = "flex";
+          group.style.flexDirection = "column";
+          const header = document.createElement("div");
+          header.style.display = "flex";
+          header.style.alignItems = "center";
+          const item = createNavItem(name, mesh, engName);
+          item.style.flex = "1";
+          header.appendChild(item);
+          const toggleBtn = document.createElement("button");
+          toggleBtn.textContent = ">";
+          toggleBtn.style.background = "none";
+          toggleBtn.style.border = "none";
+          toggleBtn.style.color = "#4fa6ff";
+          toggleBtn.style.cursor = "pointer";
+          toggleBtn.style.padding = "0 10px";
+          toggleBtn.style.fontSize = "1.2rem";
+          toggleBtn.style.outline = "none";
+          const moonsContainer = document.createElement("div");
+          moonsContainer.className = "nav-moons";
+          moonsContainer.style.display = "none";
+          moonsContainer.style.paddingLeft = "15px";
+          moonsContainer.style.flexDirection = "column";
+          toggleBtn.onclick = (e) => {
+            e.stopPropagation();
+            const isHidden = moonsContainer.style.display === "none";
+            moonsContainer.style.display = isHidden ? "flex" : "none";
+            toggleBtn.textContent = isHidden ? "<" : ">";
+            toggleBtn.style.color = isHidden ? "#fff" : "#4fa6ff";
+            toggleBtn.style.textShadow = isHidden ? "0 0 5px #fff" : "none";
+          };
+          header.appendChild(toggleBtn);
+          group.appendChild(header);
+          group.appendChild(moonsContainer);
+          parentContainer.appendChild(group);
+          return moonsContainer;
+        } else {
+          const item = createNavItem(name, mesh, engName);
+          parentContainer.appendChild(item);
+          return null;
+        }
       }
       addNavItem(tName("The Sun"), sun, "The Sun");
       planetsData.forEach((d) => {
         const planet = new Planet(d, physicsEngine, scene);
         celestialBodies.push(planet);
         if (d.name === "Earth") earthRef = planet;
-        addNavItem(tName(d.name), planet.mesh, d.name);
+        const hasMoons = d.moons && d.moons.length > 0;
+        const moonsContainer = addNavItem(tName(d.name), planet.mesh, d.name, navList, hasMoons);
         if (d.moons) {
           d.moons.forEach((m) => {
             const moon = new Moon(m, planet);
             if (d.name === "Saturn") moon.orbitObj.position.y = 0;
+            if (moonsContainer) {
+              const moonItem = createNavItem(tName(m.name), moon.mesh, m.name);
+              moonItem.style.fontSize = "0.85rem";
+              moonItem.style.padding = "5px 10px";
+              moonItem.style.opacity = "0.8";
+              moonItem.style.borderLeft = "1px solid #4fa6ff";
+              moonItem.style.marginLeft = "5px";
+              moonsContainer.appendChild(moonItem);
+            }
           });
         }
         if (d.name === "Saturn") {

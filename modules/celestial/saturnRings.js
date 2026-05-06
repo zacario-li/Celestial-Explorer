@@ -43,13 +43,17 @@ export function createSaturnRings(planetMesh) {
     }
 
     const ringTex = new THREE.CanvasTexture(rCvs);
-    const ringMat = new THREE.MeshBasicMaterial({
+    const ringMat = new THREE.MeshStandardMaterial({
         map: ringTex,
         color: 0xffffff,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 1.0
+        opacity: 1.0,
+        roughness: 0.8,
+        metalness: 0.1
     });
     const saturnRing = new THREE.Mesh(ringGeo, ringMat);
+    saturnRing.castShadow = true;
+    saturnRing.receiveShadow = true;
     planetMesh.add(saturnRing);
 }

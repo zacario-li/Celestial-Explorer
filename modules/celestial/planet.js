@@ -78,6 +78,8 @@ export class Planet {
             metalness: 0.1
         });
         const mesh = new THREE.Mesh(geo, mat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         mesh.userData = { 
             isFocusable: true, 
             radius: this.radius, 
@@ -221,6 +223,15 @@ export class Planet {
             this.mesh.scale.set(factor, factor, factor);
         } else {
             this.mesh.scale.set(1, 1, 1);
+        }
+        
+        // Update all satellites
+        if (this.satellites) {
+            this.satellites.forEach(moon => {
+                if (moon.updateScale) {
+                    moon.updateScale(isRealistic);
+                }
+            });
         }
     }
 }

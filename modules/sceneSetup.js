@@ -13,6 +13,8 @@ export const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
@@ -30,6 +32,12 @@ export const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6
 scene.add(hemisphereLight);
 
 export const sunLight = new THREE.PointLight(0xffffff, 3, 5000 / 250, 0);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.width = 2048;
+sunLight.shadow.mapSize.height = 2048;
+sunLight.shadow.camera.near = 10;
+sunLight.shadow.camera.far = 5000;
+sunLight.shadow.bias = -0.001;
 scene.add(sunLight);
 
 // Ambient Light for "High-Visibility" Mode
