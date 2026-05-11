@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
-export function createSaturnRings(planetMesh) {
-    const ringGeo = new THREE.RingGeometry(21, 35, 64);
+export function createSaturnRings(planetMesh, planetRadius = 17) {
+    const ringGeo = new THREE.RingGeometry(21, 35, 128);
     ringGeo.rotateX(-Math.PI / 2);
 
-    const size = 1024;
+    const size = 4096; // 4K texture for ultra-crisp shadows cast by the rings
     const rCvs = document.createElement('canvas');
     rCvs.width = size;
     rCvs.height = size;
@@ -50,10 +50,74 @@ export function createSaturnRings(planetMesh) {
         transparent: true,
         opacity: 1.0,
         roughness: 0.8,
-        metalness: 0.1
+        metalness: 0.1,
+        alphaTest: 0.05 // Ensures pixels with very low alpha don't block light
     });
+
+    // PROCEDURAL RAY-TRACED SHADOW (Perfectly Round)
+    ringMat.onBeforeCompile = (shader) => {
+        shader.uniforms.uPlanetRadius = { value: planetRadius };
+        
+        shader.vertexShader = `
+            varying vec3 vWorldPos;
+            varying vec3 vPlanetWorldPos;
+            varying float vScaleX;
+        ` + shader.vertexShader;
+        
+        shader.vertexShader = shader.vertexShader.replace(
+            `#include <begin_vertex>`,
+            `#include <begin_vertex>
+            vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+            // The planet is at the local origin of this mesh
+            vPlanetWorldPos = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+            vScaleX = length(vec3(modelMatrix[0][0], modelMatrix[0][1], modelMatrix[0][2]));
+            `
+        );
+
+        shader.fragmentShader = `
+            varying vec3 vWorldPos;
+            varying vec3 vPlanetWorldPos;
+            varying float vScaleX;
+            uniform float uPlanetRadius;
+        ` + shader.fragmentShader;
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+            `#include <dithering_fragment>`,
+            `#include <dithering_fragment>
+            
+            vec3 lightDir = normalize(-vWorldPos); // Sun is at origin
+            vec3 V = vPlanetWorldPos - vWorldPos;
+            float t = dot(V, lightDir);
+            
+            if (t > 0.0) {
+                float d2 = dot(V, V) - t * t;
+                float worldRadius = uPlanetRadius * vScaleX;
+                float shadowEdge = worldRadius * worldRadius;
+                float shadowCore = (worldRadius * 0.995) * (worldRadius * 0.995); // Sharper edge
+
+                
+                if (d2 < shadowEdge) {
+                    float shadowIntensity = smoothstep(shadowCore, shadowEdge, d2);
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb * 0.05, gl_FragColor.rgb, shadowIntensity);
+                }
+            }
+            `
+        );
+    };
+
     const saturnRing = new THREE.Mesh(ringGeo, ringMat);
-    saturnRing.castShadow = true;
-    saturnRing.receiveShadow = true;
+    saturnRing.castShadow = false; // Disable blocky WebGL shadow map, use procedural planet shader instead
+    saturnRing.receiveShadow = false; // Disable blocky shadow map, use procedural shader instead
+
+    // CUSTOM DEPTH MATERIAL for shadows
+    // This allows the rings' transparency to be respected during the shadow pass.
+    const customDepthMat = new THREE.MeshDepthMaterial({
+        depthPacking: THREE.RGBADepthPacking,
+        map: ringTex,
+        alphaTest: 0.05
+    });
+    saturnRing.customDepthMaterial = customDepthMat;
+
     planetMesh.add(saturnRing);
 }
+

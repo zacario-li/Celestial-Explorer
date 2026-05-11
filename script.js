@@ -5,7 +5,12 @@ import { state } from './modules/state.js';
 import { planetsData } from './modules/planetsData.js';
 import { t, tName } from './modules/i18n.js';
 import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './modules/ui.js';
-import { scene, camera, renderer, ambientLight, sunLight, highVisLight } from './modules/sceneSetup.js';
+import { scene, camera, renderer, ambientLight, sunLight, highVisLight, focusedLight } from './modules/sceneSetup.js';
+
+console.log("CELESTIAL EXPLORER: Bundle V2.8 Loading...");
+window.SIM_VERSION = "V2.8";
+
+
 import { createStarfield } from './modules/starfield.js';
 import { PhysicsEngine } from './modules/physics/physicsEngine.js';
 import { G, SUN_MASS } from './modules/physics/constants.js';
@@ -141,6 +146,29 @@ window.addEventListener('dblclick', (event) => {
     updateInfoPanel(state.focusedBody);
     updateTextureResolution();
 });
+
+// Helper to switch layers properly, traversing all children to fix "black planet" bug
+function setBodyLayer(body, targetLayer) {
+    if (!body) return;
+    const root = body.mesh || body;
+    root.traverse((child) => {
+        child.layers.set(targetLayer);
+    });
+    if (body.atmMesh) {
+        body.atmMesh.layers.set(targetLayer);
+    }
+    if (body.satellites) {
+        body.satellites.forEach(s => setBodyLayer(s, targetLayer));
+    }
+}
+
+let _prevFocused = null;
+
+
+
+
+
+
 
 // UI Components Initialized via Modules
 import { initAllButtons } from './modules/ui/buttons/buttonInitializer.js';
@@ -657,7 +685,7 @@ planetsData.forEach(d => {
     }
 
     if (d.name === 'Saturn') {
-        createSaturnRings(planet.mesh);
+        createSaturnRings(planet.mesh, planet.radius);
     }
 });
 
@@ -1231,7 +1259,11 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
         } else {
             body.orbitObj.position.copy(body.pos);
             body.mesh.rotation.y += body.rotSpeed * scriptedDt;
+            
+
+
             const sats = body.satellites;
+
             for (let k = 0; k < sats.length; k++) {
                 sats[k].spinGroup.rotation.y += sats[k].speed * scriptedDt;
                 sats[k].mesh.rotation.y += sats[k].speed * scriptedDt;
@@ -1319,6 +1351,53 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
     if (!state.isFlying) {
         controls.update();
     }
+    // --- ISOLATED HIGH-RES SHADOW LOGIC ---
+    const currentFocused = (state.focusedBody && !state.isOverview && !state.focusedBody.userData?.isSun) ? state.focusedBody : null;
+    
+    if (currentFocused !== _prevFocused) {
+        // Revert old body to global layer
+        if (_prevFocused) {
+            const oldBody = celestialBodies.find(b => b.mesh === _prevFocused || b.satellites?.some(s => s.mesh === _prevFocused));
+            if (oldBody) setBodyLayer(oldBody, 0); 
+        }
+        // Isolate new body to shadow layer
+        if (currentFocused) {
+            const newBody = celestialBodies.find(b => b.mesh === currentFocused || b.satellites?.some(s => s.mesh === currentFocused));
+            if (newBody) setBodyLayer(newBody, 2); 
+        }
+        _prevFocused = currentFocused;
+    }
+
+    if (currentFocused) {
+        const actualPos = new THREE.Vector3();
+        currentFocused.getWorldPosition(actualPos);
+        
+        const dirFromSun = actualPos.clone().normalize();
+        const shadowSize = 60; // Perfectly wraps Saturn + rings
+        
+        // Place DirectionalLight 120 units towards the Sun
+        focusedLight.position.copy(actualPos).sub(dirFromSun.multiplyScalar(shadowSize * 2));
+        focusedLight.target.position.copy(actualPos);
+        
+        // Tightly bound orthographic shadow camera
+        focusedLight.shadow.camera.left = -shadowSize;
+        focusedLight.shadow.camera.right = shadowSize;
+        focusedLight.shadow.camera.top = shadowSize;
+        focusedLight.shadow.camera.bottom = -shadowSize;
+        focusedLight.shadow.camera.near = 0.1;
+        focusedLight.shadow.camera.far = shadowSize * 4;
+        focusedLight.shadow.camera.updateProjectionMatrix();
+
+        focusedLight.intensity = 2.0; 
+    } else {
+        focusedLight.intensity = 0;
+    }
+
+
+
+
+
+
     renderer.render(scene, camera);
 }
 

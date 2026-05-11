@@ -29,6 +29,8 @@ export class Planet {
         this.satelliteAnchor = this.createSatelliteAnchor();
         this.captureMesh = this.createCaptureMesh();
         this.atmMesh = this.createAtmosphere();
+        this.atmMesh = this.createAtmosphere();
+
 
         // Physics State (Elliptical Initial State)
         const a = this.orbitRadius;
@@ -77,6 +79,72 @@ export class Planet {
             roughness: 0.6,
             metalness: 0.1
         });
+
+        if (this.name === 'Saturn') {
+            mat.onBeforeCompile = (shader) => {
+                shader.vertexShader = `
+                    varying vec3 vWorldPos;
+                    varying vec3 vPlanetWorldPos;
+                    varying vec3 vRingNormalWorld;
+                    varying float vScaleX;
+                ` + shader.vertexShader;
+                
+                shader.vertexShader = shader.vertexShader.replace(
+                    `#include <begin_vertex>`,
+                    `#include <begin_vertex>
+                    vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+                    vPlanetWorldPos = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+                    // The rings are rotated -PI/2 on X, so their local normal is Y.
+                    vRingNormalWorld = normalize((modelMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+                    vScaleX = length((modelMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
+                    `
+                );
+
+                shader.fragmentShader = `
+                    varying vec3 vWorldPos;
+                    varying vec3 vPlanetWorldPos;
+                    varying vec3 vRingNormalWorld;
+                    varying float vScaleX;
+                ` + shader.fragmentShader;
+
+                shader.fragmentShader = shader.fragmentShader.replace(
+                    `#include <dithering_fragment>`,
+                    `#include <dithering_fragment>
+                    
+                    vec3 L = normalize(-vWorldPos); // Sun is at world origin
+                    vec3 P = vWorldPos;
+                    vec3 C = vPlanetWorldPos;
+                    vec3 N = vRingNormalWorld;
+                    
+                    float denom = dot(L, N);
+                    if (abs(denom) > 0.0001) {
+                        float t = dot(C - P, N) / denom;
+                        // Only cast shadow if the ring is between the planet surface and the sun
+                        if (t > 0.0 && t < length(vWorldPos)) {
+                            vec3 I = P + t * L;
+                            float d = length(I - C);
+                            
+                            float rIn = 21.0 * vScaleX;
+                            float rCasIn = 29.5 * vScaleX;
+                            float rCasOut = 31.5 * vScaleX;
+                            float rOut = 35.0 * vScaleX;
+                            
+                            float inRing = 0.0;
+                            float soft = 0.3 * vScaleX; // Slight softness for realism
+                            
+                            inRing += smoothstep(rIn - soft, rIn + soft, d) * (1.0 - smoothstep(rCasIn - soft, rCasIn + soft, d));
+                            inRing += smoothstep(rCasOut - soft, rCasOut + soft, d) * (1.0 - smoothstep(rOut - soft, rOut + soft, d));
+                            
+                            if (inRing > 0.0) {
+                                // Darken the fragment to create a perfect ray-traced shadow
+                                gl_FragColor.rgb *= (1.0 - inRing * 0.9);
+                            }
+                        }
+                    }
+                    `
+                );
+            };
+        }
         const mesh = new THREE.Mesh(geo, mat);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -102,9 +170,12 @@ export class Planet {
         this.tiltGroup.add(this.mesh);
         
         obj.add(this.tiltGroup);
+        obj.add(this.tiltGroup);
         this.scene.add(obj);
         return obj;
     }
+
+
 
     createOrbitLine() {
         const a = this.orbitRadius;
@@ -224,6 +295,7 @@ export class Planet {
         } else {
             this.mesh.scale.set(1, 1, 1);
         }
+
         
         // Update all satellites
         if (this.satellites) {
