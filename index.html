@@ -9,9 +9,9 @@
     <script type="importmap">
     {
         "imports": {
-            "three": "/node_modules/three/build/three.module.js",
-            "three/examples/jsm/": "/node_modules/three/examples/jsm/",
-            "three/addons/": "/node_modules/three/examples/jsm/"
+            "three": "./node_modules/three/build/three.module.js",
+            "three/examples/jsm/": "./node_modules/three/examples/jsm/",
+            "three/addons/": "./node_modules/three/examples/jsm/"
         }
     }
     </script>
@@ -51,16 +51,44 @@
         });
 
         // --- SMART TROUBLESHOOTER (Checks if Modules/CORS are blocked) ---
+        // 1. Check for file:// protocol immediately
+        if (window.location.protocol === 'file:') {
+            console.error("CORS Block: ES modules cannot be loaded via file:// protocol.");
+            const subtext = document.getElementById('loading-subtext');
+            if (subtext) {
+                subtext.style.color = '#ff4f4f';
+                subtext.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 8px;">CORS ERROR: LOCAL FILE DETECTED</div>
+                    <div style="font-size: 0.85rem; line-height: 1.4; max-width: 600px; margin: 0 auto; opacity: 0.9;">
+                        English: Browsers block ES Modules from local file:// paths for security.<br>
+                        Please run using a local web server (double-click <b>Start_Simulation.command</b> or run <code>npx serve .</code>).
+                        <br><br>
+                        中文：出于安全考虑，浏览器限制直接通过本地文件路径加载 ES 模块。<br>
+                        请通过本地服务器运行（双击运行 <b>Start_Simulation.command</b> 或执行 <code>npx serve .</code>）。
+                    </div>
+                `;
+            }
+        }
+
+        // 2. Timeout check (increased to 12s to accommodate slow devices/network loads)
         setTimeout(() => {
-            if (!window.SIM_READY) {
+            if (!window.SIM_READY && window.location.protocol !== 'file:') {
                 console.error("Simulation engine failed to initialize.");
                 const subtext = document.getElementById('loading-subtext');
-                if (subtext) subtext.style.color = '#ff4f4f';
-                if (subtext) subtext.innerText = 'PROTOCOL ERROR: ENGINE FAILURE';
-            } else {
+                if (subtext) {
+                    subtext.style.color = '#ff4f4f';
+                    subtext.innerHTML = `
+                        <div style="font-weight: bold; margin-bottom: 8px;">PROTOCOL ERROR: ENGINE FAILURE</div>
+                        <div style="font-size: 0.85rem; line-height: 1.4; max-width: 600px; margin: 0 auto; opacity: 0.9;">
+                            English: The simulation took too long to initialize. Please check the browser console (F12) for details.<br>
+                            中文：模拟器初始化超时，请打开浏览器控制台 (F12) 查看具体错误。
+                        </div>
+                    `;
+                }
+            } else if (window.SIM_READY) {
                 console.log("Simulation engine initialized successfully.");
             }
-        }, 4000);
+        }, 12000);
     </script>
     <div id="canvas-container"></div>
 
