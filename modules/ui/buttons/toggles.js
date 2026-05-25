@@ -24,6 +24,16 @@ export function initAutoRotateButton() {
     });
 }
 
+export function initFuturePathButton() {
+    return new Button('future-path-button', () => {
+        state.showFuturePath = !state.showFuturePath;
+    }, {
+        stateKey: 'showFuturePath',
+        stateObject: state,
+        labels: { on: 'futurePathOn', off: 'futurePathOff' }
+    });
+}
+
 export function initHoverZonesButton(celestialBodies) {
     return new Button('hoverzones-button', () => {
         state.showHoverZones = !state.showHoverZones;

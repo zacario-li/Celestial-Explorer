@@ -9,6 +9,9 @@ echo "Modern browsers block 3D assets when opened raw."
 echo "I am starting a local server to enable 3D flight."
 echo "------------------------------------------------"
 
+# Free up port 3000 if it is already in use from a previous session
+lsof -ti :3000 | xargs kill -9 >/dev/null 2>&1
+
 # Attempt to open browser after a short delay
 (sleep 2 && open http://localhost:3000) &
 

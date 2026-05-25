@@ -32,6 +32,31 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec) {
                 scene.add(window._spaceship);
                 window._spaceship.position.copy(targetVec);
                 state.shipVelocity.set(0, 0, 0);
+
+                // Snap camera immediately to avoid slow lerping from the old planetary orbit position
+                if (state.shipViewMode === 'cockpit') {
+                    window._spaceship.visible = false;
+                    const camOffset = new THREE.Vector3(0.00, 0.05, 0).applyQuaternion(window._spaceship.quaternion);
+                    camera.position.copy(window._spaceship.position.clone().add(camOffset));
+                    
+                    const relativeQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+                    camera.quaternion.copy(window._spaceship.quaternion).multiply(relativeQuat);
+                } else {
+                    window._spaceship.visible = true;
+                    const DEFAULT_THETA = 4.712;
+                    const DEFAULT_PHI = 0.3;
+                    const r = 20.0;
+                    const ox = r * Math.sin(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);
+                    const oy = r * Math.sin(DEFAULT_PHI);
+                    const oz = r * Math.cos(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);
+                    
+                    const camOffset = new THREE.Vector3(ox, oy, oz).applyQuaternion(window._spaceship.quaternion);
+                    camera.position.copy(window._spaceship.position.clone().add(camOffset));
+                    
+                    const shipUp = new THREE.Vector3(0, 1, 0).applyQuaternion(window._spaceship.quaternion);
+                    camera.up.copy(shipUp);
+                    camera.lookAt(window._spaceship.position);
+                }
             }
         } else {
             if (hud) hud.style.display = 'none';

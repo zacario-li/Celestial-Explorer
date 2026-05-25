@@ -81,7 +81,10 @@ export const i18n = {
         simSpeed: 'SIMULATION SPEED',
         syncTimeMsg: 'Simulation synced to real-time:',
         limitReached: 'Simulation limit reached (50 planets max).',
-        ignitionTitle: 'Stellar Ignition!'
+        ignitionTitle: 'Stellar Ignition!',
+        miscSettings: '🛠️ MISC SETTINGS',
+        futurePathOn: '🔴 PREDICT TRAJECTORY: ON',
+        futurePathOff: '🔴 PREDICT TRAJECTORY: OFF'
     },
     zh: {
         title: '星空探索者',
@@ -163,7 +166,10 @@ export const i18n = {
         simSpeed: '模拟时速倍数',
         syncTimeMsg: '模拟已实时同步：',
         limitReached: '达到模拟上限（最多50个行星）。',
-        ignitionTitle: '恒星点火！'
+        ignitionTitle: '恒星点火！',
+        miscSettings: '🛠️ 杂项设置',
+        futurePathOn: '🔴 预测轨迹：开',
+        futurePathOff: '🔴 预测轨迹：关'
     }
 };
 

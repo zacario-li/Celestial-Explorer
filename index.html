@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Solar System Simulation</title>
     <link rel="stylesheet" href="style.css?v=11">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "/node_modules/three/build/three.module.js",
+            "three/examples/jsm/": "/node_modules/three/examples/jsm/",
+            "three/addons/": "/node_modules/three/examples/jsm/"
+        }
+    }
+    </script>
 </head>
 
 
@@ -21,7 +30,7 @@
                 style="width:0%; height:100%; background:#00ffff; box-shadow:0 0 15px #00ffff; transition: width 0.3s ease;">
             </div>
         </div>
-        <div id="loading-subtext" style="margin-top:1.5rem; font-size:0.8rem; opacity:0.6; letter-spacing: 2px;">V2.11 - ALL PROCEDURAL SHADOWS ACTIVE</div>
+        <div id="loading-subtext" style="margin-top:1.5rem; font-size:0.8rem; opacity:0.6; letter-spacing: 2px;">V3.8 - ACCURATE RING SHADOWS</div>
 
 
     </div>
@@ -185,7 +194,7 @@
             <div class="modal-group">
                 <label id="modal-lbl-mass">Mass Multiplier:</label>
                 <div class="range-container">
-                    <input type="range" id="spawn-mass" min="0.1" max="1000.0" step="1.0" value="1.0"
+                    <input type="range" id="spawn-mass" min="0.1" max="10000.0" step="10.0" value="1.0"
                         class="modal-input">
                     <span id="spawn-mass-val">1.0 x</span>
                 </div>
@@ -267,13 +276,22 @@
         <div class="modal-content" style="max-width: 400px; max-height: 80vh; display: flex; flex-direction: column;">
             <h2 id="settings-modal-title">Settings</h2>
             <div class="modal-group" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
-                <button id="autorotate-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">🔄 AUTO-PAN: OFF</button>
                 <button id="highvis-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">☀️ HIGH-VIS</button>
                 <button id="sync-time-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">⏳ TIME SYNC</button>
-                <button id="hoverzones-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">👾 HOVER ZONES: OFF</button>
-                <button id="venus-atm-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">☁️ VENUS ATMOSPHERE: ON</button>
                 <button id="realistic-scale-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">🔍 REALISTIC SCALE: OFF</button>
                 <button id="lang-button" class="pause-btn lang-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">🌐 中文</button>
+                
+                <!-- Misc Settings Accordion -->
+                <button id="misc-settings-btn" class="pause-btn" style="width: 100%; margin-top: 10px; padding: 15px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span id="misc-settings-title">🛠️ MISC SETTINGS</span>
+                    <span id="misc-settings-icon">▼</span>
+                </button>
+                <div id="misc-settings-content" style="display: none; flex-direction: column; gap: 10px; margin-top: 5px; padding-left: 10px; border-left: 2px solid rgba(79, 166, 255, 0.5);">
+                    <button id="future-path-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">🔴 PREDICT TRAJECTORY: ON</button>
+                    <button id="autorotate-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">🔄 AUTO-PAN: OFF</button>
+                    <button id="hoverzones-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">👾 HOVER ZONES: OFF</button>
+                    <button id="venus-atm-button" class="pause-btn" style="width: 100%; margin-top: 0; padding: 15px; font-size: 1.1rem;">☁️ VENUS ATMOSPHERE: ON</button>
+                </div>
             </div>
             <div class="modal-actions" style="margin-top: 25px;">
                 <button id="settings-close-btn" class="pause-btn modal-btn" style="background: rgba(79, 166, 255, 0.2); border-color: #4fa6ff; width: 100%;">CLOSE</button>
@@ -281,7 +299,7 @@
         </div>
     </div>
 
-    <script src="bundle.js?v=2.11"></script>
+    <script type="module" src="script.js"></script>
 
 
 </body>

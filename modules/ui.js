@@ -115,12 +115,14 @@ export async function applyLanguage() {
     // Settings Modal
     safeSetText('settings-modal-title', 'settingsModalTitle');
     safeSetText('settings-close-btn', 'settingsClose');
+    safeSetText('misc-settings-title', 'miscSettings');
 
     safeSetText('autopilot-modal-title', 'autopilotModalTitle');
     safeSetText('autopilot-cancel-btn', 'autopilotCancel');
     
     safeSetText('pause-button', state.isPaused ? 'resume' : 'pause');
     safeSetText('autorotate-button', state.isAutoRotate ? 'autoRotateOn' : 'autoRotateOff');
+    safeSetText('future-path-button', state.showFuturePath ? 'futurePathOn' : 'futurePathOff');
     safeSetText('venus-atm-button', state.showVenusAtmosphere ? 'venusAtmOn' : 'venusAtmOff');
     safeSetText('realistic-scale-button', state.isRealisticScale ? 'realisticScaleOn' : 'realisticScaleOff');
 

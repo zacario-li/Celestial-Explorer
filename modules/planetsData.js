@@ -1,26 +1,26 @@
 export const planetsData = [
-    { 
-        name: 'Mercury', r: 4, realR: 0.0016, c: 0x8e8e8e, dist: 100, speed: 0.0041, rotSpeed: 0.0007, 
+    {
+        name: 'Mercury', r: 4, realR: 0.0016, c: 0x8e8e8e, dist: 100, speed: 0.0041, rotSpeed: 0.0007,
         mass: '3.301 × 10²³ kg', massRel: '~ 0.055 Earths', radius: '2,440 km', density: '5.43 g/cm³',
         massValue: 0.055, angle: 4.36, inc: 7.00, lan: 48.33, tilt: 0.034, moons: [],
         ecc: 0.2056, w: 77.45, L0: 252.25, motion: 4.0923
     },
-    { 
-        name: 'Venus',   r: 7, realR: 0.0040, c: 0xe3bb76, dist: 180, speed: 0.0016, rotSpeed: -0.00016, 
+    {
+        name: 'Venus', r: 7, realR: 0.0040, c: 0xe3bb76, dist: 180, speed: 0.0016, rotSpeed: -0.00016,
         mass: '4.867 × 10²⁴ kg', massRel: '~ 0.815 Earths', radius: '6,052 km', density: '5.24 g/cm³',
         massValue: 0.815, angle: 0.87, inc: 3.39, lan: 76.68, tilt: 177.36, moons: [],
         ecc: 0.0068, w: 131.57, L0: 181.98, motion: 1.6021
     },
-    { 
-        name: 'Earth',   r: 8, realR: 0.0042, c: 0x4b95f2, dist: 250, speed: 0.0010, rotSpeed: 0.0400, 
+    {
+        name: 'Earth', r: 8, realR: 0.0042, c: 0x4b95f2, dist: 250, speed: 0.0010, rotSpeed: 0.0400,
         mass: '5.972 × 10²⁴ kg', massRel: '1.000 Earth Mass', radius: '6,371 km', density: '5.51 g/cm³',
         massValue: 1.0, angle: 3.14, inc: 0.00, lan: 0.00, tilt: 23.44, moons: [
             { name: 'The Moon', r: 2.0, realR: 0.0011, c: 0xaaaaaa, dist: 28, realDist: 0.257, speed: 0.013, m: '7.347 × 10²² kg', mr: '~ 0.0123 Earths', ir: '1,737 km', d: '3.34 g/cm³', inc: 5.14, lan: 125.08, tilt: 1.54 }
         ],
         ecc: 0.0167, w: 102.94, L0: 100.46, motion: 0.9856
     },
-    { 
-        name: 'Mars',    r: 5, realR: 0.0022, c: 0xdb6d46, dist: 380, speed: 0.0005, rotSpeed: 0.0380, 
+    {
+        name: 'Mars', r: 5, realR: 0.0022, c: 0xdb6d46, dist: 380, speed: 0.0005, rotSpeed: 0.0380,
         mass: '6.390 × 10²³ kg', massRel: '~ 0.107 Earths', radius: '3,390 km', density: '3.93 g/cm³',
         massValue: 0.107, angle: 2.09, inc: 1.85, lan: 49.56, tilt: 25.19, moons: [
             { name: 'Phobos', r: 0.4, realR: 0.000007, c: 0x888888, dist: 8, realDist: 0.0062, speed: 0.04, m: '1.065 × 10¹⁶ kg', mr: '< 0.0001 Earths', ir: '11.1 km', d: '1.87 g/cm³', inc: 1.09, lan: 0, tilt: 0 },
@@ -28,8 +28,8 @@ export const planetsData = [
         ],
         ecc: 0.0934, w: 336.04, L0: 355.45, motion: 0.5241
     },
-    { 
-        name: 'Jupiter', r: 20, realR: 0.0467, c: 0xc99b75, dist: 900, speed: 0.00008, rotSpeed: 0.0970, 
+    {
+        name: 'Jupiter', r: 20, realR: 0.0467, c: 0xc99b75, dist: 900, speed: 0.00008, rotSpeed: 0.0970,
         mass: '1.898 × 10²⁷ kg', massRel: '~ 317.8 Earths', radius: '69,911 km', density: '1.33 g/cm³',
         massValue: 317.8, angle: 1.22, inc: 1.30, lan: 100.46, tilt: 3.13, moons: [
             { name: 'Io', r: 1.5, realR: 0.0012, c: 0xfff000, dist: 30, realDist: 0.282, speed: 0.030, m: '8.9 × 10²² kg', mr: '~ 0.015 Earths', ir: '1,821 km', d: '3.53 g/cm³', inc: 0.05, lan: 0, tilt: 0 },
@@ -39,8 +39,8 @@ export const planetsData = [
         ],
         ecc: 0.0484, w: 14.75, L0: 34.40, motion: 0.0831
     },
-    { 
-        name: 'Saturn',  r: 17, realR: 0.0389, c: 0xe3d294, dist: 1500, speed: 0.00003, rotSpeed: 0.0880, 
+    {
+        name: 'Saturn', r: 17, realR: 0.0389, c: 0xe3d294, dist: 1500, speed: 0.00003, rotSpeed: 0.0880,
         mass: '5.683 × 10²⁶ kg', massRel: '~ 95.2 Earths', radius: '58,232 km', density: '0.69 g/cm³',
         massValue: 95.2, angle: 5.93, inc: 2.49, lan: 113.66, tilt: 26.73, moons: [
             { name: 'Mimas', r: 0.4, realR: 0.00013, c: 0xaaaaaa, dist: 22, realDist: 0.0801, speed: 0.040, m: '3.7 × 10¹⁹ kg', mr: '< 0.0001 Earths', ir: '198 km', d: '1.14 g/cm³', inc: 1.57, lan: 0, tilt: 0 },
@@ -53,8 +53,8 @@ export const planetsData = [
         ],
         ecc: 0.0542, w: 92.43, L0: 49.94, motion: 0.0335
     },
-    { 
-        name: 'Uranus',  r: 11, realR: 0.0169, c: 0xb1d8e0, dist: 2200, speed: 0.00001, rotSpeed: -0.0550, 
+    {
+        name: 'Uranus', r: 11, realR: 0.0169, c: 0xb1d8e0, dist: 2200, speed: 0.00001, rotSpeed: -0.0550,
         mass: '8.681 × 10²⁵ kg', massRel: '~ 14.5 Earths', radius: '25,362 km', density: '1.27 g/cm³',
         massValue: 14.5, angle: 0.96, inc: 0.77, lan: 74.01, tilt: 97.77, moons: [
             { name: 'Ariel', r: 0.8, realR: 0.00038, c: 0xaaaaaa, dist: 20, realDist: 0.127, speed: 0.020, m: '1.3 × 10²¹ kg', mr: '< 0.001 Earths', ir: '579 km', d: '1.67 g/cm³', inc: 0.26, lan: 0, tilt: 0 },
@@ -63,8 +63,8 @@ export const planetsData = [
         ],
         ecc: 0.0472, w: 170.96, L0: 313.23, motion: 0.0117
     },
-    { 
-        name: 'Neptune', r: 11, realR: 0.0164, c: 0x3d5c9c, dist: 3000, speed: 0.000006, rotSpeed: 0.0590, 
+    {
+        name: 'Neptune', r: 11, realR: 0.0164, c: 0x3d5c9c, dist: 3000, speed: 0.000006, rotSpeed: 0.0590,
         mass: '1.024 × 10²⁶ kg', massRel: '~ 17.1 Earths', radius: '24,622 km', density: '1.64 g/cm³',
         massValue: 17.1, angle: 6.10, inc: 1.77, lan: 131.78, tilt: 28.32, moons: [
             { name: 'Triton', r: 1.3, realR: 0.00090, c: 0xdddddd, dist: 25, realDist: 0.237, speed: 0.018, m: '2.1 × 10²² kg', mr: '~ 0.0035 Earths', ir: '1,353 km', d: '2.06 g/cm³', inc: 156.88, lan: 0, tilt: 0 }
@@ -72,7 +72,7 @@ export const planetsData = [
         ecc: 0.0086, w: 44.97, L0: 304.88, motion: 0.0060
     },
     {
-        name: 'Pluto',  r: 3, realR: 0.00079, c: 0x9a8e7d, dist: 4000, speed: 0.000003, rotSpeed: 0.01,
+        name: 'Pluto', r: 3, realR: 0.00079, c: 0x9a8e7d, dist: 4000, speed: 0.000003, rotSpeed: 0.01,
         mass: '1.303 × 10²² kg', massRel: '~ 0.002 Earths', radius: '1,188 km', density: '1.85 g/cm³',
         massValue: 0.002, angle: 2.5, inc: 17.16, lan: 110.29, tilt: 122.53, moons: [
             { name: 'Charon', r: 1.2, realR: 0.00040, c: 0xaaaaaa, dist: 15, realDist: 0.013, speed: 0.024, m: '1.58 × 10²¹ kg', mr: '< 0.001 Earths', ir: '606 km', d: '1.71 g/cm³', inc: 0.00, lan: 0, tilt: 0 }
@@ -80,13 +80,13 @@ export const planetsData = [
         ecc: 0.2488, w: 224.06, L0: 238.92, motion: 0.0040
     },
     {
-        name: 'Ceres',  r: 2.2, realR: 0.00032, c: 0x888888, dist: 650, speed: 0.0001, rotSpeed: 0.02,
+        name: 'Ceres', r: 2.2, realR: 0.00032, c: 0x888888, dist: 650, speed: 0.0001, rotSpeed: 0.02,
         mass: '9.39 × 10²⁰ kg', massRel: '< 0.0002 Earths', radius: '473 km', density: '2.16 g/cm³',
         massValue: 0.0002, angle: 4.0, inc: 10.59, lan: 80.33, tilt: 4, moons: [],
         ecc: 0.0758, w: 73.06, L0: 153.23, motion: 0.2141
     },
     {
-        name: 'Vesta',  r: 2.5, realR: 0.00035, c: 0x777777, dist: 560, speed: 0.00015, rotSpeed: 0.025,
+        name: 'Vesta', r: 2.5, realR: 0.00035, c: 0x777777, dist: 560, speed: 0.00015, rotSpeed: 0.025,
         mass: '2.59 × 10²² kg', massRel: '~ 0.004 Earths', radius: '500+ km', density: '3.46 g/cm³',
         massValue: 0.05, angle: 5.5, inc: 7.14, lan: 103.85, tilt: 29, moons: [],
         ecc: 0.0886, w: 151.12, L0: 272.91, motion: 0.2715

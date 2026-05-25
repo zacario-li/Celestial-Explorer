@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
-import coreUrl from '../assets/ship2_monitor.stl';
 
 /**
  * Creates a spaceship using the user's custom STL model.
@@ -48,8 +47,8 @@ export function createSpaceship() {
     group.add(fallbackMesh);
     // ------------------------------------------------
 
-    // Loading local STL model via bundled DataURL
-    // const coreUrl = 'assets/ship2_monitor.stl';
+    // Loading local STL model via plain URL (works with native ES modules)
+    const coreUrl = 'assets/ship2_monitor.stl';
 
     loader.load(
         coreUrl,
@@ -59,6 +58,7 @@ export function createSpaceship() {
 
             // Remove fallback on success
             group.remove(fallbackMesh);
+            fallbackGeo.dispose();
 
             const mesh = new THREE.Mesh(geometry, shipMat);
             

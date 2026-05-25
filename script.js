@@ -7,8 +7,8 @@ import { t, tName } from './modules/i18n.js';
 import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './modules/ui.js';
 import { scene, camera, renderer, ambientLight, sunLight, highVisLight, focusedLight } from './modules/sceneSetup.js';
 
-console.log("CELESTIAL EXPLORER: Bundle V2.8 Loading...");
-window.SIM_VERSION = "V2.8";
+console.log("CELESTIAL EXPLORER: Bundle V3.8 Loading...");
+window.SIM_VERSION = "V3.8";
 
 
 import { createStarfield } from './modules/starfield.js';
@@ -18,7 +18,7 @@ import { Planet } from './modules/celestial/planet.js';
 import { Moon } from './modules/celestial/moon.js';
 import { AsteroidBelt } from './modules/celestial/asteroidBelt.js';
 import { createSun, igniteStar } from './modules/celestial/sun.js';
-import { createSaturnRings } from './modules/celestial/saturnRings.js';
+import { createPlanetaryRings } from './modules/celestial/planetaryRings.js';
 import { createSpaceship } from './modules/spaceship.js';
 
 // Modular UI
@@ -71,6 +71,45 @@ window.addEventListener('keydown', (e) => {
     }
 });
 window.addEventListener('keyup', (e) => keys[e.code] = false);
+
+// Orbit drag controls for Chase Cam View
+let isShipOrbitPointerDown = false;
+let prevShipOrbitPointerX = 0;
+let prevShipOrbitPointerY = 0;
+
+window.addEventListener('pointerdown', (e) => {
+    if (state.isFlying && state.shipViewMode === 'chase' && e.target.tagName === 'CANVAS') {
+        isShipOrbitPointerDown = true;
+        prevShipOrbitPointerX = e.clientX;
+        prevShipOrbitPointerY = e.clientY;
+        state.isOrbitingShip = true;
+        state.lastOrbitTime = Date.now();
+    }
+});
+
+window.addEventListener('pointermove', (e) => {
+    if (isShipOrbitPointerDown && state.isFlying && state.shipViewMode === 'chase') {
+        const deltaX = e.clientX - prevShipOrbitPointerX;
+        const deltaY = e.clientY - prevShipOrbitPointerY;
+        prevShipOrbitPointerX = e.clientX;
+        prevShipOrbitPointerY = e.clientY;
+
+        if (!state.shipOrbitAngles) state.shipOrbitAngles = { theta: 4.712, phi: 0.3 };
+        state.shipOrbitAngles.theta -= deltaX * 0.005;
+        state.shipOrbitAngles.phi += deltaY * 0.005;
+
+        // Clamp phi to avoid flipping camera over the top/bottom
+        state.shipOrbitAngles.phi = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, state.shipOrbitAngles.phi));
+        
+        state.lastOrbitTime = Date.now();
+    }
+});
+
+window.addEventListener('pointerup', () => {
+    isShipOrbitPointerDown = false;
+    state.isOrbitingShip = false;
+});
+
 
 // Pre-allocated reusable objects (ZERO per-frame GC pressure)
 const _diff = new THREE.Vector3();
@@ -288,6 +327,18 @@ document.getElementById('settings-button').addEventListener('click', function() 
 
 document.getElementById('settings-close-btn').addEventListener('click', function() {
     document.getElementById('settings-modal').classList.remove('active');
+});
+
+document.getElementById('misc-settings-btn').addEventListener('click', function() {
+    const content = document.getElementById('misc-settings-content');
+    const icon = document.getElementById('misc-settings-icon');
+    if (content.style.display === 'none') {
+        content.style.display = 'flex';
+        icon.textContent = '▲';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▼';
+    }
 });
 
 document.getElementById('time-modal-confirm').addEventListener('click', function() {
@@ -684,8 +735,8 @@ planetsData.forEach(d => {
         });
     }
 
-    if (d.name === 'Saturn') {
-        createSaturnRings(planet.mesh, planet.radius);
+    if (['Saturn', 'Jupiter', 'Uranus', 'Neptune'].includes(d.name)) {
+        createPlanetaryRings(planet.mesh, d.name, planet.radius);
     }
 });
 
@@ -756,13 +807,17 @@ function planTransferOrbit(shipPos, target, T) {
     const steps = Math.min(150, Math.max(20, Math.ceil(T / 4))); // Dynamic steps based on remaining time
     const dt = T / steps;
 
+    const sunBody = physicsEngine.physicsBodies.find(b => b.isSun);
+    const sunPos = sunBody ? sunBody.pos : new THREE.Vector3();
+
     // Target's future position
     const pTargetFut = target.pos.clone();
     const vTargetFut = target.vel.clone();
     for (let i = 0; i < steps; i++) {
-        const rSq = pTargetFut.lengthSq();
+        const toSun = new THREE.Vector3().subVectors(sunPos, pTargetFut);
+        const rSq = toSun.lengthSq();
         if (rSq > 100) {
-            const aT = pTargetFut.clone().negate().normalize().multiplyScalar((G * SUN_MASS) / rSq);
+            const aT = toSun.normalize().multiplyScalar((G * SUN_MASS) / rSq);
             vTargetFut.addScaledVector(aT, dt);
         }
         pTargetFut.addScaledVector(vTargetFut, dt);
@@ -783,9 +838,10 @@ function planTransferOrbit(shipPos, target, T) {
 
         for (let i = 0; i < steps; i++) {
             currentPath.push(pShipFut.clone());
-            const rSq = pShipFut.lengthSq();
+            const toSun = new THREE.Vector3().subVectors(sunPos, pShipFut);
+            const rSq = toSun.lengthSq();
             if (rSq > 100) {
-                const aS = pShipFut.clone().negate().normalize().multiplyScalar((G * SUN_MASS) / rSq);
+                const aS = toSun.normalize().multiplyScalar((G * SUN_MASS) / rSq);
                 vSim.addScaledVector(aS, dt);
             }
             pShipFut.addScaledVector(vSim, dt);
@@ -1117,10 +1173,15 @@ function animate() {
         const vCrosshair = document.getElementById('v-crosshair');
 
         if (state.shipViewMode === 'cockpit') {
-            // First-Person Cockpit Camera (Inside the ship)
+            // First-Person Cockpit Camera (Inside/at the ship)
+            ship.visible = false; // Hide ship so it doesn't block cockpit view
             const camOffset = new THREE.Vector3(0.00, 0.05, 0).applyQuaternion(ship.quaternion);
             camera.position.copy(ship.position.clone().add(camOffset));
-            camera.quaternion.copy(ship.quaternion);
+            
+            // Align camera forward (-Z) with ship forward (+X)
+            const relativeQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+            camera.quaternion.copy(ship.quaternion).multiply(relativeQuat);
+            
             if (vCrosshair) vCrosshair.style.display = 'block';
         } else {
             // Third-Person Chase Camera (Soft-Follow + Drag Inspect)
@@ -1134,31 +1195,46 @@ function animate() {
                 state.shipOrbitAngles.phi += (DEFAULT_PHI - state.shipOrbitAngles.phi) * 0.05;
             }
 
-            // Calculate offset based on current orbit angles
-            const r = 1.2; 
+            // Calculate offset based on current orbit angles (r = 20.0 is perfect for ship scale)
+            const r = 20.0; 
             const ox = r * Math.sin(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
             const oy = r * Math.sin(state.shipOrbitAngles.phi);
             const oz = r * Math.cos(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
 
+            ship.visible = true; // Show ship in third-person view
             const camOffset = new THREE.Vector3(ox, oy, oz).applyQuaternion(ship.quaternion);
             const goalPos = ship.position.clone().add(camOffset);
 
             camera.position.lerp(goalPos, 0.1);
+            
+            // Align camera's up direction with ship's local up direction so camera rolls with ship
+            const shipUp = new THREE.Vector3(0, 1, 0).applyQuaternion(ship.quaternion);
+            camera.up.copy(shipUp);
+            
             camera.lookAt(ship.position);
             if (vCrosshair) vCrosshair.style.display = 'none';
         }
         // Add a slight nose-down tilt if needed, but per user request, keep it 1:1
-    } else if (window._spaceship && !state.isFlying && !earthRef.orbitObj.children.includes(window._spaceship)) {
-        // Subtle bobbing for stationary mode (relative to Earth orbital location)
-        // Note: For simplicity, if we exited flight mode far from Earth, 
-        // we'll just keep the ship where it is in global space.
-        const time = performance.now() * 0.001;
-        window._spaceship.position.y += Math.sin(time * 2) * 0.01;
-    } else if (window._spaceship && !state.isFlying) {
-        // Original docked animation
-        const time = performance.now() * 0.001;
-        window._spaceship.position.y = 16 + Math.sin(time * 2) * 0.5;
-        window._spaceship.rotation.z = Math.sin(time * 0.5) * 0.1;
+    } else {
+        // Reset camera up vector to default when not piloting
+        camera.up.set(0, 1, 0);
+        
+        if (window._spaceship) {
+            window._spaceship.visible = true; // Ensure ship is visible when not piloting
+            
+            if (!earthRef.orbitObj.children.includes(window._spaceship)) {
+                // Subtle bobbing for stationary mode (relative to Earth orbital location)
+                // Note: For simplicity, if we exited flight mode far from Earth, 
+                // we'll just keep the ship where it is in global space.
+                const time = performance.now() * 0.001;
+                window._spaceship.position.y += Math.sin(time * 2) * 0.01;
+            } else {
+                // Original docked animation
+                const time = performance.now() * 0.001;
+                window._spaceship.position.y = 16 + Math.sin(time * 2) * 0.5;
+                window._spaceship.rotation.z = Math.sin(time * 0.5) * 0.1;
+            }
+        }
     }
 
     sun.rotation.y += 0.00148 * scriptedDt;
@@ -1173,6 +1249,9 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
 
     // Modular Physics Engine
     physicsEngine.update(physicsDt, realDt);
+
+    // Sync sun light to sun's actual physics position (critical when sun drifts from origin)
+    sunLight.position.copy(sunBody.pos);
 
     // Cleanup destroyed bodies (consumed by collision)
     let hasDestroyed = false;
@@ -1191,8 +1270,32 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
                 }
                 b.instancedMesh.instanceMatrix.needsUpdate = true;
             } else {
-                scene.remove(b.orbitObj);
-                if (b.orbitLine) scene.remove(b.orbitLine);
+                const disposeHierarchy = (node) => {
+                    if (node.geometry) node.geometry.dispose();
+                    if (node.material) {
+                        if (Array.isArray(node.material)) node.material.forEach(m => m.dispose());
+                        else node.material.dispose();
+                    }
+                    if (node.children) node.children.forEach(child => disposeHierarchy(child));
+                };
+
+                if (b.orbitObj) {
+                    scene.remove(b.orbitObj);
+                    disposeHierarchy(b.orbitObj);
+                }
+                if (b.orbitLine) {
+                    scene.remove(b.orbitLine);
+                    disposeHierarchy(b.orbitLine);
+                }
+                if (b.osculatingLine) {
+                    scene.remove(b.osculatingLine);
+                    disposeHierarchy(b.osculatingLine);
+                }
+                if (b.pastTrailLine) {
+                    scene.remove(b.pastTrailLine);
+                    disposeHierarchy(b.pastTrailLine);
+                }
+
                 if (state.focusedBody === b.mesh) {
                     state.focusedBody = null;
                     state.isOverview = true;
@@ -1218,14 +1321,20 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
     }
 
     // Self-healing for corrupted camera (NaN or extreme proximity/distance)
-    const camDistSq = camera.position.distanceToSquared(controls.target);
-    const isCamCorrupt = isNaN(camera.position.x) || isNaN(camera.position.y) || isNaN(camera.position.z);
-    
-    if (isCamCorrupt || camDistSq < 0.01 || camDistSq > 100000000) {
-        console.warn("Camera Safeguard: Resetting position to safe coordinates.");
-        camera.position.set(0, 300, 500);
-        controls.target.set(0, 0, 0);
-        camera.updateProjectionMatrix();
+    if (!state.isFlying) {
+        const camDistSq = camera.position.distanceToSquared(controls.target);
+        const isCamCorrupt = isNaN(camera.position.x) || isNaN(camera.position.y) || isNaN(camera.position.z);
+        
+        // Threshold relaxed from 0.01 to 0.000001 to support Realistic Scale close-ups
+        const safeguardMin = state.isRealisticScale ? 0.00000001 : 0.01;
+        if (isCamCorrupt || camDistSq < safeguardMin || camDistSq > 100000000) {
+            console.warn("Camera Safeguard: Resetting position to safe coordinates.");
+            // Reset near the sun's current position, not the hardcoded origin
+            const sunPos = sunBody.pos;
+            camera.position.set(sunPos.x, sunPos.y + 300, sunPos.z + 500);
+            controls.target.copy(sunPos);
+            camera.updateProjectionMatrix();
+        }
     }
 
     const instancedMeshesToUpdate = new Set();
@@ -1233,13 +1342,17 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
 
     for (let i = 0; i < celestialBodies.length; i++) {
         const body = celestialBodies[i];
-        // Self-healing
+        // Self-healing for NaN positions
         if (!body.pos || isNaN(body.pos.x) || isNaN(body.pos.z)) {
             const rad = body.orbitRadius || 250;
             if (!body.pos) body.pos = new THREE.Vector3();
             if (!body.vel) body.vel = new THREE.Vector3();
-            body.pos.set(rad, 0, 0);
-            body.vel.set(0, 0, Math.sqrt((G * SUN_MASS) / rad));
+            // Place relative to the sun's current position
+            body.pos.copy(sunBody.pos).add(new THREE.Vector3(rad, 0, 0));
+            // Orbital velocity relative to sun
+            const toSun = new THREE.Vector3().subVectors(sunBody.pos, body.pos).normalize();
+            const perpVel = new THREE.Vector3(-toSun.z, 0, toSun.x);
+            body.vel.copy(perpVel).multiplyScalar(Math.sqrt((G * SUN_MASS) / rad));
         }
 
         if (body.isAsteroid) {
@@ -1258,6 +1371,17 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
             }
         } else {
             body.orbitObj.position.copy(body.pos);
+            if (body.updateOsculatingOrbit) {
+                body.updateOsculatingOrbit();
+                body.updatePastTrail();
+                
+                if (body.osculatingLine) {
+                    body.osculatingLine.visible = state.showFuturePath;
+                }
+                if (body.pastTrailLine) {
+                    body.pastTrailLine.visible = state.showPastPath;
+                }
+            }
             body.mesh.rotation.y += body.rotSpeed * scriptedDt;
             
 
@@ -1269,8 +1393,16 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
                 sats[k].mesh.rotation.y += sats[k].speed * scriptedDt;
             }
         }
+        // Update custom shader uniforms for dynamic sun position
+        if (body.mesh.userData.shaderUniforms) {
+            body.mesh.userData.shaderUniforms.uSunPos.value.copy(sunBody.pos);
+        }
+        body.mesh.children.forEach(child => {
+            if (child.userData && child.userData.shaderUniforms) {
+                child.userData.shaderUniforms.uSunPos.value.copy(sunBody.pos);
+            }
+        });
     }
-
     instancedMeshesToUpdate.forEach(mesh => {
         mesh.instanceMatrix.needsUpdate = true;
     });
@@ -1372,7 +1504,7 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
         const actualPos = new THREE.Vector3();
         currentFocused.getWorldPosition(actualPos);
         
-        const dirFromSun = actualPos.clone().normalize();
+        const dirFromSun = actualPos.clone().sub(sunBody.pos).normalize();
         const shadowSize = 60; // Perfectly wraps Saturn + rings
         
         // Place DirectionalLight 120 units towards the Sun
@@ -1421,3 +1553,10 @@ setTimeout(() => {
     // Smoothly focus on Sun at start instead of snapping
     state.isTransitioning = true;
 }, 100);
+
+// Expose variables globally for debugging and testing
+window.state = state;
+window.camera = camera;
+window.controls = controls;
+window.scene = scene;
+

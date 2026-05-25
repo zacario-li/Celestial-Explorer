@@ -116,7 +116,7 @@ export class PhysicsEngine {
 
         // 4. Asteroids (Simplified O(N) Sun-only)
         if (!state.isPaused) {
-            this.updateAsteroidsPhysics(physicsDt);
+            this.updateAsteroidsPhysics(physicsDt, sunBody);
         }
     }
 
@@ -146,11 +146,12 @@ export class PhysicsEngine {
         if (!state.isFlying || !window._spaceship || state.capturedBody) return;
 
         const sPos = window._spaceship.position;
-        const rSq = sPos.lengthSq();
 
-        // Sun Pull
+        // Sun Pull (relative to actual sun position, not hardcoded origin)
+        this._sunDir.subVectors(sunBody.pos, sPos);
+        const rSq = this._sunDir.lengthSq();
         if (rSq > 1600) { // 40*40
-            this._sunDir.copy(sPos).negate().normalize();
+            this._sunDir.normalize();
             state.shipVelocity.addScaledVector(this._sunDir, (G * SUN_MASS / rSq) * subDt);
         }
 
@@ -188,22 +189,25 @@ export class PhysicsEngine {
     }
 
     resetShipFlight() {
-        state.isFlying = false;
+        if (!state.isFlying) return;
         state.shipVelocity.set(0, 0, 0);
         setTimeout(() => {
             const btn = document.getElementById('pilot-button');
-            if (btn && btn.textContent.toLowerCase().includes('exit')) btn.click();
+            if (btn && state.isFlying) btn.click();
         }, 0);
     }
 
-    updateAsteroidsPhysics(physicsDt) {
+    updateAsteroidsPhysics(physicsDt, sunBody) {
         const nAsteroids = this.activeAsteroids.length;
         for (let i = 0; i < nAsteroids; i++) {
             const a = this.activeAsteroids[i];
             if (a.destroyed) continue;
-            const rSq = a.pos.lengthSq();
-            if (rSq > 1764) { // (40+2)^2
-                this._sunDir.copy(a.pos).negate().normalize();
+            // Use sun's actual physics position (not hardcoded origin)
+            this._sunDir.subVectors(sunBody.pos, a.pos);
+            const rSq = this._sunDir.lengthSq();
+            const collisionRadSq = (40 + 2) * (40 + 2); // (sunRad + small margin)^2
+            if (rSq > collisionRadSq) {
+                this._sunDir.normalize();
                 a.vel.addScaledVector(this._sunDir, (G * SUN_MASS / rSq) * physicsDt);
             } else {
                 a.destroyed = true; 

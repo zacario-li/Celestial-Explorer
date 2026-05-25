@@ -31,12 +31,22 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList)
         };
 
         const planet = new Planet(newPlanetData, physicsEngine, scene);
-        
-        if (massMult !== 1.0) {
-            const scaleVal = Math.pow(massMult, 0.3333);
-            planet.mesh.scale.setScalar(scaleVal);
-            planet.mesh.userData.radius *= scaleVal;
-        }
+
+        // Physics-correct visual radius:
+        // Sun has physMass = 1,000,000 and visual radius = 40 units.
+        // For a planet: r = 40 * (physMass / SUN_MASS)^(1/3)
+        // Clamp to at least the base planet radius so small multipliers
+        // still remain visible (gameplay concession already in base sizes).
+        const SUN_PHYS_MASS = 1000000;
+        const SUN_VIS_RADIUS = 40;
+        const physMass = baseData.massValue * massMult;
+        const physicsRadius = SUN_VIS_RADIUS * Math.pow(physMass / SUN_PHYS_MASS, 1 / 3);
+        const finalRadius = Math.max(physicsRadius, baseData.r); // never shrink below base
+        const scaleVal = finalRadius / baseData.r;
+
+        planet.mesh.scale.setScalar(scaleVal);
+        planet.mesh.userData.radius = finalRadius;
+        planet.radius = finalRadius; // keep planet's own radius consistent
 
         celestialBodies.push(planet);
         // UI logic for nav item...

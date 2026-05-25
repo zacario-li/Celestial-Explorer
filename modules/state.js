@@ -36,5 +36,7 @@ export const state = {
     autopilotVReq: new THREE.Vector3(),
     _prevAutopilotTarget: null,
     autopilotPhase: '', // 'PLANNING', 'ALIGNING', 'BURNING', 'COASTING'
-    _prevAutopilotPhase: ''
+    _prevAutopilotPhase: '',
+    showFuturePath: true,
+    showPastPath: true
 };
