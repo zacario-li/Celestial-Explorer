@@ -897,8 +897,8 @@ function animate() {
     if (state.isFlying && window._spaceship) {
         const ship = window._spaceship;
 
-        // Dynamically update spaceship scale based on Realistic Scale mode
-        const shipScale = state.isRealisticScale ? 0.0002 : 1.0;
+        // Dynamically update spaceship scale based on Realistic Scale mode (normalized geometries)
+        const shipScale = state.isRealisticScale ? 0.00005 : 0.2;
         ship.scale.setScalar(shipScale);
 
         // 1. Rotation (Arrow keys for Pitch/Yaw, Q/E for Roll)
@@ -995,7 +995,7 @@ function animate() {
 
                 if (state.autopilotPhase === 'PLANNING') {
                     // Estimate travel time (approximate 1.5 units/s average speed)
-                    const scaleFactor = state.isRealisticScale ? 0.0002 : 1.0;
+                    const scaleFactor = state.isRealisticScale ? 0.00005 : 0.2;
                     state.timeToIntercept = dist / (1.5 * scaleFactor); 
                     
                     const plan = planTransferOrbit(ship.position, target, state.timeToIntercept);

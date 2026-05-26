@@ -62,12 +62,19 @@ export function createSpaceship() {
 
             const mesh = new THREE.Mesh(geometry, shipMat);
             
+            // Center and normalize geometry so max dimension is exactly 1.0
+            geometry.computeBoundingBox();
+            const sizeBox = new THREE.Vector3();
+            geometry.boundingBox.getSize(sizeBox);
+            const maxDim = Math.max(sizeBox.x, sizeBox.y, sizeBox.z) || 1.0;
+            geometry.center();
+
             // --- FINAL CALIBRATED ORIENTATION ---
             // Aligned such that the Nose points at +X (Movement Axis)
             // and the Deck faces +Y (Up Axis).
             mesh.rotation.x = -Math.PI / 2; 
             mesh.rotation.z = 0; // Corrected from -Math.PI / 2 (Crab flight fixed)
-            mesh.scale.set(0.25, 0.25, 0.25);
+            mesh.scale.setScalar(1.0 / maxDim);
             mesh.position.set(0, 0, 0);
             
             mesh.castShadow = true;
