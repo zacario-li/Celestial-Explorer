@@ -35,7 +35,7 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec) {
 
                 // Snap camera immediately to avoid slow lerping from the old planetary orbit position
                 if (state.shipViewMode === 'cockpit') {
-                    window._spaceship.visible = false;
+                    window._spaceship.visible = true;
                     const camOffset = new THREE.Vector3(0.00, 0.05, 0).applyQuaternion(window._spaceship.quaternion);
                     camera.position.copy(window._spaceship.position.clone().add(camOffset));
                     

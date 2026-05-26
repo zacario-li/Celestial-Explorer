@@ -1174,7 +1174,7 @@ function animate() {
 
         if (state.shipViewMode === 'cockpit') {
             // First-Person Cockpit Camera (Inside/at the ship)
-            ship.visible = false; // Hide ship so it doesn't block cockpit view
+            ship.visible = true; // Show ship so interior is visible
             const camOffset = new THREE.Vector3(0.00, 0.05, 0).applyQuaternion(ship.quaternion);
             camera.position.copy(ship.position.clone().add(camOffset));
             
