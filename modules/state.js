@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 export const state = {
     focusedBody: null,
+    isRealisticScale: false,
     isTransitioning: false,
     isPaused: false,
     virtualTime: 0,

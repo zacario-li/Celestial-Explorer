@@ -897,6 +897,10 @@ function animate() {
     if (state.isFlying && window._spaceship) {
         const ship = window._spaceship;
 
+        // Dynamically update spaceship scale based on Realistic Scale mode
+        const shipScale = state.isRealisticScale ? 0.0002 : 1.0;
+        ship.scale.setScalar(shipScale);
+
         // 1. Rotation (Arrow keys for Pitch/Yaw, Q/E for Roll)
         const yaw = (keys['ArrowLeft'] ? 1 : 0) - (keys['ArrowRight'] ? 1 : 0);
         const pitch = (keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0);
@@ -951,12 +955,21 @@ function animate() {
 
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
 
+        // Apply engine thrust physics to shipVelocity
+        if (state.shipThrottle !== 0) {
+            const turbo = keys['ShiftLeft'] ? 3 : 1;
+            const maxAccel = 0.08 * turbo;
+            const currentAccel = state.shipThrottle * maxAccel * shipScale;
+            state.shipVelocity.addScaledVector(dir, currentAccel * (physicsDt / 0.016));
+        }
+
         // --- AUTOPILOT NAVIGATION LOGIC ---
         // --- AUTOPILOT NAVIGATION LOGIC (Predictive Trajectory Mode) ---
         if (state.isAutopilotActive && state.autopilotTarget) {
             const target = state.autopilotTarget;
             const dist = ship.position.distanceTo(target.pos);
-            const planetRadius = target.mesh.userData.radius || 0.04;
+            const scaleX = target.mesh ? target.mesh.scale.x : 1.0;
+            const planetRadius = (target.mesh.userData.radius || 0.04) * scaleX;
             const captureRadius = planetRadius * 8;
 
             // 1. ARRIVAL CHECK
@@ -982,7 +995,8 @@ function animate() {
 
                 if (state.autopilotPhase === 'PLANNING') {
                     // Estimate travel time (approximate 1.5 units/s average speed)
-                    state.timeToIntercept = dist / 1.5; 
+                    const scaleFactor = state.isRealisticScale ? 0.0002 : 1.0;
+                    state.timeToIntercept = dist / (1.5 * scaleFactor); 
                     
                     const plan = planTransferOrbit(ship.position, target, state.timeToIntercept);
                     state.autopilotVReq.copy(plan.v0);
@@ -1112,7 +1126,8 @@ function animate() {
 
             if (closest) {
                 // Radius-based capture zone (8x radius)
-                const planetRadius = closest.mesh.userData.radius || 0.04;
+                const scaleX = closest.mesh ? closest.mesh.scale.x : 1.0;
+                const planetRadius = (closest.mesh.userData.radius || 0.04) * scaleX;
                 const captureRadius = planetRadius * 8;
 
                 if (minDist < captureRadius) {
@@ -1175,13 +1190,20 @@ function animate() {
         if (state.shipViewMode === 'cockpit') {
             // First-Person Cockpit Camera (Inside/at the ship)
             ship.visible = true; // Show ship so interior is visible
-            const camOffset = new THREE.Vector3(0.00, 0.05, 0).applyQuaternion(ship.quaternion);
+            const camOffset = new THREE.Vector3(0.00, 0.05 * shipScale, 0).applyQuaternion(ship.quaternion);
             camera.position.copy(ship.position.clone().add(camOffset));
             
             // Align camera forward (-Z) with ship forward (+X)
             const relativeQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
             camera.quaternion.copy(ship.quaternion).multiply(relativeQuat);
             
+            // Dynamically set camera near plane to prevent clipping the spaceship cockpit
+            const targetNear = 0.00005 * shipScale;
+            if (camera.near !== targetNear) {
+                camera.near = targetNear;
+                camera.updateProjectionMatrix();
+            }
+
             if (vCrosshair) vCrosshair.style.display = 'block';
         } else {
             // Third-Person Chase Camera (Soft-Follow + Drag Inspect)
@@ -1196,7 +1218,7 @@ function animate() {
             }
 
             // Calculate offset based on current orbit angles (r = 20.0 is perfect for ship scale)
-            const r = 20.0; 
+            const r = 20.0 * shipScale; 
             const ox = r * Math.sin(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
             const oy = r * Math.sin(state.shipOrbitAngles.phi);
             const oz = r * Math.cos(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
@@ -1212,12 +1234,23 @@ function animate() {
             camera.up.copy(shipUp);
             
             camera.lookAt(ship.position);
+
+            if (camera.near !== 0.001) {
+                camera.near = 0.001;
+                camera.updateProjectionMatrix();
+            }
+
             if (vCrosshair) vCrosshair.style.display = 'none';
         }
         // Add a slight nose-down tilt if needed, but per user request, keep it 1:1
     } else {
         // Reset camera up vector to default when not piloting
         camera.up.set(0, 1, 0);
+
+        if (camera.near !== 0.001) {
+            camera.near = 0.001;
+            camera.updateProjectionMatrix();
+        }
         
         if (window._spaceship) {
             window._spaceship.visible = true; // Ensure ship is visible when not piloting
@@ -1229,9 +1262,12 @@ function animate() {
                 const time = performance.now() * 0.001;
                 window._spaceship.position.y += Math.sin(time * 2) * 0.01;
             } else {
-                // Original docked animation
+                // Original docked animation (proportionally scaled)
                 const time = performance.now() * 0.001;
-                window._spaceship.position.y = 16 + Math.sin(time * 2) * 0.5;
+                const earthScale = earthRef.mesh.scale.x;
+                const baseHeight = 16 * earthScale;
+                const bob = Math.sin(time * 2) * 0.5 * earthScale;
+                window._spaceship.position.set(0, baseHeight + bob, 0);
                 window._spaceship.rotation.z = Math.sin(time * 0.5) * 0.1;
             }
         }
@@ -1327,14 +1363,31 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
         
         // Threshold relaxed from 0.01 to 0.000001 to support Realistic Scale close-ups
         const safeguardMin = state.isRealisticScale ? 0.00000001 : 0.01;
-        if (isCamCorrupt || camDistSq < safeguardMin || camDistSq > 100000000) {
+        if (isCamCorrupt || camDistSq > 100000000) {
             console.warn("Camera Safeguard: Resetting position to safe coordinates.");
             // Reset near the sun's current position, not the hardcoded origin
             const sunPos = sunBody.pos;
             camera.position.set(sunPos.x, sunPos.y + 300, sunPos.z + 500);
             controls.target.copy(sunPos);
             camera.updateProjectionMatrix();
+        } else if (camDistSq < safeguardMin) {
+            console.warn("Camera Safeguard: Adjusting position to prevent clipping.");
+            const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+            if (dir.lengthSq() < 0.1) dir.set(0, 1, 0);
+            const safeDist = Math.max(safeguardMin * 1.5, controls.minDistance || 0.1);
+            camera.position.copy(controls.target).addScaledVector(dir, safeDist);
+            camera.updateProjectionMatrix();
         }
+
+        // Dynamically set OrbitControls limits based on focused body size to prevent clipping
+        let targetRadius = 40; // Default to Sun radius
+        if (state.focusedBody) {
+            targetRadius = state.focusedBody.userData.radius * state.focusedBody.scale.x || 10;
+        } else {
+            targetRadius = sun.scale.x * 40;
+        }
+        controls.minDistance = targetRadius * 1.25;
+        controls.maxDistance = 15000;
     }
 
     const instancedMeshesToUpdate = new Set();

@@ -34,9 +34,10 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec) {
                 state.shipVelocity.set(0, 0, 0);
 
                 // Snap camera immediately to avoid slow lerping from the old planetary orbit position
+                const shipScale = window._spaceship.scale.x || 1.0;
                 if (state.shipViewMode === 'cockpit') {
                     window._spaceship.visible = true;
-                    const camOffset = new THREE.Vector3(0.00, 0.05, 0).applyQuaternion(window._spaceship.quaternion);
+                    const camOffset = new THREE.Vector3(0.00, 0.05 * shipScale, 0).applyQuaternion(window._spaceship.quaternion);
                     camera.position.copy(window._spaceship.position.clone().add(camOffset));
                     
                     const relativeQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
@@ -45,7 +46,7 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec) {
                     window._spaceship.visible = true;
                     const DEFAULT_THETA = 4.712;
                     const DEFAULT_PHI = 0.3;
-                    const r = 20.0;
+                    const r = 20.0 * shipScale;
                     const ox = r * Math.sin(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);
                     const oy = r * Math.sin(DEFAULT_PHI);
                     const oz = r * Math.cos(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);

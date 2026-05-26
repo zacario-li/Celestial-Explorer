@@ -180,8 +180,11 @@ export class PhysicsEngine {
             const p = this.activePlanets[i];
             if (p.destroyed) continue;
             const distSq = window._spaceship.position.distanceToSquared(p.pos);
-            const r = p.mesh?.userData?.radius || 0.02;
-            if (distSq < r * r) {
+            const scaleX = p.mesh ? p.mesh.scale.x : 1.0;
+            const rPlanet = (p.mesh?.userData?.radius || 0.02) * scaleX;
+            const rShip = 0.125 * (window._spaceship.scale.x || 1.0);
+            const collisionDist = rPlanet + rShip;
+            if (distSq < collisionDist * collisionDist) {
                 this.resetShipFlight();
                 break;
             }
