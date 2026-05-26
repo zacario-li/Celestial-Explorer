@@ -901,6 +901,24 @@ function animate() {
         const shipScale = state.isRealisticScale ? 0.00005 : 0.2;
         ship.scale.setScalar(shipScale);
 
+        // Detect scale mode changes to snap camera immediately and avoid slow lerping lags
+        if (state._prevRealisticScaleForCam !== state.isRealisticScale) {
+            if (state.shipViewMode === 'cockpit') {
+                const camOffset = new THREE.Vector3(0.00, 0.05 * shipScale, 0).applyQuaternion(ship.quaternion);
+                camera.position.copy(ship.position.clone().add(camOffset));
+            } else {
+                const r = 20.0 * shipScale;
+                const DEFAULT_THETA = 4.712;
+                const DEFAULT_PHI = 0.3;
+                const ox = r * Math.sin(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);
+                const oy = r * Math.sin(DEFAULT_PHI);
+                const oz = r * Math.cos(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);
+                const camOffset = new THREE.Vector3(ox, oy, oz).applyQuaternion(ship.quaternion);
+                camera.position.copy(ship.position.clone().add(camOffset));
+            }
+            state._prevRealisticScaleForCam = state.isRealisticScale;
+        }
+
         // 1. Rotation (Arrow keys for Pitch/Yaw, Q/E for Roll)
         const yaw = (keys['ArrowLeft'] ? 1 : 0) - (keys['ArrowRight'] ? 1 : 0);
         const pitch = (keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0);
@@ -1272,6 +1290,7 @@ function animate() {
             }
         }
     }
+    state._prevRealisticScaleForCam = state.isRealisticScale;
 
     sun.rotation.y += 0.00148 * scriptedDt;
 

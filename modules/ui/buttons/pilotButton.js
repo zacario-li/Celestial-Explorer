@@ -33,8 +33,9 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec) {
                 window._spaceship.position.copy(targetVec);
                 state.shipVelocity.set(0, 0, 0);
 
-                // Snap camera immediately to avoid slow lerping from the old planetary orbit position
-                const shipScale = window._spaceship.scale.x || 1.0;
+                // Apply correct scale immediately to spaceship and snap camera to prevent lerping lags
+                const shipScale = state.isRealisticScale ? 0.00005 : 0.2;
+                window._spaceship.scale.setScalar(shipScale);
                 if (state.shipViewMode === 'cockpit') {
                     window._spaceship.visible = true;
                     const camOffset = new THREE.Vector3(0.00, 0.05 * shipScale, 0).applyQuaternion(window._spaceship.quaternion);
