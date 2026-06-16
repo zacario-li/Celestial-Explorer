@@ -871,6 +871,8 @@ function planTransferOrbit(shipPos, target, T) {
 }
 
 
+
+
 // Main Animation Loop
 function animate() {
     requestAnimationFrame(animate);
@@ -1596,6 +1598,7 @@ glowSphere3.scale.setScalar(1 + 0.015 * Math.sin(state.virtualTime * 0.5 + 2));
     } else {
         focusedLight.intensity = 0;
     }
+
 
 
 
