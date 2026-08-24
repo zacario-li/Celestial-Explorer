@@ -1,9 +1,14 @@
 import * as THREE from 'three';
+import { CelestialBody } from './celestialBody.js';
 
-export class Moon {
+export class Moon extends CelestialBody {
     constructor(data, planet) {
+        super({ name: data.name, kind: 'moon', mesh: null, radius: data.r, physMass: null });
         this.data = data;
         this.planet = planet;
+        this.parent = planet; // identity alias (sun/planet also expose owner relations)
+        this._prevWorldPos = new THREE.Vector3();
+        this._hasPrev = false;
         
         this.name = data.name;
         this.radius = data.r;
@@ -45,6 +50,23 @@ export class Moon {
 
         this.planet.satelliteAnchor.add(this.orbitObj);
         this.planet.satellites.push(this);
+        this.syncWorld(0); // first world pos immediately, no velocity yet
+    }
+
+    /**
+     * Soft-contract bridge: pos/vel are DERIVED from the authored scene-graph
+     * hierarchy (script-mode kinematics -- moons were never physics bodies).
+     * Called per frame by BodyVisualSystem with the scripted dt.
+     */
+    syncWorld(dt) {
+        this.mesh.getWorldPosition(this.pos);
+        if (dt > 0 && this._hasPrev && !this.pos.equals(this._prevWorldPos)) {
+            this.vel.copy(this.pos).sub(this._prevWorldPos).divideScalar(dt);
+        } else if (dt <= 0) {
+            this.vel.set(0, 0, 0);
+        }
+        this._prevWorldPos.copy(this.pos);
+        this._hasPrev = dt > 0;
     }
 
     createMesh() {

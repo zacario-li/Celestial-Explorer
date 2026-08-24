@@ -58,7 +58,8 @@ export class BodyVisualSystem {
                     body.instancedMesh.setMatrixAt(inst.instanceId, _dummyAsteroid.matrix);
                 }
             } else {
-                body.orbitObj.position.copy(body.pos);
+                // #2: sun has no orbitObj (its mesh is the origin-anchored root)
+                if (body.orbitObj) body.orbitObj.position.copy(body.pos);
                 if (body.updateOsculatingOrbit) {
                     body.updateOsculatingOrbit();
                     body.updatePastTrail();
@@ -77,6 +78,8 @@ export class BodyVisualSystem {
                 for (let k = 0; k < sats.length; k++) {
                     sats[k].spinGroup.rotation.y += sats[k].speed * scriptedDt;
                     sats[k].mesh.rotation.y += sats[k].speed * scriptedDt;
+                    // #2: moons are script-mode bodies -- derive world pos/vel
+                    if (sats[k].syncWorld) sats[k].syncWorld(scriptedDt);
                 }
             }
 

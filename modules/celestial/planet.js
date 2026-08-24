@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import { CelestialBody } from './celestialBody.js';
 import { G, SUN_MASS } from '../physics/constants.js';
 import { orbitalStateAt } from '../orbits/kepler.js';
 
-export class Planet {
+export class Planet extends CelestialBody {
     constructor(data, physicsEngine, scene) {
+        super({ name: data.name, kind: 'planet', mesh: null, radius: data.r, physMass: data.massValue || 1.0 });
         this.data = data;
         this.physicsEngine = physicsEngine;
         this.scene = scene;
@@ -31,7 +33,6 @@ export class Planet {
         this.label = this.createLabel();
         this.satelliteAnchor = this.createSatelliteAnchor();
         this.captureMesh = this.createCaptureMesh();
-        this.atmMesh = this.createAtmosphere();
         this.atmMesh = this.createAtmosphere();
 
 

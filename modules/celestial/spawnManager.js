@@ -9,7 +9,7 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList)
     const spawnMass = document.getElementById('spawn-mass');
 
     const spawnSingle = (isSilent = false) => {
-        const currentCount = celestialBodies.filter(b => !b.isAsteroid).length;
+        const currentCount = celestialBodies.filter(b => !b.isAsteroid && !b.isSun).length; // #2: sun is in the fleet, not a spawned planet
         if (currentCount >= 50) return;
 
         let baseData = spawnTemplate.value === 'Random' 

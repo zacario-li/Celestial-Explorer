@@ -17,7 +17,8 @@ import { G, SUN_MASS } from './modules/physics/constants.js';
 import { Planet } from './modules/celestial/planet.js';
 import { Moon } from './modules/celestial/moon.js';
 import { AsteroidBelt } from './modules/celestial/asteroidBelt.js';
-import { createSun, igniteStar } from './modules/celestial/sun.js';
+import { Sun, igniteStar } from './modules/celestial/sun.js';
+import { createCelestialIndex } from './modules/celestial/celestialIndex.js';
 import { createPlanetaryRings } from './modules/celestial/planetaryRings.js';
 import { createSpaceship } from './modules/spaceship.js';
 
@@ -348,19 +349,14 @@ document.getElementById('time-modal-confirm').addEventListener('click', function
 const starField = createStarfield();
 scene.add(starField);
 
-// Sun Setup
-const { sun, glowSphere, glowSphere2, glowSphere3, solarWind } = createSun(scene);
+// Sun Setup (refactor #2: the sun is a first-class CelestialBody -- the class
+// wraps the createSun visuals and IS the physics body the literal used to be)
+const sunBody = new Sun(scene);
+const sun = sunBody.mesh;
+const { glowSphere, glowSphere2, glowSphere3, solarWind } = sunBody;
 state.focusedBody = sun; // Start focusing on sun
 
 // Initialize Sun in the Physics Engine (Allowing it to move)
-const sunBody = {
-    mesh: sun,
-    pos: new THREE.Vector3(0, 0, 0),
-    vel: new THREE.Vector3(0, 0, 0),
-    physMass: SUN_MASS,
-    isSun: true,
-    destroyed: false
-};
 physicsEngine.addBody(sunBody);
 updateInfoPanel(state.focusedBody);
 
@@ -500,6 +496,10 @@ function updateTextureResolution() {
 
 
 const celestialBodies = [];
+// #2: the sun is a fleet member (identity parity with planets). Consumers
+// gate on kind/flags instead of array membership: orbit sync (isSun),
+// textures (isStar), station keeping (isCapturable=false), spawn cap (!isSun).
+celestialBodies.push(sunBody);
 let earthRef = null;
 
 // NOTE: the Kepler solver moved to modules/orbits/kepler.js (solveKepler),
@@ -516,7 +516,7 @@ function syncPlanetsToDate(targetDate = null) {
     const isSyzygy = now.getFullYear() > 9999;
 
     celestialBodies.forEach(body => {
-        if (body.isAsteroid) return;
+        if (body.isAsteroid || body.isSun) return; // sun is physics-owned, not date-synced
 
         if (isSyzygy) {
             // Syzygy Easter Egg: Align all planets and moons
@@ -750,9 +750,10 @@ if (earthRef) {
     shipRef = spaceship;           // injected into physics engine + pilot button
 }
 
-// Randomize starting rotations
+// Randomize starting rotations (planets only -- the sun's orientation stays
+// deterministic, as it always rendered)
 celestialBodies.forEach(body => {
-    if (!body.isAsteroid) {
+    if (!body.isAsteroid && !body.isSun) {
         body.mesh.rotation.y = Math.random() * Math.PI * 2;
     }
 });
@@ -893,5 +894,9 @@ window.state = state;
 window.camera = camera;
 window.controls = controls;
 window.scene = scene;
+// #2: full-population index for debugging / future consumers
+const celestialIndex = createCelestialIndex(celestialBodies);
+
 window.__sim = { time, physicsEngine, prePhysicsSystems, postPhysicsSystems, finalSystems };
+window.__bodies = celestialIndex; // debug / external tooling
 

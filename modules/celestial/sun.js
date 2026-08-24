@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { CelestialBody } from './celestialBody.js';
+import { SUN_MASS } from '../physics/constants.js';
 
 export function createSun(scene) {
     const sunGeo = new THREE.SphereGeometry(40, 64, 64);
@@ -54,4 +56,35 @@ export function igniteStar(body) {
     const g1 = makeGlowLayer(body.mesh.userData.radius * 1.05, 0x4fa6ff, 0.4);
     const g2 = makeGlowLayer(body.mesh.userData.radius * 1.15, 0x00ffff, 0.2);
     body.mesh.add(g1, g2);
+}
+
+
+/**
+ * The star, as a first-class celestial body (refactor #2).
+ *
+ * Wraps the historic createSun() visuals and carries the identity fields the
+ * physics engine used to get from the hand-built literal in script.js:
+ * mesh / pos / vel / physMass / isSun / destroyed. New gates:
+ *   - isStar        texture pipeline skips stars (no planet texture on the sun)
+ *   - isCapturable  sunlight is not a docking target (station-keeping skips)
+ * rotSpeed = 0 keeps the per-frame visual spin loop a no-op; the sun's
+ * realistic-scale transform stays on the separate sunWrapper, as before.
+ * pos/vel are integrated by the physics engine (the Sun instance IS the
+ * physics body -- same identities the literal always had).
+ */
+export class Sun extends CelestialBody {
+    constructor(scene) {
+        super({ name: 'The Sun', kind: 'sun', mesh: null, radius: 40, physMass: SUN_MASS });
+        const visuals = createSun(scene);
+        this.visuals = visuals;
+        this.mesh = visuals.sun;
+        this.glowSphere = visuals.glowSphere;
+        this.glowSphere2 = visuals.glowSphere2;
+        this.glowSphere3 = visuals.glowSphere3;
+        this.solarWind = visuals.solarWind;
+        this.isSun = true;
+        this.isStar = true;
+        this.isCapturable = false;
+        this.rotSpeed = 0;
+    }
 }

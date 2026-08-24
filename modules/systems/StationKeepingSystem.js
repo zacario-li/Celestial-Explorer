@@ -48,6 +48,7 @@ export class StationKeepingSystem {
             for (let i = 0; i < ctx.celestialBodies.length; i++) {
                 const b = ctx.celestialBodies[i];
                 if (b.isAsteroid || b.destroyed) continue;
+                if (b.isCapturable === false) continue; // #2: sun entered the fleet, never a docking target
                 const d = ship.position.distanceTo(b.pos);
                 if (d < minDist) { minDist = d; closest = b; }
             }
