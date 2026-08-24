@@ -377,40 +377,40 @@ const BASE_TEX_URL = 'https://raw.githubusercontent.com/jeromeetienne/threex.pla
 
 // Texture Registries (Paths only, not loaded yet)
 const pTexPaths = {
-    'Mercury': { high: 'textures/planets/mercury.jpg', low: 'textures/planets/low/mercury.jpg', ultra: 'textures/planets/ultralow/mercury.jpg' },
-    'Venus': { high: 'textures/planets/venus.jpg', low: 'textures/planets/low/venus.jpg', ultra: 'textures/planets/ultralow/venus.jpg' },
-    'VenusAtm': { high: 'textures/planets/venus_atm.jpg', low: 'textures/planets/venus_atm.jpg', ultra: 'textures/planets/venus_atm.jpg' },
-    'Earth': { high: 'textures/planets/earth.jpg', low: 'textures/planets/low/earth.jpg', ultra: 'textures/planets/ultralow/earth.jpg' },
-    'Mars': { high: BASE_TEX_URL + 'marsmap1k.jpg', low: BASE_TEX_URL + 'marsmap1k.jpg', ultra: BASE_TEX_URL + 'marsmap1k.jpg' },
-    'Jupiter': { high: 'textures/planets/jupiter.jpg', low: 'textures/planets/low/jupiter.jpg', ultra: 'textures/planets/ultralow/jupiter.jpg' },
-    'Saturn': { high: BASE_TEX_URL + 'saturnmap.jpg', low: BASE_TEX_URL + 'saturnmap.jpg', ultra: BASE_TEX_URL + 'saturnmap.jpg' },
-    'Uranus': { high: BASE_TEX_URL + 'uranusmap.jpg', low: BASE_TEX_URL + 'uranusmap.jpg', ultra: BASE_TEX_URL + 'uranusmap.jpg' },
-    'Neptune': { high: BASE_TEX_URL + 'neptunemap.jpg', low: BASE_TEX_URL + 'neptunemap.jpg', ultra: BASE_TEX_URL + 'neptunemap.jpg' },
-    'Pluto': { high: 'textures/planets/pluto.jpg', low: 'textures/planets/low/pluto.jpg', ultra: 'textures/planets/ultralow/pluto.jpg' },
-    'Ceres': { high: 'textures/planets/ceres.jpg', low: 'textures/planets/low/ceres.jpg', ultra: 'textures/planets/ultralow/ceres.jpg' },
-    'Vesta': { high: 'textures/planets/vesta.jpg', low: 'textures/planets/low/vesta.jpg', ultra: 'textures/planets/ultralow/vesta.jpg' },
+    'Mercury': { high: 'textures/planets/mercury.jpg', low: 'textures/planets/low/mercury.jpg', ultralow: 'textures/planets/ultralow/mercury.jpg' },
+    'Venus': { high: 'textures/planets/venus.jpg', low: 'textures/planets/low/venus.jpg', ultralow: 'textures/planets/ultralow/venus.jpg' },
+    'VenusAtm': { high: 'textures/planets/venus_atm.jpg', low: 'textures/planets/venus_atm.jpg', ultralow: 'textures/planets/venus_atm.jpg' },
+    'Earth': { high: 'textures/planets/earth.jpg', low: 'textures/planets/low/earth.jpg', ultralow: 'textures/planets/ultralow/earth.jpg' },
+    'Mars': { high: BASE_TEX_URL + 'marsmap1k.jpg', low: BASE_TEX_URL + 'marsmap1k.jpg', ultralow: BASE_TEX_URL + 'marsmap1k.jpg' },
+    'Jupiter': { high: 'textures/planets/jupiter.jpg', low: 'textures/planets/low/jupiter.jpg', ultralow: 'textures/planets/ultralow/jupiter.jpg' },
+    'Saturn': { high: BASE_TEX_URL + 'saturnmap.jpg', low: BASE_TEX_URL + 'saturnmap.jpg', ultralow: BASE_TEX_URL + 'saturnmap.jpg' },
+    'Uranus': { high: BASE_TEX_URL + 'uranusmap.jpg', low: BASE_TEX_URL + 'uranusmap.jpg', ultralow: BASE_TEX_URL + 'uranusmap.jpg' },
+    'Neptune': { high: BASE_TEX_URL + 'neptunemap.jpg', low: BASE_TEX_URL + 'neptunemap.jpg', ultralow: BASE_TEX_URL + 'neptunemap.jpg' },
+    'Pluto': { high: 'textures/planets/pluto.jpg', low: 'textures/planets/low/pluto.jpg', ultralow: 'textures/planets/ultralow/pluto.jpg' },
+    'Ceres': { high: 'textures/planets/ceres.jpg', low: 'textures/planets/low/ceres.jpg', ultralow: 'textures/planets/ultralow/ceres.jpg' },
+    'Vesta': { high: 'textures/planets/vesta.jpg', low: 'textures/planets/low/vesta.jpg', ultralow: 'textures/planets/ultralow/vesta.jpg' },
 };
 
 const mTexPaths = {
-    'The Moon': { high: 'textures/moons/moon.jpg', low: 'textures/moons/low/moon.jpg', ultra: 'textures/moons/ultralow/moon.jpg' },
-    'Phobos': { high: 'textures/moons/phobos.jpg', low: 'textures/moons/low/phobos.jpg', ultra: 'textures/moons/ultralow/phobos.jpg' },
-    'Deimos': { high: 'textures/moons/deimos.jpg', low: 'textures/moons/low/deimos.jpg', ultra: 'textures/moons/ultralow/deimos.jpg' },
-    'Io': { high: 'textures/moons/io.jpg', low: 'textures/moons/low/io.jpg', ultra: 'textures/moons/ultralow/io.jpg' },
-    'Europa': { high: 'textures/moons/europa.jpg', low: 'textures/moons/low/europa.jpg', ultra: 'textures/moons/ultralow/europa.jpg' },
-    'Ganymede': { high: 'textures/moons/ganymede.jpg', low: 'textures/moons/low/ganymede.jpg', ultra: 'textures/moons/ultralow/ganymede.jpg' },
-    'Callisto': { high: 'textures/moons/callisto.jpg', low: 'textures/moons/low/callisto.jpg', ultra: 'textures/moons/ultralow/callisto.jpg' },
-    'Mimas': { high: 'textures/moons/mimas.jpg', low: 'textures/moons/low/mimas.jpg', ultra: 'textures/moons/ultralow/mimas.jpg' },
-    'Enceladus': { high: 'textures/moons/enceladus.jpg', low: 'textures/moons/low/enceladus.jpg', ultra: 'textures/moons/ultralow/enceladus.jpg' },
-    'Tethys': { high: 'textures/moons/tethys.jpg', low: 'textures/moons/low/tethys.jpg', ultra: 'textures/moons/ultralow/tethys.jpg' },
-    'Dione': { high: 'textures/moons/dione.jpg', low: 'textures/moons/low/dione.jpg', ultra: 'textures/moons/ultralow/dione.jpg' },
-    'Rhea': { high: 'textures/moons/rhea.jpg', low: 'textures/moons/low/rhea.jpg', ultra: 'textures/moons/ultralow/rhea.jpg' },
-    'Titan': { high: 'textures/moons/titan.jpg', low: 'textures/moons/low/titan.jpg', ultra: 'textures/moons/ultralow/titan.jpg' },
-    'Iapetus': { high: 'textures/moons/iapetus.jpg', low: 'textures/moons/low/iapetus.jpg', ultra: 'textures/moons/ultralow/iapetus.jpg' },
-    'Ariel': { high: 'textures/moons/ariel.jpg', low: 'textures/moons/low/ariel.jpg', ultra: 'textures/moons/ultralow/ariel.jpg' },
-    'Titania': { high: 'textures/moons/titania.jpg', low: 'textures/moons/low/titania.jpg', ultra: 'textures/moons/ultralow/titania.jpg' },
-    'Oberon': { high: 'textures/moons/oberon.jpg', low: 'textures/moons/low/oberon.jpg', ultra: 'textures/moons/ultralow/oberon.jpg' },
-    'Triton': { high: 'textures/moons/triton.jpg', low: 'textures/moons/low/triton.jpg', ultra: 'textures/moons/ultralow/triton.jpg' },
-    'Charon': { high: 'textures/moons/charon.jpg', low: 'textures/moons/low/charon.jpg', ultra: 'textures/moons/ultralow/charon.jpg' }
+    'The Moon': { high: 'textures/moons/moon.jpg', low: 'textures/moons/low/moon.jpg', ultralow: 'textures/moons/ultralow/moon.jpg' },
+    'Phobos': { high: 'textures/moons/phobos.jpg', low: 'textures/moons/low/phobos.jpg', ultralow: 'textures/moons/ultralow/phobos.jpg' },
+    'Deimos': { high: 'textures/moons/deimos.jpg', low: 'textures/moons/low/deimos.jpg', ultralow: 'textures/moons/ultralow/deimos.jpg' },
+    'Io': { high: 'textures/moons/io.jpg', low: 'textures/moons/low/io.jpg', ultralow: 'textures/moons/ultralow/io.jpg' },
+    'Europa': { high: 'textures/moons/europa.jpg', low: 'textures/moons/low/europa.jpg', ultralow: 'textures/moons/ultralow/europa.jpg' },
+    'Ganymede': { high: 'textures/moons/ganymede.jpg', low: 'textures/moons/low/ganymede.jpg', ultralow: 'textures/moons/ultralow/ganymede.jpg' },
+    'Callisto': { high: 'textures/moons/callisto.jpg', low: 'textures/moons/low/callisto.jpg', ultralow: 'textures/moons/ultralow/callisto.jpg' },
+    'Mimas': { high: 'textures/moons/mimas.jpg', low: 'textures/moons/low/mimas.jpg', ultralow: 'textures/moons/ultralow/mimas.jpg' },
+    'Enceladus': { high: 'textures/moons/enceladus.jpg', low: 'textures/moons/low/enceladus.jpg', ultralow: 'textures/moons/ultralow/enceladus.jpg' },
+    'Tethys': { high: 'textures/moons/tethys.jpg', low: 'textures/moons/low/tethys.jpg', ultralow: 'textures/moons/ultralow/tethys.jpg' },
+    'Dione': { high: 'textures/moons/dione.jpg', low: 'textures/moons/low/dione.jpg', ultralow: 'textures/moons/ultralow/dione.jpg' },
+    'Rhea': { high: 'textures/moons/rhea.jpg', low: 'textures/moons/low/rhea.jpg', ultralow: 'textures/moons/ultralow/rhea.jpg' },
+    'Titan': { high: 'textures/moons/titan.jpg', low: 'textures/moons/low/titan.jpg', ultralow: 'textures/moons/ultralow/titan.jpg' },
+    'Iapetus': { high: 'textures/moons/iapetus.jpg', low: 'textures/moons/low/iapetus.jpg', ultralow: 'textures/moons/ultralow/iapetus.jpg' },
+    'Ariel': { high: 'textures/moons/ariel.jpg', low: 'textures/moons/low/ariel.jpg', ultralow: 'textures/moons/ultralow/ariel.jpg' },
+    'Titania': { high: 'textures/moons/titania.jpg', low: 'textures/moons/low/titania.jpg', ultralow: 'textures/moons/ultralow/titania.jpg' },
+    'Oberon': { high: 'textures/moons/oberon.jpg', low: 'textures/moons/low/oberon.jpg', ultralow: 'textures/moons/ultralow/oberon.jpg' },
+    'Triton': { high: 'textures/moons/triton.jpg', low: 'textures/moons/low/triton.jpg', ultralow: 'textures/moons/ultralow/triton.jpg' },
+    'Charon': { high: 'textures/moons/charon.jpg', low: 'textures/moons/low/charon.jpg', ultralow: 'textures/moons/ultralow/charon.jpg' }
 };
 
 const texCache = new Map();
@@ -459,10 +459,14 @@ function getOrLoadTexture(name, category, tier, material) {
 function updateTextureResolution() {
     const focused = state.focusedBody;
 
+    // Quality ladder (ties 1-to-1 with the disk tiers, see pTexPaths):
+    //   high     = 4K-8K source  (focused body / everything while flying)
+    //   low      = 512x256       (background bodies on desktop)
+    //   ultralow = 256x128       (background bodies on mobile)
     // When flying, we want everything to look sharp, not just one focused object.
     const pilotQuality = isMobile ? 'low' : 'high';
     const focusedTier = isMobile ? 'low' : 'high';
-    const otherTier = isMobile ? 'ultra' : 'low';
+    const otherTier = isMobile ? 'ultralow' : 'low';
 
     celestialBodies.forEach(body => {
         if (body.isAsteroid) return;
