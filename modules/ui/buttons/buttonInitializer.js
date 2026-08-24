@@ -13,11 +13,12 @@ import {
     initFuturePathButton
 } from './toggles.js';
 import { initSyncTimeButton } from './syncTimeButton.js';
+import { initAutopilotButton } from './autopilotButton.js';
 
 export function initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBeltMesh, kuiperBeltMesh, celestialBodies, options = {}) {
     initPauseButton();
     initLangButton();
-    initPilotButton(scene, camera, controls, headlight, targetVec);
+    initPilotButton(scene, camera, controls, headlight, targetVec, options);
     initOverviewButton();
     initAsteroidBeltButton(asteroidBeltMesh, physicsEngine);
     initKuiperBeltButton(kuiperBeltMesh, physicsEngine);
@@ -28,4 +29,5 @@ export function initAllButtons(scene, camera, controls, headlight, targetVec, ph
     initFuturePathButton();
     initRealisticScaleButton(celestialBodies, options.sunWrapper);
     initSyncTimeButton(options.syncFn);
+    initAutopilotButton(physicsEngine);
 }

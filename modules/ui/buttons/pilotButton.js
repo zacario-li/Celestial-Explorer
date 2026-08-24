@@ -4,7 +4,10 @@ import { state } from '../../state.js';
 import { t } from '../../i18n.js';
 import { updateInfoPanel } from '../../ui.js';
 
-export function initPilotButton(scene, camera, controls, headlight, targetVec) {
+export function initPilotButton(scene, camera, controls, headlight, targetVec, options = {}) {
+    // Spaceship access via injected provider (window fallback kept for
+    // external tooling; internal modules should not depend on the global)
+    const shipProvider = options.shipProvider || (() => (typeof window !== 'undefined' ? window._spaceship : null));
     return new Button('pilot-button', function() {
         state.isFlying = !state.isFlying;
         const hud = document.getElementById('pilot-hud');
@@ -27,37 +30,38 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec) {
 
             headlight.intensity = 0; 
 
-            if (window._spaceship) {
-                window._spaceship.getWorldPosition(targetVec);
-                scene.add(window._spaceship);
-                window._spaceship.position.copy(targetVec);
+            const ship = shipProvider();
+            if (ship) {
+                ship.getWorldPosition(targetVec);
+                scene.add(ship);
+                ship.position.copy(targetVec);
                 state.shipVelocity.set(0, 0, 0);
 
                 // Apply correct scale immediately to spaceship and snap camera to prevent lerping lags
                 const shipScale = state.isRealisticScale ? 0.00005 : 0.2;
-                window._spaceship.scale.setScalar(shipScale);
+                ship.scale.setScalar(shipScale);
                 if (state.shipViewMode === 'cockpit') {
-                    window._spaceship.visible = true;
-                    const camOffset = new THREE.Vector3(0.00, 0.05 * shipScale, 0).applyQuaternion(window._spaceship.quaternion);
-                    camera.position.copy(window._spaceship.position.clone().add(camOffset));
-                    
+                    ship.visible = true;
+                    const camOffset = new THREE.Vector3(0.00, 0.05 * shipScale, 0).applyQuaternion(ship.quaternion);
+                    camera.position.copy(ship.position.clone().add(camOffset));
+
                     const relativeQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
-                    camera.quaternion.copy(window._spaceship.quaternion).multiply(relativeQuat);
+                    camera.quaternion.copy(ship.quaternion).multiply(relativeQuat);
                 } else {
-                    window._spaceship.visible = true;
+                    ship.visible = true;
                     const DEFAULT_THETA = 4.712;
                     const DEFAULT_PHI = 0.3;
                     const r = 20.0 * shipScale;
                     const ox = r * Math.sin(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);
                     const oy = r * Math.sin(DEFAULT_PHI);
                     const oz = r * Math.cos(DEFAULT_THETA) * Math.cos(DEFAULT_PHI);
-                    
-                    const camOffset = new THREE.Vector3(ox, oy, oz).applyQuaternion(window._spaceship.quaternion);
-                    camera.position.copy(window._spaceship.position.clone().add(camOffset));
-                    
-                    const shipUp = new THREE.Vector3(0, 1, 0).applyQuaternion(window._spaceship.quaternion);
+
+                    const camOffset = new THREE.Vector3(ox, oy, oz).applyQuaternion(ship.quaternion);
+                    camera.position.copy(ship.position.clone().add(camOffset));
+
+                    const shipUp = new THREE.Vector3(0, 1, 0).applyQuaternion(ship.quaternion);
                     camera.up.copy(shipUp);
-                    camera.lookAt(window._spaceship.position);
+                    camera.lookAt(ship.position);
                 }
             }
         } else {

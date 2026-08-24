@@ -1,18 +1,32 @@
 import * as THREE from 'three';
 import { G, SUN_MASS, STELLAR_IGNITION_THRESHOLD } from './constants.js';
+import { computeSubSteps } from './integratorConfig.js';
 import { state } from '../state.js';
 
 export class PhysicsEngine {
-    constructor() {
+    constructor(options = {}) {
         this.physicsBodies = [];
         this.activePlanets = [];
         this.activeAsteroids = [];
         this.bodiesListDirty = true;
-        
+        // Sub-step policy (modules/physics/integratorConfig.js). Injectable for
+        // regression testing against the legacy fixed-45 policy.
+        this.subStepsFor = options.subStepsFor || computeSubSteps;
+        // Injected app hooks (decouple the engine from DOM/window globals;
+        // window fallbacks preserve historic behavior for out-of-tooling use)
+        this.shipProvider = options.shipProvider || null;
+        this.onIgnition = options.onIgnition || null;
+
         // Pre-allocated vectors for performance (Zero GC)
         this._diff = new THREE.Vector3();
         this._forceDir = new THREE.Vector3();
         this._sunDir = new THREE.Vector3();
+    }
+
+    /** Spaceship reference via the injected provider (window fallback kept). */
+    getShip() {
+        if (this.shipProvider) return this.shipProvider() || null;
+        return (typeof window !== 'undefined' && window._spaceship) ? window._spaceship : null;
     }
 
     addBody(body) {
@@ -49,7 +63,7 @@ export class PhysicsEngine {
         const sunBody = this.physicsBodies.find(b => b.isSun);
         if (!sunBody) return;
 
-        const subSteps = state.isPaused ? 0 : (state.simSpeedMultiplier > 1 ? 45 : 1);
+        const subSteps = this.subStepsFor(physicsDt, state.simSpeedMultiplier);
         const subDt = physicsDt / (subSteps || 1);
         
         const nPlanets = this.activePlanets.length;
@@ -130,7 +144,8 @@ export class PhysicsEngine {
         heavier.physMass = totalMass;
         
         if (totalMass > STELLAR_IGNITION_THRESHOLD && !heavier.isStar && !heavier.isSun) {
-            if (window.igniteStar) window.igniteStar(heavier); // Fallback to global if not modularized yet
+            const ignite = this.onIgnition || (typeof window !== 'undefined' ? window.igniteStar : null);
+            if (ignite) ignite(heavier);
         }
 
         const mR = Math.pow(totalMass / (totalMass - lighter.physMass), 0.33);
@@ -143,9 +158,10 @@ export class PhysicsEngine {
     }
 
     updateSpaceshipPhysics(subDt, moveDtBase, sunBody) {
-        if (!state.isFlying || !window._spaceship || state.capturedBody) return;
+        const ship = this.getShip();
+        if (!state.isFlying || !ship || state.capturedBody) return;
 
-        const sPos = window._spaceship.position;
+        const sPos = ship.position;
 
         // Sun Pull (relative to actual sun position, not hardcoded origin)
         this._sunDir.subVectors(sunBody.pos, sPos);
@@ -173,16 +189,16 @@ export class PhysicsEngine {
 
         // Ship Position Integration
         const moveDt = state.isAutopilotActive ? subDt : moveDtBase;
-        window._spaceship.position.addScaledVector(state.shipVelocity, moveDt);
+        ship.position.addScaledVector(state.shipVelocity, moveDt);
 
         // Surface Collision
         for (let i = 0; i < this.activePlanets.length; i++) {
             const p = this.activePlanets[i];
             if (p.destroyed) continue;
-            const distSq = window._spaceship.position.distanceToSquared(p.pos);
+            const distSq = ship.position.distanceToSquared(p.pos);
             const scaleX = p.mesh ? p.mesh.scale.x : 1.0;
             const rPlanet = (p.mesh?.userData?.radius || 0.02) * scaleX;
-            const rShip = 0.5 * (window._spaceship.scale.x || 1.0);
+            const rShip = 0.5 * (ship.scale.x || 1.0);
             const collisionDist = rPlanet + rShip;
             if (distSq < collisionDist * collisionDist) {
                 this.resetShipFlight();
