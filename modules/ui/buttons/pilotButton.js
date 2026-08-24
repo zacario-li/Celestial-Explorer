@@ -4,10 +4,31 @@ import { state } from '../../state.js';
 import { t } from '../../i18n.js';
 import { updateInfoPanel } from '../../ui.js';
 
+// Seam for non-UI modules: the physics engine (on hard planet collision)
+// requests a flight-level reset through this instead of clicking DOM nodes.
+// The UI module keeps full ownership of the button: behavior is a genuine
+// button click, including the Button listener pipeline.
+let pilotExitClick = null;
+
+export function registerPilotExit(clickFn) {
+    pilotExitClick = typeof clickFn === 'function' ? clickFn : null;
+}
+
+export function requestPilotExit() {
+    if (pilotExitClick) pilotExitClick();
+}
+
 export function initPilotButton(scene, camera, controls, headlight, targetVec, options = {}) {
     // Spaceship access via injected provider (window fallback kept for
     // external tooling; internal modules should not depend on the global)
     const shipProvider = options.shipProvider || (() => (typeof window !== 'undefined' ? window._spaceship : null));
+    const pilotButtonEl = document.getElementById('pilot-button');
+    registerPilotExit(() => {
+        // Deferral lives in the caller (physicsEngine.resetShipFlight's
+        // setTimeout) — clicking here is exactly the original single-tick
+        // timing, no extra macrotask.
+        if (state.isFlying && pilotButtonEl) pilotButtonEl.click();
+    });
     return new Button('pilot-button', function() {
         state.isFlying = !state.isFlying;
         const hud = document.getElementById('pilot-hud');

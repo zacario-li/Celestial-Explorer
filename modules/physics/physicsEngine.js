@@ -16,6 +16,9 @@ export class PhysicsEngine {
         // window fallbacks preserve historic behavior for out-of-tooling use)
         this.shipProvider = options.shipProvider || null;
         this.onIgnition = options.onIgnition || null;
+        // Called when a hard collision ends flight (UI reset); keeps the
+        // engine free of a direct DOM click (window/ID fallback preserved).
+        this.onFlightReset = options.onFlightReset || null;
 
         // Pre-allocated vectors for performance (Zero GC)
         this._diff = new THREE.Vector3();
@@ -210,6 +213,11 @@ export class PhysicsEngine {
     resetShipFlight() {
         if (!state.isFlying) return;
         state.shipVelocity.set(0, 0, 0);
+        if (this.onFlightReset) {
+            setTimeout(this.onFlightReset, 0);
+            return;
+        }
+        // Fallback for out-of-tooling usage (in-app the injection is active)
         setTimeout(() => {
             const btn = document.getElementById('pilot-button');
             if (btn && state.isFlying) btn.click();

@@ -24,7 +24,7 @@ import { createSpaceship } from './modules/spaceship.js';
 // Modular UI
 import { initPauseButton } from './modules/ui/buttons/pauseButton.js';
 import { initLangButton } from './modules/ui/buttons/langButton.js';
-import { initPilotButton } from './modules/ui/buttons/pilotButton.js';
+import { initPilotButton, requestPilotExit } from './modules/ui/buttons/pilotButton.js';
 import { initOverviewButton } from './modules/ui/buttons/overviewButton.js';
 import { initAsteroidBeltButton } from './modules/ui/buttons/asteroidBeltButton.js';
 
@@ -58,7 +58,7 @@ const targetVec = new THREE.Vector3();
 let shipRef = null;
 const shipProvider = () => shipRef;
 
-const physicsEngine = new PhysicsEngine({ shipProvider, onIgnition: igniteStar });
+const physicsEngine = new PhysicsEngine({ shipProvider, onIgnition: igniteStar, onFlightReset: requestPilotExit });
 window.physicsEngine = physicsEngine; // For global access if needed
 window.igniteStar = igniteStar; // Kept for external tooling (engine prefers injected onIgnition)
 
