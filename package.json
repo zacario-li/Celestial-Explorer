@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node server.js",
     "build": "node make.js",
-    "test": "node test-comprehensive.js && node test-performance.js"
+    "test": "node --loader ./dev/unit/esm-loader.mjs dev/unit/state-facade.test.mjs && node --loader ./dev/unit/esm-loader.mjs dev/unit/time-orbits.test.mjs && node --loader ./dev/unit/esm-loader.mjs dev/unit/celestial-contract.test.mjs",
+    "e2e": "node tools/ci-smoke.mjs"
   },
   "repository": {
     "type": "git",

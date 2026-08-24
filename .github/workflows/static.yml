@@ -1,8 +1,11 @@
 name: Deploy static content to Pages
 
+# Deploys the app to GitHub Pages as a self-contained site: repo assets +
+# vendored three (from npm) + the esbuild dist/ build -- no CDN, and
+# node_modules is never committed.
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
@@ -21,14 +24,24 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          path: '.'
-      - name: Deploy to GitHub Pages
-        id: deployment
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build dist/
+        run: npm run build
+      - name: Stage Pages root (repo + vendored three + dist)
+        run: |
+          mkdir -p pages/node_modules
+          cp -r node_modules/three pages/node_modules/
+          rsync -a --exclude '.git' --exclude 'node_modules' --exclude '.github' \
+                   --exclude 'dev' --exclude 'tools' --exclude 'scratch.js' \
+                   --exclude 'pages' ./ pages/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'pages'
+      - id: deployment
         uses: actions/deploy-pages@v4
