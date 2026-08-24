@@ -20,7 +20,9 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
 
-    let filePath = '.' + req.url;
+    // Strip query string (e.g. ?v=12 cache-busting) before resolving the file
+    const pathname = req.url.split('?')[0];
+    let filePath = '.' + pathname;
     if (filePath === './') {
         filePath = './index.html';
     }
