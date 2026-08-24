@@ -2,8 +2,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001; // single canonical port (#6)
 
+// NOTE: serves the whole repo (incl. node_modules) -- dev server only; the
+// local three package is needed by index.html's importmap in dev mode.
 const MIME_TYPES = {
     '.html': 'text/html',
     '.js': 'text/javascript',

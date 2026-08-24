@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('http://localhost:3000');
+  await page.goto('http://localhost:3001');
   await page.waitForTimeout(4000);
   
   // Click Saturn in nav list

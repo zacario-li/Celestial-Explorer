@@ -8,6 +8,8 @@
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Three.js](https://img.shields.io/badge/Three.js-r160-black)](https://threejs.org/)",
   "main": "script.js",
   "scripts": {
+    "start": "node server.js",
+    "build": "node make.js",
     "test": "node test-comprehensive.js && node test-performance.js"
   },
   "repository": {
@@ -21,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/zacario-li/Celestial-Explorer/issues"
   },
-  "homepage": "https://github.com/zacario-li/Celestial-Explorer#readme"
+  "homepage": "https://github.com/zacario-li/Celestial-Explorer#readme",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
 }

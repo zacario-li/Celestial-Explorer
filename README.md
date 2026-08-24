@@ -95,13 +95,18 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
    git clone https://github.com/zacario-li/Celestial-Explorer.git
    ```
 
-2. **Run a local server | 启动本地服务**:
+2. **Run a local server | 启动本地服务** (dev mode serves source modules directly):
    ```bash
-   npx serve .
+   npm install        # three + build tools
+   node server.js     # or: npm start  (http://localhost:3001, PORT env to override)
    ```
 
 3. **Open in Browser | 浏览器访问**:
-   Navigate to `http://localhost:3000`.
+   Navigate to `http://localhost:3001`.
+
+> **Deploy mode | 构建**: `npm run build` bundles everything (app + three)
+> into `dist/` (single `app.js`, no CDN, no importmap). Serve the repo root
+> and open `/dist/index.html`.
 
 ---
 
