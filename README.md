@@ -110,6 +110,18 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
 
 ---
 
+## 🧱 Assets | 资源与仓库体积
+
+- Planet/moon textures live in `textures/` (three tiers each: full / `low/` /
+  `ultralow/`; the app loads one tier per body per frame from
+  `updateTextureResolution()`). They account for ~55 MB and are all actively
+  referenced (an unreferenced-file audit found 4 dead files -- deleted).
+- Ship model: `assets/ship2_monitor.stl` (STL), ring art in `assets/*ring*.jpg|gif`.
+- To slim the clone: see `.gitattributes` for the one-time git-lfs migration
+  commands (not enabled by default on purpose).
+
+---
+
 ## 📜 License | 开源协议
 Distributed under the MIT License. See `LICENSE` for more information.
 

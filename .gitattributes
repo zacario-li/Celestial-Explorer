@@ -1,0 +1,14 @@
+# Textures are the bulk of the repo (~55 MB, all actively referenced).
+# They are currently stored inline; the repo stays cloneable (< GitHub's
+# 100 MB soft limit). If clone size becomes a problem, migrate with:
+#
+#   git lfs install
+#   git lfs track 'textures/**/*.jpg' 'textures/**/*.png'
+#   git lfs migrate --include='textures/**' --everything
+#
+# (Committing this file with lfs filters ACTIVE breaks every commit on
+# machines without git-lfs -- hence patterns are documented, not bound.)
+*.jpg diff
+*.png diff
+*.stl binary
+*.glb binary
