@@ -81,7 +81,10 @@ export class PhysicsEngine {
                 this._diff.subVectors(sunBody.pos, pA.pos);
                 const rSqA = this._diff.lengthSq();
                 const pRad = pA.mesh?.userData?.radius || 0.02;
-                const sunRad = 0.16;
+                // #9: collision boundary is the sun's VISUAL radius (40 u), not
+                // 0.16 u -- otherwise bodies could be swallowed while still
+                // visibly orbiting inside the solar disk
+                const sunRad = (sunBody.mesh?.userData?.radius) || 40;
                 const collisionDist = sunRad + pRad;
 
                 if (rSqA > collisionDist * collisionDist) {
@@ -89,9 +92,11 @@ export class PhysicsEngine {
                     const aDir = this._diff.normalize();
                     pA.vel.addScaledVector(aDir, (fCommon / pA.physMass) * subDt);
                     sunBody.vel.addScaledVector(aDir, -(fCommon / sunBody.physMass) * subDt);
-                } else if (!pA.isStar) {
-                    pA.destroyed = true; this.bodiesListDirty = true; continue;
                 } else {
+                    // #9: engulfment transfers mass to the sun (the old dead
+                    // branches discarded it); the sun mesh itself does not
+                    // re-scale for gameplay reasons
+                    sunBody.physMass += pA.physMass;
                     pA.destroyed = true; this.bodiesListDirty = true; continue;
                 }
 

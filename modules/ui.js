@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { t, tName } from './i18n.js';
 import { planetsData } from './planetsData.js';
+import { SCENE_UNITS_PER_AU } from './physics/constants.js';
 
 export function updateInfoPanel(body) {
     const panel = document.getElementById('info-panel');
@@ -166,8 +167,9 @@ export function populateAutopilotDestinations(activePlanets, onSelect) {
         
         const distSpan = document.createElement('span');
         distSpan.className = 'dest-dist';
-        const dist = p.pos.length().toFixed(2);
-        distSpan.textContent = `${dist} AU`;
+        // #9: these were scene units relabeled "AU"; 1 AU = 250 units
+        const dist = p.pos.length();
+        distSpan.textContent = `${(dist / SCENE_UNITS_PER_AU).toFixed(2)} AU`;
 
         item.appendChild(nameSpan);
         item.appendChild(distSpan);

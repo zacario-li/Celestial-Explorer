@@ -18,17 +18,30 @@ export function requestPilotExit() {
     if (pilotExitClick) pilotExitClick();
 }
 
+let pilotToggleClick = null;
+
+export function registerPilotToggle(fn) {
+    pilotToggleClick = typeof fn === 'function' ? fn : null;
+}
+
+/** R-key entry: the HTML has long advertised "Press R or Click Button". */
+export function requestPilotToggle() {
+    if (pilotToggleClick) pilotToggleClick();
+}
+
 export function initPilotButton(scene, camera, controls, headlight, targetVec, options = {}) {
     // Spaceship access via injected provider (window fallback kept for
     // external tooling; internal modules should not depend on the global)
     const shipProvider = options.shipProvider || (() => (typeof window !== 'undefined' ? window._spaceship : null));
     const pilotButtonEl = document.getElementById('pilot-button');
+    registerPilotToggle(() => { if (pilotButtonEl) pilotButtonEl.click(); });
     registerPilotExit(() => {
         // Deferral lives in the caller (physicsEngine.resetShipFlight's
         // setTimeout) — clicking here is exactly the original single-tick
         // timing, no extra macrotask.
         if (state.isFlying && pilotButtonEl) pilotButtonEl.click();
     });
+    const touchControls = !!options.touchControls;
     return new Button('pilot-button', function() {
         state.isFlying = !state.isFlying;
         const hud = document.getElementById('pilot-hud');
@@ -37,7 +50,9 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec, o
 
         if (state.isFlying) {
             if (hud) hud.style.display = 'block';
-            if (vController) vController.style.display = 'block';
+            // #9: the on-screen D-pad is a MOBILE controller -- on desktop it
+            // used to overlay the UI and intercept clicks on the exit button
+            if (vController) vController.style.display = touchControls ? 'block' : 'none';
             if (vCrosshair) vCrosshair.style.display = 'block';
             controls.enabled = false;
 

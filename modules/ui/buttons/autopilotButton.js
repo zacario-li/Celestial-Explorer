@@ -1,4 +1,5 @@
 import { state } from '../../state.js';
+import { SCENE_UNITS_PER_AU } from '../../physics/constants.js';
 import { t } from '../../i18n.js';
 import { populateAutopilotDestinations } from '../../ui.js';
 
@@ -101,7 +102,7 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
             if (destList) destList.style.display = 'none';
             if (indicator) indicator.style.display = 'flex';
             if (apStatus) {
-                apStatus.textContent = `NAVIGATING → ${targetName} (${dist.toFixed(1)} AU)`;
+                apStatus.textContent = `NAVIGATING → ${targetName} (${(dist / SCENE_UNITS_PER_AU).toFixed(2)} AU)`;
             }
 
             if (window.clearToastMessage) window.clearToastMessage();

@@ -25,7 +25,7 @@ import { createSpaceship } from './modules/spaceship.js';
 // Modular UI
 import { initPauseButton } from './modules/ui/buttons/pauseButton.js';
 import { initLangButton } from './modules/ui/buttons/langButton.js';
-import { initPilotButton, requestPilotExit } from './modules/ui/buttons/pilotButton.js';
+import { initPilotButton, requestPilotExit, requestPilotToggle } from './modules/ui/buttons/pilotButton.js';
 import { initOverviewButton } from './modules/ui/buttons/overviewButton.js';
 import { initAsteroidBeltButton } from './modules/ui/buttons/asteroidBeltButton.js';
 
@@ -67,6 +67,14 @@ window.igniteStar = igniteStar; // Kept for external tooling (engine prefers inj
 // on-screen virtual controls all write to this single object)
 import { keys, attachKeyboard } from './modules/input/keyboard.js';
 attachKeyboard();
+
+// #9: the HUD has always advertised "Press R or Click Button" -- wire R.
+window.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyR' || e.repeat) return;
+    const el = e.target;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+    requestPilotToggle();
+});
 
 // Disengage autopilot on any manual pilot input
 window.addEventListener('keydown', (e) => {
@@ -722,7 +730,8 @@ initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, ast
         showToast(`${t('syncTimeMsg')} ${timeStr}`);
     },
     sunWrapper: sunWrapper,
-    shipProvider
+    shipProvider,
+    touchControls: isMobile   // #9: on-screen D-pad is touch-only
 });
 initSpawnManager(physicsEngine, scene, celestialBodies, navList);
 
