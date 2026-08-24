@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { G, SUN_MASS } from '../physics/constants.js';
+import { orbitalStateAt } from '../orbits/kepler.js';
 
 export class Planet {
     constructor(data, physicsEngine, scene) {
@@ -35,37 +36,20 @@ export class Planet {
 
 
         // Physics State (Elliptical Initial State)
-        const a = this.orbitRadius;
-        const e = this.ecc;
-        
-        // Initial Mean Anomaly (using data.angle as a fallback for M if L0 isn't available, 
+        // Initial Mean Anomaly (using data.angle as a fallback for M if L0 isn't available,
         // though script.js usually handles the real sync)
-        const M = this.angle; 
-        
-        // Simple Kepler solver for initial state
-        let E = M;
-        for (let i = 0; i < 6; i++) {
-            E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
-        }
+        const M = this.angle;
 
-        const x_orb = a * (Math.cos(E) - e);
-        const z_orb = a * Math.sqrt(1 - e * e) * Math.sin(E);
-        
-        this.pos = new THREE.Vector3(x_orb, 0, z_orb);
-        this.pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.w);
-        this.pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.inc);
-        this.pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.lan);
-        this.orbitObj.position.copy(this.pos);
-
-        const vFactor = Math.sqrt((G * (SUN_MASS + this.physMass)) / a) / (1 - e * Math.cos(E));
-        this.vel = new THREE.Vector3(
-            -vFactor * Math.sin(E),
-            0,
-            vFactor * Math.sqrt(1 - e * e) * Math.cos(E)
+        // Shared Kepler state (modules/orbits/kepler.js). iter=6 preserves the
+        // historical inline loop's numerics exactly.
+        const { pos, vel } = orbitalStateAt(
+            this.orbitRadius, this.ecc, M, this.w, this.inc, this.lan,
+            G * (SUN_MASS + this.physMass),
+            6
         );
-        this.vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.w);
-        this.vel.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.inc);
-        this.vel.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.lan);
+        this.pos = pos;
+        this.orbitObj.position.copy(this.pos);
+        this.vel = vel;
 
         // Conserve momentum: give sun an equal-and-opposite kick so system CoM stays fixed
         // We need a reference to sunBody – it's on physicsEngine
