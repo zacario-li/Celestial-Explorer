@@ -18,8 +18,26 @@ export class CameraSafeguardSystem {
         const { ctx } = this;
         const { camera, controls, sunBody, sun } = ctx;
 
-        // Self-healing for corrupted camera (NaN or extreme proximity/distance)
-        if (state.isFlying) return;
+        // Self-healing for corrupted camera (NaN or extreme proximity/distance).
+        // While flying the ship's own drift / a runaway burn can corrupt the
+        // rig: reset the ship near the sun instead of waiting for the pilot
+        // to survive to the exit button.
+        if (state.isFlying) {
+            const sp = ctx.spaceship;
+            const camBad = !(Number.isFinite(camera.position.x) && Number.isFinite(camera.position.y) && Number.isFinite(camera.position.z));
+            const shipBad = !(sp && Number.isFinite(sp.position.x) && Number.isFinite(sp.position.y) && Number.isFinite(sp.position.z));
+            if (camBad || shipBad) {
+                console.warn('Camera Safeguard: resetting corrupted in-flight camera/ship.');
+                if (sp) {
+                    sp.position.set(sunBody.pos.x, sunBody.pos.y + 20, sunBody.pos.z);
+                    sp.scale.setScalar(state.isRealisticScale ? 0.00005 : 0.2);
+                    state.shipVelocity.set(0, 0, 0);
+                }
+                camera.position.set(sunBody.pos.x, sunBody.pos.y + 20, sunBody.pos.z + 10);
+                camera.lookAt(sunBody.pos);
+            }
+            return;
+        }
 
         const camDistSq = camera.position.distanceToSquared(controls.target);
         const isCamCorrupt = isNaN(camera.position.x) || isNaN(camera.position.y) || isNaN(camera.position.z);

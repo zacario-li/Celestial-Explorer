@@ -42,7 +42,13 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec, o
         if (state.isFlying && pilotButtonEl) pilotButtonEl.click();
     });
     const touchControls = !!options.touchControls;
+    // Rapid double-toggle (R tapped twice, double-click) would otherwise be
+    // two full flights, each erasing the pre-flight focus.
+    let _lastToggleAt = 0;
     return new Button('pilot-button', function() {
+        const nowMs = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+        if (nowMs - _lastToggleAt < 150) return;
+        _lastToggleAt = nowMs;
         state.isFlying = !state.isFlying;
         const hud = document.getElementById('pilot-hud');
         const vController = document.getElementById('v-controller');
@@ -104,7 +110,31 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec, o
             if (hud) hud.style.display = 'none';
             if (vController) vController.style.display = 'none';
             if (vCrosshair) vCrosshair.style.display = 'none';
-            state.shipThrottle = 0; 
+            state.shipThrottle = 0;
+            // Tear down autopilot leftovers -- exiting used to freeze the state
+            // machine mid-BURN with a stale vReq, which synchronously resumed
+            // the next time the pilot re-entered (an approvaled burn) and
+            // also abandoned an open picker modal:
+            if (state.isAutopilotActive || state._prevAutopilotTarget !== null) {
+                state.isAutopilotActive = false;
+                state.autopilotPhase = '';
+                state._prevAutopilotPhase = '';
+                state.autopilotTarget = null;
+                state._prevAutopilotTarget = null;
+                state.timeToIntercept = 0;
+            }
+            const apModal = document.getElementById('autopilot-modal');
+            if (state.isAutopilotModalActive && apModal) {
+                apModal.classList.remove('active');
+                state.isAutopilotModalActive = false;
+            }
+            const apIndicator = document.getElementById('autopilot-indicator');
+            if (apIndicator) apIndicator.style.display = 'none';
+            const apBtn = document.getElementById('pilot-autopilot-button');
+            if (apBtn) {
+                apBtn.textContent = t('pilotAutopilot');
+                apBtn.classList.remove('warning-glow');
+            }
             controls.enabled = true;
             this.textContent = t('pilotStart');
             this.style.background = 'rgba(255, 255, 255, 0.05)';

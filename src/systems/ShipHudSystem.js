@@ -1,4 +1,5 @@
 import { state } from '../core/state.js';
+import { t } from '../core/i18n.js';
 
 /**
  * ShipHudSystem — pilot HUD widget updates (was script.js animate(), ~L1192-1215).
@@ -10,6 +11,7 @@ export class ShipHudSystem {
         this.vBar = document.getElementById('v-throttle-bar');
         this.vVal = document.getElementById('v-throttle-val');
         this.vToggleBtn = document.getElementById('v-toggle-reverse');
+        this.vViewBtn = document.getElementById('v-toggle-view');
     }
 
     update() {
@@ -19,7 +21,10 @@ export class ShipHudSystem {
 
         // Update Virtual Throttle UI
         if (vBar) {
-            vBar.style.height = `${state.shipThrottle * 100}%`;
+            // |throttle|: the bar is a magnitude meter; the direction is
+            // shown by the FWD/REV labels below (a negative % is an invalid
+            // CSS and the bar just froze at the old height)
+            vBar.style.height = `${Math.abs(state.shipThrottle) * 100}%`;
             vBar.classList.toggle('reverse', state.isReverse);
         }
         if (vVal) {
@@ -30,6 +35,11 @@ export class ShipHudSystem {
         if (vToggleBtn) {
             vToggleBtn.classList.toggle('reverse-active', state.isReverse);
             vToggleBtn.textContent = state.isReverse ? 'REV: ON' : 'REV: OFF';
+        }
+        // The CAM toggle used to say whatever init set it to -- it now
+        // reflects which view is actually active.
+        if (this.vViewBtn) {
+            this.vViewBtn.textContent = t(state.shipViewMode === 'chase' ? 'camChase' : 'camCockpit');
         }
     }
 }

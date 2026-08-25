@@ -86,7 +86,9 @@ export const i18n = {
         futurePathOn: '🔴 PREDICT TRAJECTORY: ON',
         futurePathOff: '🔴 PREDICT TRAJECTORY: OFF',
         needPilotFirst: 'Enter Pilot Mode first to use auto-navigation',
-        autoNavHeading: 'Select Destination'
+        autoNavHeading: 'Select Destination',
+        camChase: '📷 CAM: CHASE',
+        camCockpit: '📷 CAM: COCKPIT'
     },
     zh: {
         title: '星空探索者',
@@ -173,7 +175,9 @@ export const i18n = {
         futurePathOn: '🔴 预测轨迹：开',
         futurePathOff: '🔴 预测轨迹：关',
         needPilotFirst: '请先进入驾驶模式再使用自动导航',
-        autoNavHeading: '选择目标'
+        autoNavHeading: '选择目标',
+        camChase: '📷 追随视角',
+        camCockpit: '📷 座舱视角'
     }
 };
 

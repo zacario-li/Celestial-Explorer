@@ -78,6 +78,8 @@ window.addEventListener('keydown', (e) => {
 
 // Disengage autopilot on any manual pilot input
 window.addEventListener('keydown', (e) => {
+    const el = e.target;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
     if (state.isAutopilotActive) {
         if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyE', 'ShiftLeft'].includes(e.code)) {
             state.isAutopilotActive = false;
@@ -123,6 +125,20 @@ window.addEventListener('pointermove', (e) => {
 });
 
 window.addEventListener('pointerup', () => {
+    isShipOrbitPointerDown = false;
+    state.isOrbitingShip = false;
+});
+
+// The pointer can be cancelled by an OS gesture hijack (pointercancel fires
+// instead of pointerup/leave): release the drag or the chase auto-reset stays
+// latched forever.
+window.addEventListener('pointercancel', () => {
+    isShipOrbitPointerDown = false;
+    state.isOrbitingShip = false;
+});
+
+// Losing focus (alt-tab / clicking into DevTools) is also a release point.
+window.addEventListener('blur', () => {
     isShipOrbitPointerDown = false;
     state.isOrbitingShip = false;
 });
@@ -214,6 +230,9 @@ function bindVKey(id, keyCode) {
     btn.addEventListener('pointerdown', (e) => { e.preventDefault(); keys[keyCode] = true; });
     btn.addEventListener('pointerup', (e) => { e.preventDefault(); keys[keyCode] = false; });
     btn.addEventListener('pointerleave', (e) => { e.preventDefault(); keys[keyCode] = false; });
+    // OS gesture hijack: pointercancel must release too, else a touch
+    // button can latch a phantom key.
+    btn.addEventListener('pointercancel', (e) => { e.preventDefault(); keys[keyCode] = false; });
 }
 
 bindVKey('v-up', 'ArrowUp');
@@ -230,11 +249,13 @@ const vToggleView = document.getElementById('v-toggle-view');
 if (vThrottleUp) {
     vThrottleUp.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['KeyW'] = true; });
     vThrottleUp.addEventListener('pointerup', (e) => { e.preventDefault(); keys['KeyW'] = false; });
+    vThrottleUp.addEventListener('pointercancel', (e) => { e.preventDefault(); keys['KeyW'] = false; });
     vThrottleUp.addEventListener('pointerleave', (e) => { e.preventDefault(); keys['KeyW'] = false; });
 }
 if (vThrottleDown) {
     vThrottleDown.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['KeyS'] = true; });
     vThrottleDown.addEventListener('pointerup', (e) => { e.preventDefault(); keys['KeyS'] = false; });
+    vThrottleDown.addEventListener('pointercancel', (e) => { e.preventDefault(); keys['KeyS'] = false; });
     vThrottleDown.addEventListener('pointerleave', (e) => { e.preventDefault(); keys['KeyS'] = false; });
 }
 if (vToggleReverse) {

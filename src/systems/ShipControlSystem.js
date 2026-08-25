@@ -16,6 +16,11 @@ export class ShipControlSystem {
     constructor(ctx) {
         this.ctx = ctx;
         this.alBtn = document.getElementById('pilot-autolevel-button');
+        // The HUD has advertised this button all along; nothing used to
+        // engage the auto-level (isAutoLeveling was write-only false):
+        if (this.alBtn) {
+            this.alBtn.addEventListener('click', () => { state.isAutoLeveling = true; });
+        }
     }
 
     update() {
@@ -99,11 +104,15 @@ export class ShipControlSystem {
 
         const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
 
+        // The REV toggle inverts the throttle (FWD keys fire aft). Previously
+        // it was display-only -- the HUD said REV: ON but the ship ignored it.
+        const effThrottle = state.isReverse ? -state.shipThrottle : state.shipThrottle;
+
         // Apply engine thrust physics to shipVelocity
-        if (state.shipThrottle !== 0) {
+        if (effThrottle !== 0) {
             const turbo = keys['ShiftLeft'] ? 3 : 1;
             const maxAccel = 0.08 * turbo;
-            const currentAccel = state.shipThrottle * maxAccel * shipScale;
+            const currentAccel = effThrottle * maxAccel * shipScale;
             state.shipVelocity.addScaledVector(dir, currentAccel * (physicsDt / 0.016));
         }
     }
