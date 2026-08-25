@@ -6,11 +6,11 @@
   "name": "lyw",
   "version": "1.0.0",
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Three.js](https://img.shields.io/badge/Three.js-r160-black)](https://threejs.org/)",
-  "main": "script.js",
+  "main": "src/main.js",
   "scripts": {
     "start": "node server.js",
     "build": "node make.js",
-    "test": "node --loader ./dev/unit/esm-loader.mjs dev/unit/state-facade.test.mjs && node --loader ./dev/unit/esm-loader.mjs dev/unit/time-orbits.test.mjs && node --loader ./dev/unit/esm-loader.mjs dev/unit/celestial-contract.test.mjs",
+    "test": "node --loader ./tests/unit/esm-loader.mjs tests/unit/state-facade.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/time-orbits.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/celestial-contract.test.mjs",
     "e2e": "node tools/ci-smoke.mjs"
   },
   "repository": {

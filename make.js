@@ -3,7 +3,7 @@
  *
  *   npm run build
  *
- * - bundles script.js + every module + three (from node_modules) into
+ * - bundles src/main.js + the whole src/ tree + three (from node_modules) into
  *   dist/app.js via esbuild (single IIFE, minified, no importmap needed)
  * - emits dist/index.html from index.html with the importmap removed, the
  *   module script swapped for app.js, and a <base href="/"> so the asset
@@ -24,7 +24,7 @@ const esbuild = require(path.join(ROOT, 'node_modules', 'esbuild'));
     fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
 
     const result = await esbuild.build({
-        entryPoints: [path.join(ROOT, 'script.js')],
+        entryPoints: [path.join(ROOT, 'src', 'main.js')],
         bundle: true,
         outfile: path.join(ROOT, 'dist', 'app.js'),
         format: 'iife',
@@ -41,10 +41,9 @@ const esbuild = require(path.join(ROOT, 'node_modules', 'esbuild'));
     let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf-8');
     html = html.replace(/<script type="importmap">[\s\S]*?<\/script>/, '');
     // absolute path: the <base> tag below rewrites all relative URLs
-    html = html.replace(
-        /<script type="module" src="script\.js[^"]*"><\/script>/,
-        '<script src="/dist/app.js"></script>'
-    );
+    const scriptRe = /<script type="module" src="[^"]*"><\/script>/;
+    if (!scriptRe.test(html)) throw new Error('make.js: entry <script type="module"> not found in index.html');
+    html = html.replace(scriptRe, '<script src="/dist/app.js"></script>');
     html = html.replace(/(<head>)/, '$1\n    <base href="/"> <!-- assets stay at repo root; JS embeds relative paths -->');
     fs.writeFileSync(path.join(ROOT, 'dist', 'index.html'), html);
 

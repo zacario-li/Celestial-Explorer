@@ -110,6 +110,35 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
 
 ---
 
+## 📁 Repository Layout | 仓库结构
+
+```
+├── index.html / style.css      web entry (root, served as-is)
+├── server.js                   dev server — the only launch entry (PORT env, default :3001)
+├── make.js                     `npm run build` → dist/ (single-file vendor build)
+├── src/                        all application code
+│   ├── main.js                 bootstrapping + system wiring (the former script.js)
+│   ├── core/                   framework-free primitives: state stores, simulation
+│   │                           clock, Kepler solver, transfer orbits, keyboard,
+│   │                           i18n, scene setup
+│   ├── celestial/              body classes & data: sun, planets, moons, ship,
+│   │                           asteroid belt, rings, spawn manager, planetsData
+│   ├── physics/                engine, constants, integrator sub-step policy
+│   ├── systems/                the per-frame systems that main.js dispatches
+│   └── ui/                     uiCore (info panel, language, autopilot picker)
+│       └── buttons/            one module per UI button
+├── tests/unit/                 deterministic Node suites (npm test)
+├── tools/ci-smoke.mjs          headless browser smoke (CI e2e)
+├── assets/                     ship model, ring art, readme images
+└── textures/                   planet/moon textures, three tiers each
+```
+
+Rules of thumb: **root = entry/build config, src/ = code, tests/ + tools/ =
+verification, assets + textures = data.** A body class lives next to the other
+bodies; a per-frame concern lives in `systems/`; UI wiring lives in `ui/`.
+
+---
+
 ## 🧱 Assets | 资源与仓库体积
 
 - Planet/moon textures live in `textures/` (three tiers each: full / `low/` /
