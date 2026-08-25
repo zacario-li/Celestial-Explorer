@@ -910,6 +910,6 @@ window.scene = scene;
 // #2: full-population index for debugging / future consumers
 const celestialIndex = createCelestialIndex(celestialBodies);
 
-window.__sim = { time, physicsEngine, prePhysicsSystems, postPhysicsSystems, finalSystems };
+window.__sim = { scene, renderer, time, physicsEngine, prePhysicsSystems, postPhysicsSystems, finalSystems };
 window.__bodies = celestialIndex; // debug / external tooling
 
