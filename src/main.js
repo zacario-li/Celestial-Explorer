@@ -30,7 +30,6 @@ import { initOverviewButton } from './ui/buttons/overviewButton.js';
 import { initAsteroidBeltButton } from './ui/buttons/asteroidBeltButton.js';
 
 // --- SYSTEM INITIALIZATION FLAG ---
-window.SIM_READY = true;
 // ----------------------------------
 
 // Controls
@@ -171,11 +170,23 @@ function showToast(message, duration = 3000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
+    // style.css had a full .toast block (shape + animations) that toasts
+    // never received because the class was never assigned:
+    toast.className = 'toast';
     toast.textContent = message;
     toast.style.cssText = 'background:rgba(0,0,0,0.8);color:#00ffff;padding:10px 20px;border-radius:8px;border:1px solid #00ffff;font-family:monospace;font-size:0.85rem;opacity:1;transition:opacity 0.5s ease;pointer-events:none;';
     container.appendChild(toast);
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, duration);
 }
+
+// Exposed so non-UI modules (autopilot button, spawn manager) can notify
+// the user without reaching into main's module scope:
+function clearToasts() {
+    const container = document.getElementById('toast-container');
+    if (container) container.innerHTML = '';
+}
+window.showToastMsg = (message) => showToast(String(message));
+window.clearToastMessage = clearToasts;
 
 // updatePauseButtonVisuals helper
 function updatePauseButtonVisuals() {
@@ -311,12 +322,8 @@ document.getElementById('modal-cancel-btn').addEventListener('click', function (
 });
 
 
-document.getElementById('sync-time-button').addEventListener('click', function () {
-    const timeStr = syncPlanetsToDate(); // Now
-    state.isPaused = true;
-    updatePauseButtonVisuals();
-    showToast(`${t('syncTimeMsg')} ${timeStr}`);
-});
+// (TIME SYNC used to be double-bound here AND through the Button module;
+// the pause side-effect now lives in the single injected syncFn below)
 
 document.getElementById('set-time-button').addEventListener('click', function() {
     // Before showing, populate with current time as default
@@ -357,13 +364,20 @@ document.getElementById('misc-settings-btn').addEventListener('click', function(
 
 document.getElementById('time-modal-confirm').addEventListener('click', function() {
     const y = parseInt(document.getElementById('time-year').value) || 2026;
-    const m = (parseInt(document.getElementById('time-month').value) || 1) - 1; // 0-indexed
+    let m = (parseInt(document.getElementById('time-month').value) || 1) - 1; // 0-indexed
     const d = parseInt(document.getElementById('time-day').value) || 1;
     const h = parseInt(document.getElementById('time-hour').value) || 0;
     const min = parseInt(document.getElementById('time-minute').value) || 0;
     const s = parseInt(document.getElementById('time-second').value) || 0;
+    m = Math.min(Math.max(m, 0), 11);
 
     const targetDate = new Date(y, m, d, h, min, s);
+    // A too-extreme year makes Date invalid -> diffDays NaN -> every planet
+    // teleports to NaN. Validate before syncing:
+    if (isNaN(targetDate.getTime())) {
+        showToast(t('timeInvalid'));
+        return;
+    }
     const timeStr = syncPlanetsToDate(targetDate);
     
     document.getElementById('time-modal').classList.remove('active');
@@ -467,7 +481,9 @@ function getOrLoadTexture(name, category, tier, material) {
             const el = document.getElementById('error-log');
             if (el) {
                 el.style.display = 'block';
-                el.innerHTML += `Failed to load ${name} (${tier}) at ${path}<br>`;
+                if (el.querySelectorAll('br').length < 6) {
+                    el.innerHTML += `Failed to load ${name} (${tier}) at ${path}<br>`;
+                }
             }
             console.error(`Error loading texture for ${name} at ${path}:`, err);
         }
@@ -627,7 +643,7 @@ function syncPlanetsToDate(targetDate = null) {
 // Navigation Setup
 const navList = document.getElementById('nav-list');
 
-function createNavItem(name, mesh, engName) {
+export function createNavItem(name, mesh, engName) {
     const navItem = document.createElement('div');
     navItem.className = 'nav-item';
     if (engName === 'The Sun') navItem.className += ' active';
@@ -754,13 +770,17 @@ const sunWrapper = {
 initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, asteroidBelt.instancedMesh, kuiperBelt.instancedMesh, celestialBodies, {
     syncFn: () => {
         const timeStr = syncPlanetsToDate();
+        // After syncing, the run must pause (historical behavior of the
+        // standalone listener that was removed with the double-binding):
+        state.isPaused = true;
+        updatePauseButtonVisuals();
         showToast(`${t('syncTimeMsg')} ${timeStr}`);
     },
     sunWrapper: sunWrapper,
     shipProvider,
     touchControls: isMobile   // #9: on-screen D-pad is touch-only
 });
-initSpawnManager(physicsEngine, scene, celestialBodies, navList);
+initSpawnManager(physicsEngine, scene, celestialBodies, navList, createNavItem);
 
 // Earth Atmosphere & Spaceship
 if (earthRef) {
@@ -935,4 +955,7 @@ const celestialIndex = createCelestialIndex(celestialBodies);
 
 window.__sim = { scene, renderer, time, physicsEngine, prePhysicsSystems, postPhysicsSystems, finalSystems };
 window.__bodies = celestialIndex; // debug / external tooling
+// Only now (full engine construction completed) do we declare ready:
+// the 12-second 'engine failed' overlay in index.html can now catch real init failures
+window.SIM_READY = true;
 

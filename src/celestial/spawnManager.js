@@ -2,7 +2,11 @@ import { Planet } from './planet.js';
 import { planetsData } from './planetsData.js';
 import { t, tName } from '../core/i18n.js';
 
-export function initSpawnManager(physicsEngine, scene, celestialBodies, navList) {
+export function initSpawnManager(physicsEngine, scene, celestialBodies, navList, createNavItem) {
+    // Injected by main.js: importing main.js from here would re-enter the entry
+    // module (script-tag + import = double evaluation) and double-build every
+    // listener/instance in the app.
+
     const spawnModal = document.getElementById('spawn-modal');
     const spawnTemplate = document.getElementById('spawn-template');
     const spawnDistance = document.getElementById('spawn-distance');
@@ -10,7 +14,10 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList)
 
     const spawnSingle = (isSilent = false) => {
         const currentCount = celestialBodies.filter(b => !b.isAsteroid && !b.isSun).length; // #2: sun is in the fleet, not a spawned planet
-        if (currentCount >= 50) return;
+        if (currentCount >= 50) {
+            if (window.showToastMsg) window.showToastMsg(t('limitReached')); // the 50-planet cap used to fail silently
+            return;
+        }
 
         let baseData = spawnTemplate.value === 'Random' 
             ? planetsData[Math.floor(Math.random() * planetsData.length)]
@@ -50,6 +57,10 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList)
 
         planet.isSpawned = true; // custom body: date-sync must not reseed onto the template ellipse
         celestialBodies.push(planet);
+        // Spawns used to have no nav entry at all -- only reachable by
+        // double-click (and not shown in the autopilot destination picker,
+        // which iterates the nav list):
+        if (createNavItem) navList.appendChild(createNavItem(spawnName, planet.mesh, spawnName));
         // UI logic for nav item...
         return planet;
     };
@@ -57,6 +68,12 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList)
     document.getElementById('modal-confirm-btn')?.addEventListener('click', () => {
         spawnModal.classList.remove('active');
         spawnSingle(false);
+    });
+
+    // The MACHINE GUN button had a label but no handler: batch-drop 10
+    // silent spawns (randomized distance/mass, as the silent path does):
+    document.getElementById('modal-machinegun-btn')?.addEventListener('click', () => {
+        for (let i = 0; i < 10; i++) spawnSingle(true);
     });
     
     // Add more listeners as needed...

@@ -88,7 +88,9 @@ export const i18n = {
         needPilotFirst: 'Enter Pilot Mode first to use auto-navigation',
         autoNavHeading: 'Select Destination',
         camChase: '📷 CAM: CHASE',
-        camCockpit: '📷 CAM: COCKPIT'
+        camCockpit: '📷 CAM: COCKPIT',
+        timeInvalid: 'Invalid date — check the fields',
+        apDisconnect: '✖ DISCONNECT'
     },
     zh: {
         title: '星空探索者',
@@ -177,7 +179,9 @@ export const i18n = {
         needPilotFirst: '请先进入驾驶模式再使用自动导航',
         autoNavHeading: '选择目标',
         camChase: '📷 追随视角',
-        camCockpit: '📷 座舱视角'
+        camCockpit: '📷 座舱视角',
+        timeInvalid: '日期无效，请检查各项',
+        apDisconnect: '✖ 取消导航'
     }
 };
 

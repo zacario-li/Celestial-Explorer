@@ -756,3 +756,8 @@ canvas {
         transform: translateY(-10px) scale(0.95);
     }
 }
+.warning-glow {
+    border-color: #ff7d4f !important;
+    background: rgba(255, 90, 60, 0.25) !important;
+    box-shadow: 0 0 12px rgba(255, 90, 60, 0.9);
+}

@@ -16,8 +16,12 @@ import { populateAutopilotDestinations } from '../uiCore.js';
  * found in tooltips/targets are tooltip-module placeholders — not elements.)
  */
 export function initAutopilotButton(physicsEngineOrScene, camera, controls, options = {}) {
-    // Note: buttonInitializer calls this as initAutopilotButton(physicsEngine)
-    // today; the argument is unused.
+    // The destination picker populates from the LIVE physics engine -- the
+    // first argument IS that engine (buttonInitializer passes initAutopilotButton
+    // the engine). It used to be ignored and a bare `physicsEngine` identifier
+    // was referenced instead, which ReferenceError'd inside the guarded
+    // populate call and rendered an empty picker.
+    const physicsEngine = physicsEngineOrScene || options.physicsEngine || null;
     const shipProvider = options.shipProvider || null;
 
     const AIP_ANOMALIES = ['astartus', 'titan', 'ptiliusprime', 'pthraxos', 'creemmeprime', 'despina'];
@@ -71,7 +75,7 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
             // Idle → show destination picker (now navigable: connects modal
             // population, target selection, status + indicator stripping)
             state.isAutopilotModalActive = true;
-            try { populateAutopilotDestinations(physicsEngine.activePlanets, _onDestinationSelected); } catch (e) { console.error('populateAutopilotDestinations:', e); }
+            try { if (physicsEngine) populateAutopilotDestinations(physicsEngine.activePlanets, _onDestinationSelected); } catch (e) { console.error('populateAutopilotDestinations:', e); }
             if (modalTitle) modalTitle.textContent = t('autoNavHeading');
             if (modal) modal.classList.add('active');
         });
@@ -111,10 +115,9 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
 
             if (docButton && docButton.classList) {
                 docButton.classList.remove('warning-glow');
-                docButton.textContent = '✖ DISCONNECT';
+                docButton.textContent = t('apDisconnect');
             }
 
-            if (window.displayTelemetryUpdate) window.displayTelemetryUpdate();
         } catch (e) {
             console.error('autopilot select error:', e);
         }

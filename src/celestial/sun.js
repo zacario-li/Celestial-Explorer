@@ -6,7 +6,7 @@ export function createSun(scene) {
     const sunGeo = new THREE.SphereGeometry(40, 64, 64);
     const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff8e0 });
     const sun = new THREE.Mesh(sunGeo, sunMat);
-    sun.userData = { isSun: true, isFocusable: true, name: 'Sun', radius: 40, mass: '1.989 × 10³⁰ kg', infoRadius: '696,340 km', density: '1.41 g/cm³', massRel: '~ 332,946 Earth Masses' };
+    sun.userData = { isSun: true, isFocusable: true, name: 'The Sun', radius: 40, mass: '1.989 × 10³⁰ kg', infoRadius: '696,340 km', density: '1.41 g/cm³', massRel: '~ 332,946 Earth Masses' };
     scene.add(sun);
 
     // Load sun texture

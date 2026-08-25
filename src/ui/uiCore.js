@@ -60,7 +60,7 @@ export async function applyLanguage() {
     safeSetText('pilot-button', state.isFlying ? 'pilotEnd' : 'pilotStart');
     safeSetText('pilot-instr', 'pilotInstructions');
     safeSetText('pilot-autolevel-button', 'pilotAutoLevel');
-    safeSetText('pilot-autopilot-button', 'pilotAutopilot');
+    safeSetText('pilot-autopilot-button', state.isAutopilotActive ? 'apDisconnect' : 'pilotAutopilot');
     
     safeSetText('sk-status', 'stationKeepingActive');
     safeSetText('sk-hint', 'stationKeepingHint');
@@ -155,6 +155,9 @@ export async function applyLanguage() {
 export function populateAutopilotDestinations(activePlanets, onSelect) {
     const list = document.getElementById('autopilot-dest-list');
     if (!list) return;
+    // The picker hid itself after the first pick and nothing restored it, so
+    // the second open would show only the ABORT button:
+    list.style.display = '';
     list.innerHTML = '';
 
     activePlanets.forEach(p => {
