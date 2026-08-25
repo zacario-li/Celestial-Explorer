@@ -1,0 +1,20 @@
+#!/bin/bash
+# Celestial Explorer launcher — double-click behavior:
+#   * if :$PORT already serves  → just open the browser (idempotent)
+#   * otherwise                 → start `node server.js` in a visible Terminal
+#     (logs on screen, Ctrl+C stops the whole simulation) then open the browser.
+REPO="$(cd "$(dirname "$0")/../../.." && pwd)"   # app lives at the repo root
+PORT="${CELESTIAL_PORT:-3001}"
+cd "$REPO"
+if curl -s --max-time 1 "http://localhost:$PORT/" >/dev/null 2>&1; then
+  open "http://localhost:$PORT/"
+  exit 0
+fi
+osascript <<OSA
+tell application "Terminal"
+  activate
+  do script "cd '$REPO' && echo '🚀 Celestial Explorer  starting on  http://localhost:$PORT   (Ctrl-C stops it)' && node server.js; echo 'server stopped — window closing…'; sleep 2"
+end tell
+OSA
+sleep 2
+open "http://localhost:$PORT/"
