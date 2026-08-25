@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Rebuilds ./CelestialExplorer.app from tools/icon.svg.
+# Rebuilds ./Celestial Explorer.app from tools/icon.svg.
 # Usage: bash tools/make-app.sh   (needs: node+playwright via node_modules, sips, iconutil)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP="$ROOT/CelestialExplorer.app"
+APP="$ROOT/Celestial Explorer.app"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
