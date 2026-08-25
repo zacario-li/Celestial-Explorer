@@ -212,7 +212,6 @@ const geo = new THREE.SphereGeometry(this.radius, 40, 40);
         this.tiltGroup.add(this.mesh);
         
         obj.add(this.tiltGroup);
-        obj.add(this.tiltGroup);
         this.scene.add(obj);
         return obj;
     }

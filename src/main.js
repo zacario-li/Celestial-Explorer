@@ -849,6 +849,10 @@ planetsData.forEach(d => {
 
 const asteroidBelt = new AsteroidBelt(4000, 550, 750, 'asteroid', physicsEngine, scene);
 const kuiperBelt = new AsteroidBelt(8000, 3200, 5000, 'kuiper', physicsEngine, scene);
+// Belt visuals honor the (default-off) state flags from frame one; the
+// engine's belt steps are already state-gated, so nothing runs hidden here:
+asteroidBelt.instancedMesh.visible = state.isAsteroidBeltActive;
+kuiperBelt.instancedMesh.visible = state.isKuiperBeltActive;
 
 // UI Manager
 const sunWrapper = {

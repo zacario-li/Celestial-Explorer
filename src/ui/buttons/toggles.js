@@ -34,6 +34,18 @@ export function initFuturePathButton() {
     });
 }
 
+export function initPlannedPathButton() {
+    return new Button('plannedpath-button', () => {
+        // User intent for the autopilot transfer line; AutopilotSystem
+        // realises it per frame while a plan exists (default off):
+        state.showPlannedPath = !state.showPlannedPath;
+    }, {
+        stateKey: 'showPlannedPath',
+        stateObject: state,
+        labels: { on: 'plannedPathOn', off: 'plannedPathOff' }
+    });
+}
+
 export function initHoverZonesButton(celestialBodies) {
     return new Button('hoverzones-button', () => {
         state.showHoverZones = !state.showHoverZones;

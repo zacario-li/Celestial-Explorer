@@ -29,12 +29,12 @@ const ALL_FIELDS = [
     // viewState
     'focusedBody', 'previousBody', 'isTransitioning', 'currentLang', 'isRealisticScale',
     '_prevRealisticScaleForCam', 'isHighVis', 'isAutoRotate', 'isOverview',
-    'showVenusAtmosphere', 'showFuturePath', 'showPastPath'
+    'showVenusAtmosphere', 'showFuturePath', 'showPastPath', 'showPlannedPath'
 ];
 
 console.log('state facade');
 
-ok('all 40 fields exist and are explicitly initialized', () => {
+ok('all 41 fields exist and are explicitly initialized', () => {
     for (const f of ALL_FIELDS) {
         assert.equal(f in state, true, `missing field: ${f}`);
     }

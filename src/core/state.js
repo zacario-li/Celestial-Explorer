@@ -27,7 +27,8 @@ export const simState = {
     virtualTime: 0,
     simSpeedMultiplier: 1, // Speed up simulation (User requested modification from 400)
     isAsteroidBeltActive: false,
-    isKuiperBeltActive: false
+    isKuiperBeltActive: false,
+    showPlannedPath: false
 };
 
 export const flightState = {

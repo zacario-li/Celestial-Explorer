@@ -52,6 +52,10 @@ export class AutopilotSystem {
             const planetRadius = (target.mesh.userData.radius || 0.04) * scaleX;
             const captureRadius = planetRadius * 8;
 
+            // The transfer-line visibility mirrors the Misc-settings choice
+            // for the whole engagement (off by default):
+            this.apPathLine.visible = state.showPlannedPath;
+
             // 1. ARRIVAL CHECK
             if (dist < captureRadius) {
                 state.isAutopilotActive = false;
@@ -92,7 +96,8 @@ export class AutopilotSystem {
                         }
                         this.apPathGeometry.setDrawRange(0, nPts);
                         this.apPathGeometry.attributes.position.needsUpdate = true;
-                        this.apPathLine.visible = true;
+                        // Honors the Misc-settings PLAN PATH flag (off by default):
+                        this.apPathLine.visible = state.showPlannedPath;
                         this.rendezvousGhost.position.copy(plan.rendezvous);
                         this.rendezvousGhost.visible = true;
                     }
