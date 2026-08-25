@@ -33,6 +33,14 @@ export class StationKeepingSystem {
             }
         }
 
+        // A corpse cannot be docked: if the captured body got destroyed
+        // mid-collision, release the lock instead of pinning the ship to the
+        // frozen dead point.
+        if (state.capturedBody && state.capturedBody.destroyed) {
+            state.capturedBody = null;
+            if (this.skIndicator) this.skIndicator.style.display = 'none';
+        }
+
         if (state.capturedBody) {
             // Apply captured movement: Ship follows planet position exactly
             ship.position.copy(state.capturedBody.pos).add(state.relativePos);

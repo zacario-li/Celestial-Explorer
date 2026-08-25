@@ -18,7 +18,8 @@ import { G, SUN_MASS } from '../physics/constants.js';
  * @param {THREE.Vector3} sunPos  Current sun physics position.
  * @returns {{v0: THREE.Vector3, points: THREE.Vector3[], rendezvous: THREE.Vector3}}
  */
-export function planTransferOrbit(shipPos, target, T, sunPos) {
+export function planTransferOrbit(shipPos, target, T, sunPos, mu = G * SUN_MASS) {
+    if (!(T > 0)) T = 1; // T<=0 would run the planner backwards (garbage v0; T=0 yields Inf/NaN)
     const steps = Math.min(150, Math.max(20, Math.ceil(T / 4))); // Dynamic steps based on remaining time
     const dt = T / steps;
 
@@ -31,7 +32,7 @@ export function planTransferOrbit(shipPos, target, T, sunPos) {
         const toSun = new THREE.Vector3().subVectors(sp, pTargetFut);
         const rSq = toSun.lengthSq();
         if (rSq > 100) {
-            const aT = toSun.normalize().multiplyScalar((G * SUN_MASS) / rSq);
+            const aT = toSun.normalize().multiplyScalar(mu / rSq);
             vTargetFut.addScaledVector(aT, dt);
         }
         pTargetFut.addScaledVector(vTargetFut, dt);
@@ -55,7 +56,7 @@ export function planTransferOrbit(shipPos, target, T, sunPos) {
             const toSun = new THREE.Vector3().subVectors(sp, pShipFut);
             const rSq = toSun.lengthSq();
             if (rSq > 100) {
-                const aS = toSun.normalize().multiplyScalar((G * SUN_MASS) / rSq);
+                const aS = toSun.normalize().multiplyScalar(mu / rSq);
                 vSim.addScaledVector(aS, dt);
             }
             pShipFut.addScaledVector(vSim, dt);

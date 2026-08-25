@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { G, SUN_MASS, STELLAR_IGNITION_THRESHOLD } from './constants.js';
+import { G, STELLAR_IGNITION_THRESHOLD } from './constants.js';
 import { computeSubSteps } from './integratorConfig.js';
 import { state } from '../core/state.js';
 
@@ -112,6 +112,7 @@ export class PhysicsEngine {
 
                     if (dSq < minD * minD) {
                         this.handleCollision(pA, pB);
+                        if (pA.destroyed) break; // lighter body died mid-pair: do not touch its corpse again
                     } else {
                         this._forceDir.copy(this._diff).normalize();
                         const sharedForce = (G * 10 * pB.physMass * pA.physMass / (dSq + 25)) * subDt;
@@ -176,7 +177,7 @@ export class PhysicsEngine {
         const rSq = this._sunDir.lengthSq();
         if (rSq > 1600) { // 40*40
             this._sunDir.normalize();
-            state.shipVelocity.addScaledVector(this._sunDir, (G * SUN_MASS / rSq) * subDt);
+            state.shipVelocity.addScaledVector(this._sunDir, (G * sunBody.physMass / rSq) * subDt);
         }
 
         // Planet Pulls
@@ -240,7 +241,7 @@ export class PhysicsEngine {
             const collisionRadSq = (40 + 2) * (40 + 2); // (sunRad + small margin)^2
             if (rSq > collisionRadSq) {
                 this._sunDir.normalize();
-                a.vel.addScaledVector(this._sunDir, (G * SUN_MASS / rSq) * physicsDt);
+                a.vel.addScaledVector(this._sunDir, (G * sunBody.physMass / rSq) * physicsDt);
             } else {
                 a.destroyed = true; 
                 this.bodiesListDirty = true;

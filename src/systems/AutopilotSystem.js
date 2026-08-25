@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { state } from '../core/state.js';
 import { applyLanguage } from '../ui/uiCore.js';
 import { planTransferOrbit } from '../core/transferOrbit.js';
+import { G } from '../physics/constants.js';
 
 /**
  * AutopilotSystem — orbital transfer state machine
@@ -32,9 +33,20 @@ export class AutopilotSystem {
         const ship = ctx.spaceship;
         if (!state.isFlying || !ship) return;
         const physicsDt = ctx.physicsDt;
+        // Whole-second edge trigger for course corrections (see COASTING):
+        // computed once per frame so every phase can observe the same value.
+        const vSecNow = Math.floor(state.virtualTime);
 
         if (state.isAutopilotActive && state.autopilotTarget) {
             const target = state.autopilotTarget;
+            if (target.destroyed) {
+                // Destination was taken in during the transfer: abort instead of
+                // planning toward a stationary ghost (the planner had already
+                // converged onto the corpse's remaining pos/vel).
+                state.isAutopilotActive = false;
+                state.autopilotTarget = null;
+                return; // the OFF branch below clears the rest next frame
+            }
             const dist = ship.position.distanceTo(target.pos);
             const scaleX = target.mesh ? target.mesh.scale.x : 1.0;
             const planetRadius = (target.mesh.userData.radius || 0.04) * scaleX;
@@ -64,7 +76,7 @@ export class AutopilotSystem {
                     const scaleFactor = state.isRealisticScale ? 0.00005 : 0.2;
                     state.timeToIntercept = dist / (1.5 * scaleFactor);
 
-                    const plan = planTransferOrbit(ship.position, target, state.timeToIntercept, ctx.sunBody.pos);
+                    const plan = planTransferOrbit(ship.position, target, state.timeToIntercept, ctx.sunBody.pos, G * ctx.sunBody.physMass);
                     state.autopilotVReq.copy(plan.v0);
 
                     // Show planned trajectory
@@ -123,11 +135,22 @@ export class AutopilotSystem {
                 if (state.autopilotPhase === 'COASTING') {
                     state.shipThrottle = 0;
 
-                    // Periodic course correction (every 5 seconds of virtual time)
-                    if (Math.floor(state.virtualTime) % 5 === 0 && Math.abs(state.virtualTime - Math.floor(state.virtualTime)) < physicsDt) {
+                    // Periodic course correction (every 5 seconds of virtual
+                    // time). Edge-triggered on the change of floor(virtualTime):
+                    // the old window comparison mixed virtual-time and
+                    // physics-dt, so at low warp the correction frame could be
+                    // skipped and at extreme warp it fired every frame.
+                    if (vSecNow % 5 === 0 && vSecNow !== state._prevCourseSec) {
                         // Quick re-plan if still far
                         if (dist > captureRadius * 5) {
-                            const plan = planTransferOrbit(ship.position, target, state.timeToIntercept, ctx.sunBody.pos);
+                            // The decaying countdown can expire on long
+                            // transfers: refresh the estimate instead of
+                            // planning with T<=0 (garbage / NaN v0).
+                            if (!(state.timeToIntercept > 1)) {
+                                const scaleFactor = state.isRealisticScale ? 0.00005 : 0.2;
+                                state.timeToIntercept = dist / (1.5 * scaleFactor);
+                            }
+                            const plan = planTransferOrbit(ship.position, target, state.timeToIntercept, ctx.sunBody.pos, G * ctx.sunBody.physMass);
                             state.autopilotVReq.copy(plan.v0);
                             // If correction is significant, re-align
                             if (this._diffVec.copy(state.autopilotVReq).sub(state.shipVelocity).length() > 0.001) {
@@ -138,7 +161,7 @@ export class AutopilotSystem {
                 }
 
                 // ETA Countdown (Accounts for simulation speed)
-                state.timeToIntercept -= physicsDt;
+                if (state.timeToIntercept > 0) state.timeToIntercept -= physicsDt;
 
                 // Live countdown in the HUD: refresh once per whole second of
                 // remaining time (applyLanguage renders #ap-status)
@@ -155,12 +178,19 @@ export class AutopilotSystem {
                     state._prevAutopilotPhase = state.autopilotPhase;
                     applyLanguage();
                 }
+                state._prevCourseSec = vSecNow;
             }
         } else {
             // Cleanup visuals & state cache when autopilot evaluates as OFF
             if (this.apPathLine.visible) this.apPathLine.visible = false;
             if (this.rendezvousGhost.visible) this.rendezvousGhost.visible = false;
+            if (this.apIndicator) this.apIndicator.style.display = 'none';
+            // Refresh the pill once so a stale ghost target stops being shown
+            // (e.g. the destination was consumed mid-transfer):
+            state.autopilotStatus = 'apDisengaged';
+            applyLanguage();
             state.timeToIntercept = 0;
+            state.autopilotTarget = null;
             state._prevAutopilotTarget = null;
             state.autopilotPhase = '';
             state._prevAutopilotPhase = '';

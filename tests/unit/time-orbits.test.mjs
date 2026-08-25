@@ -24,6 +24,8 @@ import { computeSubSteps, legacySubSteps, MAX_SUBSTEPS, MAX_SUBSTEP_SECONDS } fr
 import { solveKepler, orbitalStateAt } from '../../src/core/kepler.js';
 import { PhysicsEngine } from '../../src/physics/physicsEngine.js';
 import { state } from '../../src/core/state.js';
+import { planetsData } from '../../src/celestial/planetsData.js';
+import { planTransferOrbit } from '../../src/core/transferOrbit.js';
 
 let passed = 0;
 function ok(name, fn) {
@@ -210,6 +212,43 @@ ok('1e6×: hard cap bounds the worst-case step (45× finer than legacy)', () => 
     for (const b of bodies) {
         assert.ok(Number.isFinite(b.pos.x) && Number.isFinite(b.pos.z));
     }
+});
+
+
+console.log('5) batch-1 regression locks (numeric edge guards)');
+
+ok('solveKepler: divergent NR case (e=0.99, M=0.3) rescued by bisection', () => {
+    // 8-iteration Newton-Raphson from E0=M genuinely diverges here
+    // (residual ~0.10); the solver must now fall back and converge.
+    const E = solveKepler(0.3, 0.99, 8);
+    const residual = Math.abs(E - 0.99 * Math.sin(E) - 0.3);
+    assert.ok(residual < 1e-9, `expected converged E, residual=${residual}`);
+});
+
+ok('solveKepler: shipped data still converges to < 1e-12 (bit-identical path)', () => {
+    for (const p of planetsData) {
+        if (p.ecc === undefined) continue;
+        const E = solveKepler(1.234, p.ecc, 8);
+        const residual = Math.abs(E - p.ecc * Math.sin(E) - 1.234);
+        assert.ok(residual < 1e-12, `${p.name}: residual=${residual}`);
+    }
+});
+
+ok('planTransferOrbit: T<=0 no longer yields Inf/NaN v0', () => {
+    const target = { pos: new THREE.Vector3(400, 0, 0), vel: new THREE.Vector3(0, 0, 1) };
+    for (const T of [-5, 0, 1e-9]) {
+        const plan = planTransferOrbit(new THREE.Vector3(0, 0, 0), target, T, new THREE.Vector3());
+        assert.ok(Number.isFinite(plan.v0.x) && Number.isFinite(plan.v0.y) && Number.isFinite(plan.v0.z),
+            `T=${T}: non-finite v0`);
+        assert.ok(plan.v0.length() > 0, `T=${T}: zero v0`);
+    }
+});
+
+ok('planTransferOrbit: custom mu actually reaches the planner', () => {
+    const target = { pos: new THREE.Vector3(400, 0, 0), vel: new THREE.Vector3(0, 0, 1) };
+    const a = planTransferOrbit(new THREE.Vector3(0, 0, 0), target, 300, new THREE.Vector3(), G * 1e6);
+    const b = planTransferOrbit(new THREE.Vector3(0, 0, 0), target, 300, new THREE.Vector3(), G * 1e9);
+    assert.ok(!a.v0.equals(b.v0), 'a 1000x stronger sun must bend the transfer');
 });
 
 console.log(`\n${passed} checks passed.`);

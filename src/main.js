@@ -13,7 +13,7 @@ window.SIM_VERSION = "V3.8";
 
 import { createStarfield } from './celestial/starfield.js';
 import { PhysicsEngine } from './physics/physicsEngine.js';
-import { G, SUN_MASS } from './physics/constants.js';
+import { G } from './physics/constants.js';
 import { Planet } from './celestial/planet.js';
 import { Moon } from './celestial/moon.js';
 import { AsteroidBelt } from './celestial/asteroidBelt.js';
@@ -545,7 +545,7 @@ function syncPlanetsToDate(targetDate = null) {
             }
             body.pos.copy(pos);
             
-            const vMag = Math.sqrt((G * SUN_MASS) / body.orbitRadius);
+            const vMag = Math.sqrt((G * sunBody.physMass) / body.orbitRadius);
             const vel = new THREE.Vector3(
                 -vMag * Math.sin(angle),
                 0,
@@ -565,7 +565,7 @@ function syncPlanetsToDate(targetDate = null) {
                     moon.spinGroup.rotation.y = 0;
                 });
             }
-        } else if (body.data.L0 !== undefined) {
+        } else if (body.data.L0 !== undefined && !body.isSpawned) {
             const config = body.data;
             const ecc = config.ecc || 0;
             const w = (config.w || 0) * (Math.PI / 180);
@@ -576,14 +576,16 @@ function syncPlanetsToDate(targetDate = null) {
             // Mean Anomaly (M) = L - w
             const M = L - w;
 
-            // Shared Kepler state (modules/orbits/kepler.js). mu = G*SUN_MASS
-            // and iter = 8 preserve the historical date-sync numerics exactly.
+            // Shared Kepler state (modules/orbits/kepler.js). mu tracks the
+            // live sun body (stardust ingestion grows through; for an
+            // un-ingested sun exactly G*SUN_MASS = historical numerics),
+            // and iter = 8 retains it.
             // (?? 0) mirrors the old `body.inc !== undefined` guard: when
             // inc/lan were undefined the old code skipped those rotations, and
             // a zero-angle rotation is exactly the identity.
             const { pos, vel } = orbitalStateAt(
                 body.orbitRadius, ecc, M, w, body.inc ?? 0, body.lan ?? 0,
-                G * SUN_MASS
+                G * sunBody.physMass
             );
             body.pos.copy(pos);
             body.vel.copy(vel);

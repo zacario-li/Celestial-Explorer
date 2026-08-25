@@ -21,7 +21,17 @@ export function solveKepler(M, e, iter = 8) {
     for (let i = 0; i < iter; i++) {
         E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
     }
-    return E;
+    // Convergence check: shipped data converges well below this, so conforming
+    // callers are bit-identical; a non-converged Newton–Raphson (high
+    // eccentricity or a pathological M) falls back to a bisection on the
+    // monotone branch rather than emitting bad state silently.
+    if (Math.abs(E - e * Math.sin(E) - M) < 1e-9) return E;
+    let lo = M - Math.PI, hi = Math.PI + M;
+    for (let i = 0; i < 48; i++) {
+        const mid = (lo + hi) / 2;
+        if (mid - e * Math.sin(mid) - M < 0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
 }
 
 const AXIS_X = new THREE.Vector3(1, 0, 0);

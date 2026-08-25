@@ -82,6 +82,13 @@ export class CleanupSystem {
                     if (this.overviewButton) this.overviewButton.textContent = t('overviewOff');
                 }
 
+                // Navigation / flight state must not retain a corpse
+                // (or dock the ship to the dead one):
+                if (state.capturedBody === b) state.capturedBody = null;
+                if (state.autopilotTarget === b) state.autopilotTarget = null;
+                if (state._prevAutopilotTarget === b) state._prevAutopilotTarget = null;
+                if (state.previousBody === b) state.previousBody = null;
+
                 // Remove from Nav List
                 const items = this.navList.querySelectorAll('.nav-item');
                 items.forEach(item => {

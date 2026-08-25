@@ -84,7 +84,9 @@ export const i18n = {
         ignitionTitle: 'Stellar Ignition!',
         miscSettings: '🛠️ MISC SETTINGS',
         futurePathOn: '🔴 PREDICT TRAJECTORY: ON',
-        futurePathOff: '🔴 PREDICT TRAJECTORY: OFF'
+        futurePathOff: '🔴 PREDICT TRAJECTORY: OFF',
+        needPilotFirst: 'Enter Pilot Mode first to use auto-navigation',
+        autoNavHeading: 'Select Destination'
     },
     zh: {
         title: '星空探索者',
@@ -169,7 +171,9 @@ export const i18n = {
         ignitionTitle: '恒星点火！',
         miscSettings: '🛠️ 杂项设置',
         futurePathOn: '🔴 预测轨迹：开',
-        futurePathOff: '🔴 预测轨迹：关'
+        futurePathOff: '🔴 预测轨迹：关',
+        needPilotFirst: '请先进入驾驶模式再使用自动导航',
+        autoNavHeading: '选择目标'
     }
 };
 

@@ -48,6 +48,7 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList)
         planet.mesh.userData.radius = finalRadius;
         planet.radius = finalRadius; // keep planet's own radius consistent
 
+        planet.isSpawned = true; // custom body: date-sync must not reseed onto the template ellipse
         celestialBodies.push(planet);
         // UI logic for nav item...
         return planet;

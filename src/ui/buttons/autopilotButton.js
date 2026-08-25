@@ -56,7 +56,7 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
         docButton.addEventListener('click', () => {
             if (!state.isFlying) {
                 if (window.showToastMsg) {
-                    try { window.showToastMsg(t('needPilotFirst', 'Enter Pilot Mode First')); } catch (e) {}
+                    try { window.showToastMsg(t('needPilotFirst')); } catch (e) {}
                 }
                 docButton.classList.add('warning-glow');
                 setTimeout(() => docButton.classList.remove('warning-glow'), 700);
@@ -72,7 +72,7 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
             // population, target selection, status + indicator stripping)
             state.isAutopilotModalActive = true;
             try { populateAutopilotDestinations(physicsEngine.activePlanets, _onDestinationSelected); } catch (e) { console.error('populateAutopilotDestinations:', e); }
-            if (modalTitle) modalTitle.textContent = t('autoNavHeading', 'Select Destination');
+            if (modalTitle) modalTitle.textContent = t('autoNavHeading');
             if (modal) modal.classList.add('active');
         });
     }
@@ -96,7 +96,7 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
             const dist = planet.pos.length();
             state.autopilotTarget = planet;
             state.isAutopilotActive = true;
-            state.autopilotStatus = 'apNavigating';
+            state.autopilotStatus = 'apStatusNavigating';
             state.showAutopilotTrajectory = true;
 
             if (destList) destList.style.display = 'none';

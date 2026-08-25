@@ -57,6 +57,11 @@ export class Moon extends CelestialBody {
      * Soft-contract bridge: pos/vel are DERIVED from the authored scene-graph
      * hierarchy (script-mode kinematics -- moons were never physics bodies).
      * Called per frame by BodyVisualSystem with the scripted dt.
+     *
+     * pos is the canonical render position. vel is a derivative-velocity
+     * estimate for display / tooling use only -- DO NOT feed it to physics
+     * or station-keeping: its delta mixes the parent's physical flight into
+     * the scripted dt, so its magnitude/coast is not a physical velocity.
      */
     syncWorld(dt) {
         this.mesh.getWorldPosition(this.pos);

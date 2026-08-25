@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { state } from '../core/state.js';
-import { G, SUN_MASS } from '../physics/constants.js';
+import { G } from '../physics/constants.js';
 
 /**
  * BodyVisualSystem — per-body visual sync (was script.js animate(), ~L1386-1505).
@@ -30,7 +30,8 @@ export class BodyVisualSystem {
         for (let i = 0; i < celestialBodies.length; i++) {
             const body = celestialBodies[i];
             // Self-healing for NaN positions
-            if (!body.pos || isNaN(body.pos.x) || isNaN(body.pos.z)) {
+            if (!body.pos || !Number.isFinite(body.pos.x) || !Number.isFinite(body.pos.y) || !Number.isFinite(body.pos.z)
+                || !body.vel || !Number.isFinite(body.vel.x) || !Number.isFinite(body.vel.y) || !Number.isFinite(body.vel.z)) {
                 const rad = body.orbitRadius || 250;
                 if (!body.pos) body.pos = new THREE.Vector3();
                 if (!body.vel) body.vel = new THREE.Vector3();
@@ -39,7 +40,7 @@ export class BodyVisualSystem {
                 // Orbital velocity relative to sun
                 const toSun = new THREE.Vector3().subVectors(sunBody.pos, body.pos).normalize();
                 const perpVel = new THREE.Vector3(-toSun.z, 0, toSun.x);
-                body.vel.copy(perpVel).multiplyScalar(Math.sqrt((G * SUN_MASS) / rad));
+                body.vel.copy(perpVel).multiplyScalar(Math.sqrt((G * sunBody.physMass) / rad));
             }
 
             if (body.isAsteroid) {
