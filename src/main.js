@@ -700,7 +700,8 @@ function syncPlanetsToDate(targetDate = null) {
             // Align satellites
             if (body.satellites && body.satellites.length > 0) {
                 body.satellites.forEach(moon => {
-                    moon.spinGroup.rotation.y = 0;
+                    // Dynamic orbit: re-seed on the ring (see Moon.resetOrbit)
+                    moon.resetOrbit();
                 });
             }
         } else if (body.data.L0 !== undefined && !body.isSpawned) {

@@ -77,7 +77,8 @@ export class BodyVisualSystem {
                 const sats = body.satellites;
 
                 for (let k = 0; k < sats.length; k++) {
-                    sats[k].spinGroup.rotation.y += sats[k].speed * scriptedDt;
+                    // #9(dynamicorbits): spinGroup clock retired -- the engine
+                    // integrates relPos/relVel now; only the body's own spin remains.
                     sats[k].mesh.rotation.y += sats[k].speed * scriptedDt;
                     // #2: moons are script-mode bodies -- derive world pos/vel
                     if (sats[k].syncWorld) sats[k].syncWorld(scriptedDt);

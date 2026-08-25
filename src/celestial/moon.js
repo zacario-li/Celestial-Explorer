@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CelestialBody } from './celestialBody.js';
+import { SCRIPTED_TIME_SCALE } from '../core/time.js';
 
 export class Moon extends CelestialBody {
     constructor(data, planet) {
@@ -50,28 +51,109 @@ export class Moon extends CelestialBody {
 
         this.planet.satelliteAnchor.add(this.orbitObj);
         this.planet.satellites.push(this);
-        this.syncWorld(0); // first world pos immediately, no velocity yet
+        this.startDynamics();
+        this.syncWorld(0); // first world pos immediately (dynamics state)
     }
 
     /**
-     * Soft-contract bridge: pos/vel are DERIVED from the authored scene-graph
-     * hierarchy (script-mode kinematics -- moons were never physics bodies).
-     * Called per frame by BodyVisualSystem with the scripted dt.
+     * Real orbital dynamics (replaces the old spinGroup angle clock).
      *
-     * pos is the canonical render position. vel is a derivative-velocity
-     * estimate for display / tooling use only -- DO NOT feed it to physics
-     * or station-keeping: its delta mixes the parent's physical flight into
-     * the scripted dt, so its magnitude/coast is not a physical velocity.
+     * State lives in planet-relative, plane-aligned (spinGroup) coordinates:
+     *   relPos / relVel  -- integrated per physics sub-step by the engine
+     *   muEff            -- central gravitational parameter tuned so the
+     *                       period equals the ORIGINAL scripted one:
+     *                       omega = speed * SCRIPTED_TIME_SCALE rad per
+     *                       sim-second, mu = omega^2 * R^3
+     * (Moon periods are ~10^6 sim-seconds against 0.016 s sub-steps, so
+     *  explicit Euler drifts by ~1e-9 energy per step -- no integrator
+     *  upgrade needed.) The old spinGroup clock is frozen at 0.
+     */
+    startDynamics() {
+        const omegaSim = this.speed * SCRIPTED_TIME_SCALE;
+        const R = this.translationGroup.position.x || this.orbitRadius;
+        this.orbitR = R;
+        this.omegaSim = omegaSim;
+        this.muEff = omegaSim * omegaSim * R * R * R;
+        this.relPos = new THREE.Vector3(R, 0, 0);
+        this.relVel = new THREE.Vector3(0, 0, -omegaSim * R);
+        // The spin clock is dead: the integrator owns the position now.
+        this.spinGroup.rotation.set(0, 0, 0);
+        this.translationGroup.position.copy(this.relPos);
+        if (this.planet) this.publishWorld(this.planet);
+    }
+
+    /** One sub-step of the central-force orbit (from the physics engine). */
+    stepDynamics(subDt) {
+        const D = this.relPos.lengthSq();
+        if (!(D > 1e-12)) {
+            // degenerate (should not happen): re-seed on the ring
+            this.relPos.set(this.orbitR, 0, 0);
+            this.relVel.set(0, 0, -this.omegaSim * this.orbitR);
+            return;
+        }
+        this.relVel.addScaledVector(this.relPos, -(this.muEff / Math.pow(D, 1.5)) * subDt);
+        this.relPos.addScaledVector(this.relVel, subDt);
+    }
+
+    /**
+     * Republish world pos/vel from the integrated relative state (called by
+     * the engine each sub-step and by the visual system as a safety net).
+     * The orbital plane is rigid (inc/lan/tilt are data constants), so the
+     * plane quaternion is static: world delta = planeQuat * relVec.
+     */
+    publishWorld(planet) {
+        if (!planet || !planet.pos || !planet.vel) return; // test doubles without physics fields
+        if (!this._planeQuat) this._planeQuat = new THREE.Quaternion();
+        this.planeGroup.getWorldQuaternion(this._planeQuat);
+        this._wdelta.set(this.orbitR, 0, 0); // temp reuse
+        this._wdelta.set(this.relPos.x, this.relPos.y, this.relPos.z);
+        this._wdelta.applyQuaternion(this._planeQuat);
+        this.pos.copy(planet.pos).add(this._wdelta);
+        this._wvel.set(this.relVel.x, this.relVel.y, this.relVel.z);
+        this._wvel.applyQuaternion(this._planeQuat);
+        this.vel.copy(planet.vel).add(this._wvel);
+    }
+
+    /** _wdelta/_wvel scratch (allocated lazily here to keep the constructor lean) */
+    get _wdelta() {
+        if (!this.__wdelta) this.__wdelta = new THREE.Vector3();
+        return this.__wdelta;
+    }
+    get _wvel() {
+        if (!this.__wvel) this.__wvel = new THREE.Vector3();
+        return this.__wvel;
+    }
+
+    /** Date-sync / reset: put the moon back on its ring (clock zero). */
+    resetOrbit() {
+        this.spinGroup.rotation.set(0, 0, 0);
+        this.relPos.set(this.orbitR, 0, 0);
+        this.relVel.set(0, 0, -this.omegaSim * this.orbitR);
+        this.translationGroup.position.copy(this.relPos);
+        if (this.planet) this.publishWorld(this.planet);
+    }
+
+    /** Realistic-scale change: rescale the orbit (linear, period-conserving). */
+    setOrbitRadius(newR) {
+        if (!(newR > 0)) return;
+        const f = newR / (this.orbitR || newR);
+        if (Math.abs(f - 1) < 1e-6) return;
+        this.orbitR = newR;
+        this.relPos.multiplyScalar(f);
+        this.relVel.multiplyScalar(f);
+        this.muEff = this.omegaSim * this.omegaSim * newR * newR * newR;
+        this.translationGroup.position.copy(this.relPos);
+    }
+
+    /**
+     * Render sync (dynamics are owned by the engine). Pushes the integrated
+     * relative state into the scene graph: translationGroup sits under a
+     * frozen spinGroup, so its local position IS relPos.
      */
     syncWorld(dt) {
-        this.mesh.getWorldPosition(this.pos);
-        if (dt > 0 && this._hasPrev && !this.pos.equals(this._prevWorldPos)) {
-            this.vel.copy(this.pos).sub(this._prevWorldPos).divideScalar(dt);
-        } else if (dt <= 0) {
-            this.vel.set(0, 0, 0);
+        if (this.translationGroup && this.relPos) {
+            this.translationGroup.position.copy(this.relPos);
         }
-        this._prevWorldPos.copy(this.pos);
-        this._hasPrev = dt > 0;
     }
 
     createMesh() {
@@ -114,7 +196,7 @@ export class Moon extends CelestialBody {
         if (isRealistic && this.data.realR && this.data.realDist) {
             const rFactor = this.data.realR / this.radius;
             this.mesh.scale.set(rFactor, rFactor, rFactor);
-            this.translationGroup.position.x = this.data.realDist;
+            this.setOrbitRadius(this.data.realDist);
             const distFactor = this.data.realDist / this.orbitRadius;
             this.orbitLine.scale.set(distFactor, distFactor, distFactor);
         } else {

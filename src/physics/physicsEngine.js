@@ -122,6 +122,22 @@ export class PhysicsEngine {
                 }
             }
 
+            // 1c. Satellites: real central orbits about their planet (the
+            //     old spinGroup clocks were retired in favor of integrable
+            //     relPos/relVel state; see Moon.startDynamics).
+            for (let i = 0; i < nPlanets; i++) {
+                const host = this.activePlanets[i];
+                if (!host.destroyed && host.satellites) {
+                    for (let m = 0; m < host.satellites.length; m++) {
+                        const moon = host.satellites[m];
+                        if (!moon.destroyed && moon.stepDynamics) {
+                            moon.stepDynamics(subDt);
+                            moon.publishWorld(host);
+                        }
+                    }
+                }
+            }
+
             // 2. Spaceship Gravity
             this.updateSpaceshipPhysics(subDt, realDt / (subSteps || 1), sunBody);
 

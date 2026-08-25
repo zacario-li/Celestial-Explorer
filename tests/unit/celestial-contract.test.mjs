@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { CelestialBody } from '../../src/celestial/celestialBody.js';
 import { Moon } from '../../src/celestial/moon.js';
+import { SCRIPTED_TIME_SCALE } from '../../src/core/time.js';
 import { createCelestialIndex } from '../../src/celestial/celestialIndex.js';
 
 let passed = 0;
@@ -37,7 +38,12 @@ ok('base class provides full identity defaults', () => {
 });
 
 function fakePlanet() {
-    return { satelliteAnchor: new THREE.Object3D(), satellites: [] };
+    return {
+        satelliteAnchor: new THREE.Object3D(),
+        satellites: [],
+        pos: new THREE.Vector3(),
+        vel: new THREE.Vector3(),
+    };
 }
 
 ok('Moon satisfies identity (soft contract) and joins its planet', () => {
@@ -56,31 +62,35 @@ ok('Moon satisfies identity (soft contract) and joins its planet', () => {
     assert.equal(m.mesh.userData.name, 'Testmoon');
 });
 
-ok('Moon.syncWorld derives world pos from the hierarchy', () => {
+ok('Moon world pos aligns center + orbit offset (dynamics-owned)', () => {
     const planet = fakePlanet();
     const m = new Moon({ name: 'M2', r: 1, c: 0xffffff, dist: 10, speed: 0.5, inc: 0, lan: 0, tilt: 0 }, planet);
-    // planet at (5, 0, 0); moon offset +10 on local X after groups
-    planet.satelliteAnchor.position.set(5, 0, 0);
-    m.mesh.updateWorldMatrix(true, false);
-    m.syncWorld(0);
+    // Planet at (5, 0, 0); moon starts on the +X ring (local) at x +10.
+    // The plane is inclined (inc 0 here) so world delta === relVec.
+    planet.pos.set(5, 0, 0);
+    planet.vel.set(0, 0, 0);
+    m.publishWorld(planet);
     assert.equal(m.pos.x, 15);
     assert.equal(m.pos.y, 0);
     assert.equal(m.pos.z, 0);
 });
 
-ok('Moon.syncWorld derives velocity from a frame delta', () => {
+ok('Moon syncWorld is render-only; pos/vel are dynamics-owned', () => {
     const planet = fakePlanet();
     const m = new Moon({ name: 'M3', r: 1, c: 0xffffff, dist: 10, speed: 0.5, inc: 0, lan: 0, tilt: 0 }, planet);
-    planet.satelliteAnchor.position.set(0, 0, 0);
+    planet.pos.set(0, 0, 0);
+    planet.vel.set(0, 0, 0);
+    // Constructor already published: circular tangent velocity omega*R
+    const omega = 0.5 * SCRIPTED_TIME_SCALE;
+    assert.ok(Math.abs(m.vel.z - (-omega * 10)) < 1e-9, `vel.z=${m.vel.z}`);
+    // syncWorld no longer derives pos/vel (the engine owns them); it only
+    // mirrors relPos into the scene graph
+    m.pos.set(7, 7, 7);
+    m.vel.set(1, 2, 3);
     m.syncWorld(0.016);
-    assert.equal(m.vel.length(), 0); // first frame: no delta yet
-    planet.satelliteAnchor.position.set(0.16, 0, 0); // moved 0.16 in 0.016 s -> 10 u/s
-    m.mesh.updateWorldMatrix(true, false);
-    m.syncWorld(0.016);
-    assert.ok(Math.abs(m.vel.x - 10) < 1e-9, `vel.x=${m.vel.x}`);
-    // paused (dt <= 0): pos still tracked, vel zeroed
-    m.syncWorld(0);
-    assert.equal(m.vel.length(), 0);
+    assert.equal(m.pos.x, 7);
+    assert.equal(m.vel.y, 2);
+    assert.equal(m.translationGroup.position.x, m.relPos.x);
 });
 
 ok('index composes the fleet, moons, allBodies, byName', () => {

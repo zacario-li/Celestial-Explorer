@@ -68,6 +68,13 @@ export class StationKeepingSystem {
                 const captureRadius = planetRadius * 8;
 
                 if (minDist < captureRadius) {
+                    // A ship inside a body's hull is mid-collision (the engine's
+                    // flight reset is one setTimeout tick behind the collision,
+                    // and during that tick velocity is already zero --
+                    // capturing there would race the reset and 'dock' the ship
+                    // INSIDE the planet): docking is only legal outside the hull.
+                    const rShip = 0.5 * (ship.scale.x || 1.0);
+                    const outsideHull = minDist > planetRadius + rShip;
                     // Update Target Throttle Guidance
                     if (state.showHoverZones && this.skTargetThrottle) {
                         const targetSpeedMag = closest.vel.length();
@@ -83,7 +90,7 @@ export class StationKeepingSystem {
 
                     const relV = vShip.clone().sub(vPlanet);
                     // If relative velocity magnitude is very low, lock position
-                    if (relV.length() < 0.0004) {
+                    if (outsideHull && relV.length() < 0.0004) {
                         state.capturedBody = closest;
                         state.relativePos.copy(ship.position).sub(closest.pos);
                         if (this.skIndicator) this.skIndicator.style.display = 'block';
