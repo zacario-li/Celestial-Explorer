@@ -75,7 +75,7 @@ export class Moon extends CelestialBody {
     }
 
     createMesh() {
-        const geo = new THREE.SphereGeometry(this.radius, 32, 32);
+        const geo = new THREE.SphereGeometry(this.radius, 24, 24); // moons are small on screen
         const mat = new THREE.MeshStandardMaterial({
             color: this.color,
             roughness: 0.8,

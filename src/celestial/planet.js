@@ -68,7 +68,9 @@ export class Planet extends CelestialBody {
     }
 
     createMesh() {
-        const geo = new THREE.SphereGeometry(this.radius, 64, 64);
+        // 40 segments / about 3.2k triangles: visually indistinguishable at all
+// zoom levels (a 4k texture resolves the limit), saves about -60% against a 64 sphere.
+const geo = new THREE.SphereGeometry(this.radius, 40, 40);
         const mat = new THREE.MeshStandardMaterial({
             color: this.color,
             roughness: 0.6,
@@ -470,7 +472,7 @@ export class Planet extends CelestialBody {
     createAtmosphere() {
         if (this.name !== 'Venus') return null;
         const radius = this.radius;
-        const atmGeo = new THREE.SphereGeometry(radius * 1.015, 64, 64);
+        const atmGeo = new THREE.SphereGeometry(radius * 1.015, 32, 32); // the atmosphere is a haze -- no need for more segments than this
         const atmMat = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             roughness: 1.0,

@@ -3,7 +3,7 @@ import { CelestialBody } from './celestialBody.js';
 import { SUN_MASS } from '../physics/constants.js';
 
 export function createSun(scene) {
-    const sunGeo = new THREE.SphereGeometry(40, 64, 64);
+    const sunGeo = new THREE.SphereGeometry(40, 48, 48); // outside the glow halo
     const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff8e0 });
     const sun = new THREE.Mesh(sunGeo, sunMat);
     sun.userData = { isSun: true, isFocusable: true, name: 'The Sun', radius: 40, mass: '1.989 × 10³⁰ kg', infoRadius: '696,340 km', density: '1.41 g/cm³', massRel: '~ 332,946 Earth Masses' };
