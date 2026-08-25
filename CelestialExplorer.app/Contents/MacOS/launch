@@ -3,7 +3,13 @@
 #   * if :$PORT already serves  → just open the browser (idempotent)
 #   * otherwise                 → start `node server.js` in a visible Terminal
 #     (logs on screen, Ctrl+C stops the whole simulation) then open the browser.
-REPO="$(cd "$(dirname "$0")/../../.." && pwd)"   # app lives at the repo root
+# Resolve the repo: next to the app (repo-root copy) → $CELESTIAL_HOME → known path
+REPO=""
+for cand in "$(cd "$(dirname "$0")/../../.." 2>/dev/null && pwd)" "${CELESTIAL_HOME:-}"; do
+  if [ -n "$cand" ] && [ -f "$cand/server.js" ]; then REPO="$cand"; break; fi
+done
+[ -z "$REPO" ] && REPO="/Users/stesha/code/lyw"
+[ -f "$REPO/server.js" ] || { echo "Celestial Explorer: could not find service files (server.js) — try setting CELESTIAL_HOME=$PWD"; exit 1; }
 PORT="${CELESTIAL_PORT:-3001}"
 cd "$REPO"
 if curl -s --max-time 1 "http://localhost:$PORT/" >/dev/null 2>&1; then
