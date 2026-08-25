@@ -148,6 +148,11 @@ window.addEventListener('blur', () => {
 
 // --- AUTOPILOT VISUALS ---
 const apPathGeometry = new THREE.BufferGeometry();
+// Pooled line buffer: setFromPoints() allocates a fresh BufferAttribute per
+// transfer plan (the old one's GL buffer was never freed). We write into a
+// fixed 151-vertex attribute and adjust the draw range instead:
+apPathGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(151 * 3), 3).setUsage(THREE.DynamicDrawUsage));
+apPathGeometry.setDrawRange(0, 0);
 const apPathMaterial = new THREE.LineBasicMaterial({
     color: 0x00ffff,
     transparent: true,
@@ -449,20 +454,111 @@ const mTexPaths = {
 };
 
 const texCache = new Map();
+// The cache used to grow without bound: after browsing a session of
+// 12 planets + ~30 moons at high tier (4K-8K sources, several per planet),
+// every texture ever fetched stays in VRAM forever (roughly 0.5-1.2 GB).
+// It is now an LRU: old entries are disposed once nothing live uses them.
+const TEX_CACHE_MAX = 24;
+// These four planets share a single remote URL across all three tiers --
+// distinct cache keys would hold three GPU copies + at worst three HTTP
+// fetches of the same image. One key, one texture:
+const REMOTE_SINGLE_TIER = ['Mars', 'Saturn', 'Uranus', 'Neptune'];
+const TEX_OWNED = new Set(); // uuids of cache-managed textures (hierarchy dispose skips them)
+
+function bodyUsesTexture(b, tex) {
+    const check = (n) => {
+        if (!n) return false;
+        const mats = n.material ? (Array.isArray(n.material) ? n.material : [n.material]) : [];
+        for (const m of mats) if (m.map === tex || m.alphaMap === tex) return true;
+        for (const c of n.children || []) if (check(c)) return true;
+        return false;
+    };
+    return check(b.orbitObj || b.mesh || b);
+}
+
+function texRemember(key, tex) {
+    if (!tex.uuid) return;
+    TEX_OWNED.add(tex.uuid);
+    if (texCache.has(key)) texCache.delete(key);
+    texCache.set(key, tex);  // re-assert recency
+    while (texCache.size > TEX_CACHE_MAX) {
+        const oldKey = texCache.keys().next().value;
+        const oldTex = texCache.get(oldKey);
+        texCache.delete(oldKey);
+        // Evict only when a live body does not still use this texture
+        // (spawned planets intentionally share their template's texture):
+        let inUse = false;
+        for (const b of celestialBodies) if (bodyUsesTexture(b, oldTex)) { inUse = true; break; }
+        if (inUse) { texCache.set(oldKey, oldTex); break; }
+        oldTex.dispose();
+        TEX_OWNED.delete(oldTex.uuid);
+    }
+}
+
+// Disposed the body's cache entries on destruction (skipping anything any other
+// live body still has on a material):
+function releaseBodyTextures(b) {
+    if (!b || !b.name) return;
+    const prefixes = [b.name + '-'];
+    if (b.name === 'Venus') prefixes.push('VenusAtm-');  // atmosphere is cached under its own key
+    for (const key of [...texCache.keys()]) {
+        if (!prefixes.some(pref => key.startsWith(pref))) continue;
+        const tex = texCache.get(key);
+        let inUse = false;
+        for (const o of celestialBodies) if (o !== b && bodyUsesTexture(o, tex)) { inUse = true; break; }
+        if (!inUse) {
+            tex.dispose();
+            TEX_OWNED.delete(tex.uuid);
+            texCache.delete(key);
+        }
+    }
+}
+
+function canDisposeTexture(tex) { return !!tex && !TEX_OWNED.has(tex.uuid); }
+
+function findCachedKey(tex) {
+    for (const [k, v] of texCache) if (v === tex) return k;
+    return null;
+}
+
+// Free a texture (and its cache row) once no live body's materials still
+// reference it. Called when a tier is swapped out: the old tier's texture is
+// then orphaned exactly once, and refocusing re-fetches that tier on demand:
+function releaseIfUnreferenced(tex) {
+    if (!tex) return;
+    for (const b of celestialBodies) if (bodyUsesTexture(b, tex)) return;
+    const k = findCachedKey(tex);
+    if (k) {
+        texCache.delete(k);
+        TEX_OWNED.delete(tex.uuid);
+        tex.dispose();
+    }
+}
 
 function getOrLoadTexture(name, category, tier, material) {
     const registry = category === 'planet' ? pTexPaths : mTexPaths;
+    // Spawned planets inherit their template's texture (a "Earth-48211" has
+    // no registry row of its own):
+    if (!registry[name]) {
+        const i = name.lastIndexOf('-');
+        if (i > 0 && /^\d{4,5}$/.test(name.slice(i + 1))) {
+            const base = name.slice(0, i);
+            if (registry[base]) name = base;
+        }
+    }
     if (!registry[name]) return null;
 
     const path = registry[name][tier] || registry[name].high;
-    const cacheKey = `${name}-${tier}`;
+    const cacheKey = REMOTE_SINGLE_TIER.includes(name) ? `${name}-high` : `${name}-${tier}`;
 
     if (texCache.has(cacheKey)) {
         const tex = texCache.get(cacheKey);
         if (material && material.map !== tex) {
+            const prev = material.map;
             material.map = tex;
             material.color.set(0xffffff);
             material.needsUpdate = true;
+            if (prev) releaseIfUnreferenced(prev);
         }
         return tex;
     }
@@ -471,13 +567,19 @@ function getOrLoadTexture(name, category, tier, material) {
         (tex) => {
             tex.colorSpace = THREE.SRGBColorSpace;
             if (material) {
+                const prev = material.map;
                 material.map = tex;
                 material.color.set(0xffffff);
                 material.needsUpdate = true;
+                if (prev) releaseIfUnreferenced(prev);
             }
+            // Only successful loads enter the cache (a failed fetch used to
+            // poison this body's texture for the rest of the session):
+            texRemember(cacheKey, tex);
         },
         undefined,
         (err) => {
+            texCache.delete(cacheKey);              // allow a retry on the next focus
             const el = document.getElementById('error-log');
             if (el) {
                 el.style.display = 'block';
@@ -489,7 +591,6 @@ function getOrLoadTexture(name, category, tier, material) {
         }
     );
 
-    texCache.set(cacheKey, texture);
     return texture;
 }
 
@@ -780,7 +881,7 @@ initAllButtons(scene, camera, controls, headlight, targetVec, physicsEngine, ast
     shipProvider,
     touchControls: isMobile   // #9: on-screen D-pad is touch-only
 });
-initSpawnManager(physicsEngine, scene, celestialBodies, navList, createNavItem);
+initSpawnManager(physicsEngine, scene, celestialBodies, navList, createNavItem, updateTextureResolution);
 
 // Earth Atmosphere & Spaceship
 if (earthRef) {
@@ -861,6 +962,7 @@ const simCtx = {
     physicsEngine,
     apPathLine, apPathGeometry, rendezvousGhost,
     keys,
+    releaseBodyTextures, canDisposeTexture,
     dt: 0, physicsDt: 0, scriptedDt: 0
 };
 

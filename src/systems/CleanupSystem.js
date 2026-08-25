@@ -18,6 +18,8 @@ export class CleanupSystem {
         this.ctx = ctx;
         this.navList = ctx.navList;
         this.overviewButton = document.getElementById('overview-button');
+        this.canDisposeTexture = ctx.canDisposeTexture;
+        this.releaseBodyTextures = ctx.releaseBodyTextures;
 
         // Pre-allocated zero-scaled dummy used to hide asteroid instances
         this._dummyZero = new THREE.Object3D();
@@ -26,10 +28,18 @@ export class CleanupSystem {
 
         this.disposeHierarchy = (node) => {
             if (node.geometry) node.geometry.dispose();
-            if (node.material) {
-                if (Array.isArray(node.material)) node.material.forEach(m => m.dispose());
-                else node.material.dispose();
+            const mats = node.material ? (Array.isArray(node.material) ? node.material : [node.material]) : [];
+            for (const m of mats) {
+                // Textures: canvas labels, ring art and other LOCAL uploads
+                // get freed here; LRU-managed (shared) textures are skipped
+                // and the pool rules their lifetime:
+                for (const k of ['map', 'alphaMap', 'emissiveMap', 'roughnessMap', 'metalnessMap', 'bumpMap', 'normalMap']) {
+                    if (m[k] && (this.canDisposeTexture ? this.canDisposeTexture(m[k]) : true)) m[k].dispose();
+                }
+                m.dispose();
             }
+            // Ring meshes attach a customDepthMaterial that was never disposed:
+            if (node.customDepthMaterial) node.customDepthMaterial.dispose();
             if (node.children) node.children.forEach(child => this.disposeHierarchy(child));
         };
     }
@@ -88,6 +98,10 @@ export class CleanupSystem {
                 if (state.autopilotTarget === b) state.autopilotTarget = null;
                 if (state._prevAutopilotTarget === b) state._prevAutopilotTarget = null;
                 if (state.previousBody === b) state.previousBody = null;
+
+                // Free the body's texture cache entries that no other live
+                // body still shares:
+                if (this.releaseBodyTextures) this.releaseBodyTextures(b);
 
                 // Remove from Nav List
                 const items = this.navList.querySelectorAll('.nav-item');

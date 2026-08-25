@@ -52,6 +52,7 @@ export function buildStarTexture() {
 export function igniteStar(body) {
     if (!body.mesh) return;
     body.isStar = true;
+    body.mesh.material?.dispose?.();  // the old PBR material was orphaned forever
     body.mesh.material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const g1 = makeGlowLayer(body.mesh.userData.radius * 1.05, 0x4fa6ff, 0.4);
     const g2 = makeGlowLayer(body.mesh.userData.radius * 1.15, 0x00ffff, 0.2);

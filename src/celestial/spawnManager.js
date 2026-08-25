@@ -2,7 +2,7 @@ import { Planet } from './planet.js';
 import { planetsData } from './planetsData.js';
 import { t, tName } from '../core/i18n.js';
 
-export function initSpawnManager(physicsEngine, scene, celestialBodies, navList, createNavItem) {
+export function initSpawnManager(physicsEngine, scene, celestialBodies, navList, createNavItem, applyTextures) {
     // Injected by main.js: importing main.js from here would re-enter the entry
     // module (script-tag + import = double evaluation) and double-build every
     // listener/instance in the app.
@@ -61,6 +61,9 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList,
         // double-click (and not shown in the autopilot destination picker,
         // which iterates the nav list):
         if (createNavItem) navList.appendChild(createNavItem(spawnName, planet.mesh, spawnName));
+        // A spawned planet has no texture until the next focus/tier pass
+        // (planet construction never assigns one) -- refresh now:
+        if (applyTextures) applyTextures();
         // UI logic for nav item...
         return planet;
     };

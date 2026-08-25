@@ -74,6 +74,10 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec, o
 
             const ship = shipProvider();
             if (ship) {
+                // The ship's berth (parent + local offset) is captured before
+                // it lifts off, so exit can restore the docked pose:
+                state._shipDockParent = ship.parent || null;
+                state._shipDockLocal = ship.position.clone();
                 ship.getWorldPosition(targetVec);
                 scene.add(ship);
                 ship.position.copy(targetVec);
@@ -136,6 +140,15 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec, o
                 apBtn.classList.remove('warning-glow');
             }
             controls.enabled = true;
+            // Restore the docked pose (previously the ship stayed rooted to
+            // the scene, slowly drifting, and never docked again):
+            const shipOut = shipProvider();
+            if (shipOut && state._shipDockParent && state._shipDockParent.parent && state._shipDockLocal) {
+                state._shipDockParent.add(shipOut);
+                shipOut.position.copy(state._shipDockLocal);
+            } else if (shipOut) {
+                scene.add(shipOut);
+            }
             this.textContent = t('pilotStart');
             this.style.background = 'rgba(255, 255, 255, 0.05)';
             this.style.borderColor = '#4fa6ff';

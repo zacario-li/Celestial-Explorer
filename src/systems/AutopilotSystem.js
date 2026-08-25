@@ -81,7 +81,17 @@ export class AutopilotSystem {
 
                     // Show planned trajectory
                     if (state.showAutopilotTrajectory) {
-                        this.apPathGeometry.setFromPoints(plan.points);
+                        // Pooled line buffer (main.js pre-allocated 151
+                        // vertices): setFromPoints() would allocate a fresh
+                        // BufferAttribute per plan and leak the GL buffer:
+                        const posArr = this.apPathGeometry.attributes.position.array;
+                        const nPts = Math.min(plan.points.length, 151);
+                        for (let i = 0; i < nPts; i++) {
+                            const v = plan.points[i];
+                            posArr[3 * i] = v.x; posArr[3 * i + 1] = v.y; posArr[3 * i + 2] = v.z;
+                        }
+                        this.apPathGeometry.setDrawRange(0, nPts);
+                        this.apPathGeometry.attributes.position.needsUpdate = true;
                         this.apPathLine.visible = true;
                         this.rendezvousGhost.position.copy(plan.rendezvous);
                         this.rendezvousGhost.visible = true;
