@@ -16,7 +16,26 @@ export class StationKeepingSystem {
     constructor(ctx) {
         this.ctx = ctx;
         this.skIndicator = document.getElementById('station-keeping-indicator');
+        this.skStatus = document.getElementById('sk-status');
+        this.skHint = document.getElementById('sk-hint');
         this.skTargetThrottle = document.getElementById('sk-target-throttle');
+        this._lastHoldMs = performance.now();
+        this._desired = new THREE.Vector3();
+    }
+
+    _frameDt() {
+        const now = performance.now();
+        const dt = Math.min((now - this._lastHoldMs) / 1000, 0.05);
+        this._lastHoldMs = now;
+        return dt > 0 ? dt : 0.016;
+    }
+
+    _setIndicator(on) {
+        if (this.skIndicator) this.skIndicator.style.display = on ? 'block' : 'none';
+        if (on) {
+            if (this.skStatus) this.skStatus.textContent = t('stationKeepingActive');
+            if (this.skHint) this.skHint.textContent = t('stationKeepingHint');
+        }
     }
 
     update() {
@@ -29,7 +48,7 @@ export class StationKeepingSystem {
         if (state.capturedBody) {
             if (keys['KeyW'] || keys['KeyS'] || keys['ShiftLeft']) {
                 state.capturedBody = null;
-                if (this.skIndicator) this.skIndicator.style.display = 'none';
+                this._setIndicator(false);
             }
         }
 
@@ -38,14 +57,20 @@ export class StationKeepingSystem {
         // frozen dead point.
         if (state.capturedBody && state.capturedBody.destroyed) {
             state.capturedBody = null;
-            if (this.skIndicator) this.skIndicator.style.display = 'none';
+            this._setIndicator(false);
         }
 
         if (state.capturedBody) {
-            // Apply captured movement: Ship follows planet position exactly
-            ship.position.copy(state.capturedBody.pos).add(state.relativePos);
-            // Synchronize physics velocity with planet so lock-release is smooth
-            state.shipVelocity.copy(state.capturedBody.vel);
+            // SOFT hold (spring-damper, no per-frame snapping): ease the ship
+            // toward the berth captured at lock time and match the body's
+            // velocity. Quiet "captured and hovering in place" -- and any real
+            // engine input still breaks the lock instantly.
+            const dtH = this._frameDt();
+            const kVel = 1 - Math.exp(-3.0 * dtH);
+            const kPos = 1 - Math.exp(-2.0 * dtH);
+            state.shipVelocity.lerp(state.capturedBody.vel, kVel);
+            this._desired.copy(state.capturedBody.pos).add(state.relativePos);
+            ship.position.lerp(this._desired, kPos);
         } else {
             // 100% Newtonian: Position only updated by velocity in subSteps
             // Proximity & Velocity Match Detection logic follows...
@@ -89,12 +114,22 @@ export class StationKeepingSystem {
                     const vPlanet = closest.vel;
 
                     const relV = vShip.clone().sub(vPlanet);
-                    // If relative velocity magnitude is very low, lock position
-                    if (outsideHull && relV.length() < 0.0004) {
+                    const rv = relV.length();
+                    // Very low relative velocity outside the hull: SOFT LOCK
+                    // (keeps the exact offset, velocity-matched station hold):
+                    if (outsideHull && rv < 0.0008) {
                         state.capturedBody = closest;
                         state.relativePos.copy(ship.position).sub(closest.pos);
-                        if (this.skIndicator) this.skIndicator.style.display = 'block';
-                        if (this.skTargetThrottle) this.skTargetThrottle.style.display = 'none'; // Hide guidance when captured
+                        this._lastHoldMs = performance.now(); // no jump on first frame
+                        this._setIndicator(true);
+                        if (this.skTargetThrottle) this.skTargetThrottle.style.display = 'none';
+                    } else if (rv < 0.025) {
+                        // STATION-KEEP ASSIST (no lock, no indicator): gently
+                        // bleed relative velocity so a coasting ship settles
+                        // with the body instead of fighting it. Throttle input
+                        // always fights back -- it is never a trap.
+                        const kA = 1 - Math.exp(-0.5 * this._frameDt());
+                        vShip.lerp(vPlanet, kA);
                     }
                 } else {
                     // Out of range, hide guidance

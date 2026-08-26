@@ -206,11 +206,9 @@ export class PhysicsEngine {
             state.shipVelocity.addScaledVector(this._forceDir, (G * p.physMass / dSq) * subDt);
         }
 
-        // Damping
-        if (state.shipThrottle === 0 && !state.isAutopilotActive) {
-            const dragFactor = Math.pow(0.5, subDt / 50.0);
-            state.shipVelocity.multiplyScalar(dragFactor);
-        }
+        // No artificial damping: once coasting with throttle 0, the ship is
+        // purely Newtonian (sun + planet gravity only) -- like a real vessel.
+        // (The old 0.5^(dt/50) drag silently bled off all velocity.)
 
         // Ship Position Integration
         const moveDt = state.isAutopilotActive ? subDt : moveDtBase;

@@ -151,6 +151,10 @@
             style="pointer-events: auto; margin-top: 10px; margin-left: 10px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; transition: background 0.3s;">
             🤖 AUTOPILOT
         </button>
+        <button id="v-toggle-view"
+            style="pointer-events: auto; margin-top: 10px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; transition: background 0.3s;">
+            🎥 CAM: COCKPIT
+        </button>
         <div id="station-keeping-indicator"
             style="display: none; margin-top: 10px; padding: 8px; background: rgba(0, 255, 0, 0.1); border: 1px dashed #00ff00; border-radius: 4px; animation: pulse 2s infinite;">
             <div id="sk-status" style="font-weight: bold; color: #00ff00; font-size: 0.85rem; letter-spacing: 1px;">
@@ -191,9 +195,7 @@
             <div id="v-throttle-val" class="v-throttle-val">0% FWD</div>
             <div class="v-pad-row" style="margin-top: 5px;">
                 <button id="v-toggle-reverse" class="v-btn v-throttle-btn"
-                    style="flex: 1; font-size: 0.75rem;">DIR</button>
-                <button id="v-toggle-view" class="v-btn v-throttle-btn"
-                    style="flex: 1; font-size: 0.75rem; margin-left: 5px;">CAM</button>
+                    style="flex: 1 1 100%; font-size: 0.75rem;">DIR</button>
             </div>
         </div>
     </div>
