@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { state } from '../core/state.js';
 import { applyLanguage } from '../ui/uiCore.js';
 import { planTransferOrbit } from '../core/transferOrbit.js';
+import { solveIntercept, throttleForDeltaV, AP_GUIDANCE } from '../core/autopilotGuidance.js';
 import { G } from '../physics/constants.js';
 
 /**
@@ -56,8 +57,12 @@ export class AutopilotSystem {
             // for the whole engagement (off by default):
             this.apPathLine.visible = state.showPlannedPath;
 
-            // 1. ARRIVAL CHECK
-            if (dist < captureRadius) {
+            // 1. ARRIVAL CHECK -- snap-lock only when arriving slow inside
+            // the capture radius. A fast flyby must not be captured (the
+            // plumbing would read as 'force capture'). The guidance law
+            // hands off cleanly when it settles a ship with ~zero residual.
+            const relAtArrival = state.shipVelocity.distanceTo(target.vel);
+            if (dist < captureRadius && relAtArrival < 0.15) {
                 state.isAutopilotActive = false;
                 state.shipThrottle = 0;
                 if (this.skIndicator) this.skIndicator.style.display = 'block';
@@ -105,78 +110,51 @@ export class AutopilotSystem {
                     state.autopilotPhase = 'ALIGNING';
                 }
 
-                if (state.autopilotPhase === 'ALIGNING') {
-                    const deltaV = this._diffVec.copy(state.autopilotVReq).sub(state.shipVelocity);
-                    if (deltaV.length() < 0.0001) {
-                        state.autopilotPhase = 'COASTING';
-                    } else {
-                        // Point ship in direction of deltaV
-                        const toDir = deltaV.normalize();
-                        const targetMat = new THREE.Matrix4();
-                        const targetUp = new THREE.Vector3(0, 1, 0);
-                        const targetX = toDir;
-                        const targetZ = new THREE.Vector3().crossVectors(targetX, targetUp).normalize();
-                        const targetY = new THREE.Vector3().crossVectors(targetZ, targetX).normalize();
+                // 3. CONTINUOUS GUIDANCE (phase 2).
+                // Every frame: propagate the target under sun gravity to
+                // time tau, aim the burn at the residual delta-V for that
+                // lead point, and scale throttle proportionally -- so the
+                // burn auto-tapers and no phase ever sits idle while the
+                // hand (attitude) drifts.
+                const guidance = solveIntercept(ship.position, state.shipVelocity, target, ctx.sunBody.pos, G * ctx.sunBody.physMass);
+                state.autopilotVReq.copy(guidance.vReq);
+                state.timeToIntercept = guidance.tau; // LIVE ETA (per-frame solved)
+                const dvMag = guidance.deltaV.length();
 
-                        if (targetX.lengthSq() > 0.001 && targetZ.lengthSq() > 0.001) {
-                            targetMat.makeBasis(targetX, targetY, targetZ);
-                            const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetMat);
-                            ship.quaternion.slerp(targetQuat, 0.05);
-
-                            // If alignment is close enough, start burn
-                            if (ship.quaternion.angleTo(targetQuat) < 0.1) {
-                                state.autopilotPhase = 'BURNING';
-                            }
-                        }
-                    }
-                }
-
-                if (state.autopilotPhase === 'BURNING') {
-                    const deltaV = this._diffVec.copy(state.autopilotVReq).sub(state.shipVelocity);
-                    const currentDir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
-
-                    // Check if we are still pointing in the right direction
-                    const alignment = currentDir.dot(deltaV.normalize());
-
-                    if (deltaV.length() < 0.0005 || alignment < 0) {
-                        // Burn complete or overshot
-                        state.shipThrottle = 0;
-                        state.autopilotPhase = 'COASTING';
-                    } else {
-                        state.shipThrottle = 1.0;
-                    }
-                }
-
-                if (state.autopilotPhase === 'COASTING') {
+                // ARRIVAL: on topology and residual negligible inside the
+                // capture radius -- stop burning and hand the ship to
+                // station keeping (its assist picks up the last ~0.02 and
+                // soft-locks; the hull window protects the interior).
+                if (dist < captureRadius && dvMag <= AP_GUIDANCE.deadband) {
+                    state.isAutopilotActive = false;
                     state.shipThrottle = 0;
-
-                    // Periodic course correction (every 5 seconds of virtual
-                    // time). Edge-triggered on the change of floor(virtualTime):
-                    // the old window comparison mixed virtual-time and
-                    // physics-dt, so at low warp the correction frame could be
-                    // skipped and at extreme warp it fired every frame.
-                    if (vSecNow % 5 === 0 && vSecNow !== state._prevCourseSec) {
-                        // Quick re-plan if still far
-                        if (dist > captureRadius * 5) {
-                            // The decaying countdown can expire on long
-                            // transfers: refresh the estimate instead of
-                            // planning with T<=0 (garbage / NaN v0).
-                            if (!(state.timeToIntercept > 1)) {
-                                const scaleFactor = state.isRealisticScale ? 0.00005 : 0.2;
-                                state.timeToIntercept = dist / (1.5 * scaleFactor);
-                            }
-                            const plan = planTransferOrbit(ship.position, target, state.timeToIntercept, ctx.sunBody.pos, G * ctx.sunBody.physMass);
-                            state.autopilotVReq.copy(plan.v0);
-                            // If correction is significant, re-align
-                            if (this._diffVec.copy(state.autopilotVReq).sub(state.shipVelocity).length() > 0.001) {
-                                state.autopilotPhase = 'ALIGNING';
-                            }
-                        }
-                    }
+                    state.autopilotPhase = '';
+                    state.autopilotStatus = 'apDisengaged';
+                    if (this.apIndicator) this.apIndicator.style.display = 'none';
+                    if (this.apPathLine.visible) this.apPathLine.visible = false;
+                    if (this.rendezvousGhost.visible) this.rendezvousGhost.visible = false;
+                    return;
                 }
 
-                // ETA Countdown (Accounts for simulation speed)
-                if (state.timeToIntercept > 0) state.timeToIntercept -= physicsDt;
+                // Aim + proportional burn
+                const throttle = throttleForDeltaV(dvMag);
+                state.shipThrottle = throttle;
+                if (throttle > 0) {
+                    const dvDir = guidance.deltaV.clone().normalize();
+                    if (dvDir.lengthSq() > 1e-9) {
+                        let cross = new THREE.Vector3().crossVectors(dvDir, new THREE.Vector3(0, 1, 0));
+                        if (cross.lengthSq() < 1e-6) cross = new THREE.Vector3().crossVectors(dvDir, new THREE.Vector3(1, 0, 0)); // near-polar aim
+                        const targetZ = cross.normalize();
+                        const targetY = new THREE.Vector3().crossVectors(targetZ, dvDir).normalize();
+                        const aimQuat = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(dvDir, targetY, targetZ));
+                        // 0.12 per frame: a few-second misaim resolves in ~1 s
+                        ship.quaternion.slerp(aimQuat, 0.12);
+                    }
+                }
+                state.autopilotPhase = throttle > 0 ? 'STEERING' : 'HOLD';
+
+                // ETA: live-solved per frame by the guidance law above
+                // (state.timeToIntercept = tau); no manual countdown.
 
                 // Live countdown in the HUD: refresh once per whole second of
                 // remaining time (applyLanguage renders #ap-status)
