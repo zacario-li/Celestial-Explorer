@@ -59,6 +59,21 @@ focusedLight.layers.set(2);
 scene.add(focusedLight);
 scene.add(focusedLight.target);
 
+// --- Performance mode (user-opted-in; default OFF keeps today's image) -----
+// Two modest, honest levers with a small visible cost profile:
+// pixel ratio 1.5 -> 1.0 (raster pixels -64% in the page) and the
+// focused shadow map 2048^2 -> 1024^2 (shadow pass -75%). Applied as a
+// toggle so the user chooses the trade with their own eyes.
+export function setPerformanceMode(on) {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, on ? 1.0 : 1.5));
+    const size = on ? 1024 : 2048;
+    focusedLight.shadow.mapSize.set(size, size);
+    if (focusedLight.shadow.map) {
+        focusedLight.shadow.map.dispose();
+        focusedLight.shadow.map = null; // regrows at the new size on next pass
+    }
+}
+
 
 
 // High-Visibility Ambient Light

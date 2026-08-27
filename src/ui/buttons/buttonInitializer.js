@@ -8,6 +8,7 @@ import {
     initAutoRotateButton, 
     initHoverZonesButton, 
     initPlannedPathButton,
+    initPerformanceModeButton,
     initVenusAtmButton, 
     initKuiperBeltButton,
     initRealisticScaleButton,
@@ -29,6 +30,7 @@ export function initAllButtons(scene, camera, controls, headlight, targetVec, ph
     initVenusAtmButton(celestialBodies);
     initFuturePathButton();
     initPlannedPathButton();
+    initPerformanceModeButton();
     initRealisticScaleButton(celestialBodies, options.sunWrapper);
     initSyncTimeButton(options.syncFn);
     initAutopilotButton(physicsEngine);

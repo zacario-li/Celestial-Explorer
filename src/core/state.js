@@ -28,7 +28,8 @@ export const simState = {
     simSpeedMultiplier: 1, // Speed up simulation (User requested modification from 400)
     isAsteroidBeltActive: false,
     isKuiperBeltActive: false,
-    showPlannedPath: false
+    showPlannedPath: false,
+    performanceMode: false // fill-rate trade (pixel 1.0 + 1024^2 shadows); OFF = today's image
 };
 
 export const flightState = {

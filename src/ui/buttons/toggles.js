@@ -1,6 +1,6 @@
 import { Button } from './button.js';
 import { state } from '../../core/state.js';
-import { highVisLight } from '../../core/sceneSetup.js';
+import { highVisLight, setPerformanceMode } from '../../core/sceneSetup.js';
 import { applyLanguage } from '../uiCore.js';
 
 export function initHighVisButton() {
@@ -43,6 +43,19 @@ export function initPlannedPathButton() {
         stateKey: 'showPlannedPath',
         stateObject: state,
         labels: { on: 'plannedPathOn', off: 'plannedPathOff' }
+    });
+}
+
+export function initPerformanceModeButton() {
+    return new Button('performance-mode-button', () => {
+        // User-opted-in fill-rate trade: pixel 1.0 + 1024^2 shadow map.
+        // OFF (default) is exactly today's image.
+        state.performanceMode = !state.performanceMode;
+        setPerformanceMode(state.performanceMode);
+    }, {
+        stateKey: 'performanceMode',
+        stateObject: state,
+        labels: { on: 'boostOn', off: 'boostOff' }
     });
 }
 

@@ -29,12 +29,12 @@ const ALL_FIELDS = [
     // viewState
     'focusedBody', 'previousBody', 'isTransitioning', 'currentLang', 'isRealisticScale',
     '_prevRealisticScaleForCam', 'isHighVis', 'isAutoRotate', 'isOverview',
-    'showVenusAtmosphere', 'showFuturePath', 'showPastPath', 'showPlannedPath'
+    'showVenusAtmosphere', 'showFuturePath', 'showPastPath', 'showPlannedPath', 'performanceMode'
 ];
 
 console.log('state facade');
 
-ok('all 41 fields exist and are explicitly initialized', () => {
+ok('all 42 fields exist and are explicitly initialized', () => {
     for (const f of ALL_FIELDS) {
         assert.equal(f in state, true, `missing field: ${f}`);
     }
@@ -42,6 +42,7 @@ ok('all 41 fields exist and are explicitly initialized', () => {
     // the historic undefined-init bug is fixed
     assert.equal(state.showVenusAtmosphere, false);
     assert.equal(state._prevRealisticScaleForCam, false);
+    assert.equal(state.performanceMode, false);
 });
 
 ok('every field routes facade → store AND store → facade', () => {
