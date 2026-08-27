@@ -49,9 +49,14 @@ export function initPlannedPathButton() {
 export function initPerformanceModeButton() {
     return new Button('performance-mode-button', () => {
         // User-opted-in fill-rate trade: pixel 1.0 + 1024^2 shadow map.
-        // OFF (default) is exactly today's image.
+        // OFF (default) is exactly today's image. The flip happens even if
+        // the side effect throws, so the label can never stick on OFF.
         state.performanceMode = !state.performanceMode;
-        setPerformanceMode(state.performanceMode);
+        try {
+            setPerformanceMode(state.performanceMode);
+        } catch (e) {
+            console.warn('performance mode effect failed (state is still set):', e);
+        }
     }, {
         stateKey: 'performanceMode',
         stateObject: state,

@@ -1095,6 +1095,22 @@ window.__compileWarm = (() => {
 // everything else (frame gap) -- so a slow-machine engineer can see
 // which side of the fence the time lives on. Zero steady-state cost
 // beyond three lightweight timers.
+window.__perfCheck = () => {
+    const out = {
+        devicePixelRatio: window.devicePixelRatio,
+        renderPixelRatio: renderer.getPixelRatio(),
+        performanceMode: state.performanceMode,
+    };
+    let dir = null;
+    scene.traverse((o) => { if (o.isDirectionalLight && o.castShadow) dir = o; });
+    if (dir) out.shadowMap = [dir.shadow.mapSize.width, dir.shadow.mapSize.height];
+    const gl = renderer.getContext();
+    out.webgl = gl.getParameter(gl.VERSION);
+    out.maxTexture = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    out.gpu = (() => { try { const ext = gl.getExtension('WEBGL_debug_renderer_info'); return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null; } catch (e) { return null; } })();
+    return out;
+};
+
 window.__frameInvoice = (() => {
     const B = 600;
     const wall = new Float32Array(B), phys = new Float32Array(B), rend = new Float32Array(B);
