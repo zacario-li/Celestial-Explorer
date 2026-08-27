@@ -100,6 +100,15 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
             const dist = planet.pos.length();
             state.autopilotTarget = planet;
             state.isAutopilotActive = true;
+            // The autopilot takes FULL ownership of the ship: release any
+            // station-hold lock, otherwise station-keeping re-locks every
+            // frame and the burn can never pull the ship off its home body.
+            if (state.capturedBody) {
+                state.capturedBody = null;
+                state.relativePos.set(0, 0, 0);
+                const sk = document.getElementById('station-keeping-indicator');
+                if (sk) sk.style.display = 'none';
+            }
             state.autopilotStatus = 'apStatusNavigating';
             state.showAutopilotTrajectory = true;
 

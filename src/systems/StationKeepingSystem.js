@@ -44,9 +44,12 @@ export class StationKeepingSystem {
         if (!state.isFlying || !ship) return;
         const keys = ctx.keys;
 
-        // Break lock if user provides meaningful input (Acceleration or Turbo)
+        // Break lock on ANY real pilot input (thrust, turbo, or attitude):
+        // aiming with the arrows must not be held against a wall.
         if (state.capturedBody) {
-            if (keys['KeyW'] || keys['KeyS'] || keys['ShiftLeft']) {
+            if (keys['KeyW'] || keys['KeyS'] || keys['ShiftLeft'] ||
+                keys['ArrowUp'] || keys['ArrowDown'] || keys['ArrowLeft'] || keys['ArrowRight'] ||
+                keys['KeyQ'] || keys['KeyE']) {
                 state.capturedBody = null;
                 this._setIndicator(false);
             }
@@ -71,9 +74,14 @@ export class StationKeepingSystem {
             state.shipVelocity.lerp(state.capturedBody.vel, kVel);
             this._desired.copy(state.capturedBody.pos).add(state.relativePos);
             ship.position.lerp(this._desired, kPos);
-        } else {
-            // 100% Newtonian: Position only updated by velocity in subSteps
-            // Proximity & Velocity Match Detection logic follows...
+        } else if (!state.isAutopilotActive) {
+            // Proximity capture/assist is PAUSED while the autopilot owns the
+            // ship (it plans its own burns), or while the pilot has the
+            // engines fired: re-locking on the same frame you released would
+            // fight the first few seconds of every departure (the 2/s spring
+            // holds the ship in place and it feels like forced capture).
+            // Re-capture happens once the pilot goes idle.
+            if (state.shipThrottle === 0 && !keys['KeyW'] && !keys['KeyS']) {
 
             // Proximity & Velocity Match Detection
             let closest = null;
@@ -139,6 +147,7 @@ export class StationKeepingSystem {
             } else {
                 if (this.skTargetThrottle) this.skTargetThrottle.style.display = 'none';
                 if (this.skIndicator && !state.capturedBody) this.skIndicator.style.display = 'none';
+            }
             }
         }
     }

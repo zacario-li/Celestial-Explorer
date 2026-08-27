@@ -108,11 +108,14 @@ export class ShipControlSystem {
         // it was display-only -- the HUD said REV: ON but the ship ignored it.
         const effThrottle = state.isReverse ? -state.shipThrottle : state.shipThrottle;
 
-        // Apply engine thrust physics to shipVelocity
+        // Apply engine thrust physics to shipVelocity. Acceleration is a
+        // PHYSICS quantity, independent of the model's render scale (which
+        // was silently multiplying the delta-V by 0.2 -- five times weaker
+        // than intended, forever-stalling autopilot burns).
         if (effThrottle !== 0) {
             const turbo = keys['ShiftLeft'] ? 3 : 1;
             const maxAccel = 0.08 * turbo;
-            const currentAccel = effThrottle * maxAccel * shipScale;
+            const currentAccel = effThrottle * maxAccel;
             state.shipVelocity.addScaledVector(dir, currentAccel * (physicsDt / 0.016));
         }
     }
