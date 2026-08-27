@@ -1066,3 +1066,75 @@ window.__bodies = celestialIndex; // debug / external tooling
 // the 12-second 'engine failed' overlay in index.html can now catch real init failures
 window.SIM_READY = true;
 
+// --- Shader pre-warm --------------------------------------------------------
+// The first time a material meets the GPU it pays a synchronous
+// 0.5-2 s program compile (the classic 'first view / first focus
+// switch' hiccup). Queue the scene's compile well after first paint,
+// off the critical path, so that moment stops costing a second.
+window.__compileWarm = (() => {
+    let done = false;
+    const run = () => {
+        if (done) return;
+        done = true;
+        try {
+            const t0 = performance.now();
+            renderer.compile(scene, camera);
+            console.debug("[celestial] pre-warm done in " + (performance.now() - t0).toFixed(0) + " ms");
+        } catch (e) {
+            console.warn("pre-warm skipped:", e && e.message);
+        }
+    };
+    setTimeout(() => setTimeout(run, 32), 1500);
+    return run;
+})();
+
+// --- Frame invoice ----------------------------------------------------------
+// Diagnostic (call window.__frameInvoice() in the console):
+// 600 wall-time buckets over the last ~10 s, each bucket splitting
+// physics (engine.update), render (renderer.render enqueue) and
+// everything else (frame gap) -- so a slow-machine engineer can see
+// which side of the fence the time lives on. Zero steady-state cost
+// beyond three lightweight timers.
+window.__frameInvoice = (() => {
+    const B = 600;
+    const wall = new Float32Array(B), phys = new Float32Array(B), rend = new Float32Array(B);
+    let idx = 0, w0 = performance.now();
+    let accumP = 0, accumR = 0;
+    const origUpd = physicsEngine.update.bind(physicsEngine);
+    physicsEngine.update = function (...a) {
+        const t0 = performance.now();
+        const r = origUpd(...a);
+        accumP += performance.now() - t0;
+        return r;
+    };
+    const origRnd = renderer.render.bind(renderer);
+    renderer.render = function (...a) {
+        const t0 = performance.now();
+        const r = origRnd(...a);
+        accumR += performance.now() - t0;
+        return r;
+    };
+    setInterval(() => {
+        const now = performance.now();
+        wall[idx] = now - w0; phys[idx] = accumP; rend[idx] = accumR;
+        w0 = now; accumP = 0; accumR = 0;
+        idx = (idx + 1) % B;
+    }, 16);
+    const pct = (arr, p) => {
+        const s = Array.from(arr).filter((v) => v > 0).sort((a, b) => a - b);
+        return s.length ? s[Math.min(s.length - 1, (p * (s.length - 1)) | 0)] : 0;
+    };
+    const line = (name, arr) => ({
+        p50: +pct(arr, 0.5).toFixed(2),
+        p95: +pct(arr, 0.95).toFixed(2),
+        max: +pct(arr, 1).toFixed(1),
+    });
+    return function () {
+        const out = {};
+        const src = { wall: wall, phys: phys, rend: rend };
+        for (const k of ['wall', 'phys', 'rend']) out[k] = line(k, src[k]);
+        out.gap = { p50: +(out.wall.p50 - out.phys.p50 - out.rend.p50).toFixed(2), p95: +(out.wall.p95 - out.phys.p95 - out.rend.p95).toFixed(2) };
+        return out;
+    };
+})();
+
