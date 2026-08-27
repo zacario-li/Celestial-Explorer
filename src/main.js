@@ -58,7 +58,7 @@ const targetVec = new THREE.Vector3();
 let shipRef = null;
 const shipProvider = () => shipRef;
 
-const physicsEngine = new PhysicsEngine({ shipProvider, onIgnition: igniteStar, onFlightReset: requestPilotExit });
+const physicsEngine = new PhysicsEngine({ shipProvider, onIgnition: igniteStar, onFlightReset: requestPilotExit, frameBudgetMs: 12 });
 window.physicsEngine = physicsEngine; // For global access if needed
 window.igniteStar = igniteStar; // Kept for external tooling (engine prefers injected onIgnition)
 

@@ -29,6 +29,28 @@ export const HIGH_SPEED_SUBSTEP_FLOOR = 45;
 export const MAX_SUBSTEPS = 2048;
 
 /**
+ * Slicing of the per-frame sub-step run across wall frames.
+ *
+ * computeSubSteps says HOW MANY sub-steps a virtual frame needs; at 8000x
+ * that is ~260 per frame, and running them all inside one update() pins
+ * the whole page in a single JS callback (the classic extreme-speed
+ * freeze). The engine therefore enqueues each virtual frame as {n, dt}
+ * chunks and drains them FIFO under a per-frame budget:
+ *
+ *   FRAME_SUBSTEP_BUDGET   -- one slice per rendered wall frame. The run
+ *     splits across several rAF turns; UI/input/render stay responsive,
+ *     and the trajectory is unchanged: every step keeps its exact dt and
+ *     order (only the wall-time grouping changes).
+ *
+ *   MAX_PENDING_SUBSTEPS   -- outstanding-step cap. Overflow (a long-
+ *     hidden tab returning at extreme multipliers) is dropped, the same
+ *     spirit as MAX_SUBSTEPS dropping: sim time jumps forward rather than
+ *     replaying stored time by the hour.
+ */
+export const FRAME_SUBSTEP_BUDGET = 45;
+export const MAX_PENDING_SUBSTEPS = 4096;
+
+/**
  * @param {number} physicsDt            Seconds of simulated time this frame.
  * @param {number} simSpeedMultiplier   Current user speed multiplier.
  * @returns {number} sub-steps to run this frame (0 while paused)

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { G, STELLAR_IGNITION_THRESHOLD } from './constants.js';
-import { computeSubSteps } from './integratorConfig.js';
+import { computeSubSteps, FRAME_SUBSTEP_BUDGET, MAX_PENDING_SUBSTEPS } from './integratorConfig.js';
 import { state } from '../core/state.js';
 
 export class PhysicsEngine {
@@ -12,6 +12,13 @@ export class PhysicsEngine {
         // Sub-step policy (modules/physics/integratorConfig.js). Injectable for
         // regression testing against the legacy fixed-45 policy.
         this.subStepsFor = options.subStepsFor || computeSubSteps;
+        // Per-wall-frame slice budget of the pending sub-step queue; overridable
+        // per instance so tests can emulate the legacy monolithic run (any huge value).
+        this.frameBudget = options.frameBudget || FRAME_SUBSTEP_BUDGET;
+        // Optional wall-time budget (ms) for the drain; when set it wins over the
+        // step-count budget so fast machines can run out the full nominal rate
+        // (e.g. 8000x) and slow machines cap smoothly instead of freezing.
+        this.frameBudgetMs = options.frameBudgetMs || 0;
         // Injected app hooks (decouple the engine from DOM/window globals;
         // window fallbacks preserve historic behavior for out-of-tooling use)
         this.shipProvider = options.shipProvider || null;
@@ -67,11 +74,70 @@ export class PhysicsEngine {
         if (!sunBody) return;
 
         const subSteps = this.subStepsFor(physicsDt, state.simSpeedMultiplier);
-        const subDt = physicsDt / (subSteps || 1);
-        
+        if (subSteps > 0) {
+            // SLICE: enqueue this virtual frame as a fixed-dt chunk and
+            // drain FIFO under a per-frame budget, so a 8000x frame
+            // (always ~260 steps) never pins the whole page in one JS
+            // callback. Step dt and order are preserved per chunk, so the
+            // trajectory is the identical run -- just spread over a few
+            // wall frames instead of one frozen one.
+            this._pending = this._pending || [];
+            this._pending.push({ n: subSteps, dt: physicsDt / subSteps, move: realDt / subSteps });
+            let totalQ = 0;
+            for (const c of this._pending) totalQ += c.n;
+            if (totalQ > MAX_PENDING_SUBSTEPS) {
+                let over = totalQ - MAX_PENDING_SUBSTEPS;
+                while (over > 0 && this._pending.length) {
+                    const head = this._pending[0];
+                    const take = Math.min(head.n, over);
+                    head.n -= take;
+                    over -= take;
+                    if (head.n === 0) this._pending.shift();
+                }
+            }
+            if (this.frameBudgetMs > 0) {
+                let t0 = performance.now();
+                while (this._pending.length) {
+                    const chunk = this._pending[0];
+                    this.stepSubStep(chunk.dt, chunk.move, sunBody);
+                    chunk.n -= 1;
+                    if (chunk.n === 0) this._pending.shift();
+                    if (performance.now() - t0 >= this.frameBudgetMs) break;
+                }
+            } else {
+                let budget = this.frameBudget;
+                while (budget > 0 && this._pending.length) {
+                    const chunk = this._pending[0];
+                    this.stepSubStep(chunk.dt, chunk.move, sunBody);
+                    chunk.n -= 1;
+                    budget -= 1;
+                    if (chunk.n === 0) this._pending.shift();
+                }
+            }
+        }
+    }
+
+    /** Drain the whole pending queue at once (determinism + test seam; also
+     * used conceptually as 'replay all owed sub-steps in one turn'). */
+    flushAll() {
+        if (!this._pending || !this._pending.length) return 0;
+        const sunBody = this.physicsBodies.find((b) => b.isSun);
+        if (!sunBody) return 0;
+        let n = 0;
+        while (this._pending.length) {
+            const chunk = this._pending[0];
+            this.stepSubStep(chunk.dt, chunk.move, sunBody);
+            chunk.n -= 1;
+            n += 1;
+            if (chunk.n === 0) this._pending.shift();
+        }
+        return n;
+    }
+
+    /** One integration sub-step (the body of the legacy per-frame run). */
+    stepSubStep(subDt, moveDt, sunBody) {
         const nPlanets = this.activePlanets.length;
 
-        for (let s = 0; s < subSteps; s++) {
             // 1. Planet-Sun and Planet-Planet interactions
             for (let i = 0; i < nPlanets; i++) {
                 const pA = this.activePlanets[i];
@@ -139,7 +205,7 @@ export class PhysicsEngine {
             }
 
             // 2. Spaceship Gravity
-            this.updateSpaceshipPhysics(subDt, realDt / (subSteps || 1), sunBody);
+            this.updateSpaceshipPhysics(subDt, moveDt, sunBody);
 
             // 3. Integration
             for (let i = 0; i < this.physicsBodies.length; i++) {
@@ -151,12 +217,6 @@ export class PhysicsEngine {
                     }
                 }
             }
-        }
-
-        // 4. Asteroids (Simplified O(N) Sun-only)
-        if (!state.isPaused) {
-            this.updateAsteroidsPhysics(physicsDt, sunBody);
-        }
     }
 
     handleCollision(pA, pB) {

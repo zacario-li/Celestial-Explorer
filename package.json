@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node server.js",
     "build": "node make.js",
-    "test": "node --loader ./tests/unit/esm-loader.mjs tests/unit/state-facade.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/time-orbits.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/celestial-contract.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/moon-orbit.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/autopilot-guidance.test.mjs",
+    "test": "node --loader ./tests/unit/esm-loader.mjs tests/unit/state-facade.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/time-orbits.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/celestial-contract.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/moon-orbit.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/autopilot-guidance.test.mjs && node --loader ./tests/unit/esm-loader.mjs tests/unit/physics-slice.test.mjs",
     "e2e": "node tools/ci-smoke.mjs"
   },
   "repository": {
