@@ -49,15 +49,30 @@ export class FocusedShadowSystem {
                 const newBody = celestialBodies.find(b => b.mesh === currentFocused || b.satellites?.some(s => s.mesh === currentFocused));
                 if (newBody) this.setBodyLayer(newBody, 2);
             }
+            this._shadowSize = 60;
+            // Cover the focused system's full satellite cloud, not just the
+            // body disc. A fixed 60u half-width box clipped distant moons out
+            // of the shadow camera: half a moon shaded normally, half falling
+            // off the map and reading fully sunlit -- the broken far-side
+            // shading. Moon positions are fixed orbital radii, so the box
+            // size is static per focus.
+            const sysBody = celestialBodies.find(b => b.mesh === currentFocused || b.satellites?.some(s => s.mesh === currentFocused));
+            const sats = (sysBody && sysBody.satellites) || [];
+            for (const sat of sats) {
+                const d = (sat.dist || 0) + (sat.radius || sat.r || 0) + 8;
+                if (d > this._shadowSize) this._shadowSize = Math.ceil(d);
+            }
+            const ring = sysBody && sysBody.rings ? (sysBody.userData.radius || 0) * 1.5 : 0;
+            if (ring > this._shadowSize) this._shadowSize = Math.ceil(ring);
+            this._shadowSize = Math.min(this._shadowSize, 300);
             this._prevFocused = currentFocused;
         }
-
         if (currentFocused) {
             const actualPos = new THREE.Vector3();
             currentFocused.getWorldPosition(actualPos);
 
             const dirFromSun = actualPos.clone().sub(sunBody.pos).normalize();
-            const shadowSize = 60; // Perfectly wraps Saturn + rings
+            const shadowSize = this._shadowSize || 60;
 
             // Place DirectionalLight 120 units towards the Sun
             focusedLight.position.copy(actualPos).sub(dirFromSun.multiplyScalar(shadowSize * 2));
