@@ -1,12 +1,9 @@
 {
-  "dependencies": {
-    "playwright": "^1.59.1",
-    "three": "^0.160.0"
-  },
   "name": "lyw",
   "version": "1.0.0",
-  "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Three.js](https://img.shields.io/badge/Three.js-r160-black)](https://threejs.org/)",
+  "description": "A celestial explorer application using Three.js",
   "main": "src/main.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.js",
     "build": "node make.js",
@@ -20,11 +17,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/zacario-li/Celestial-Explorer/issues"
   },
   "homepage": "https://github.com/zacario-li/Celestial-Explorer#readme",
+  "dependencies": {
+    "playwright": "^1.59.1",
+    "three": "^0.160.0"
+  },
   "devDependencies": {
     "esbuild": "^0.28.2"
   }
