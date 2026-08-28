@@ -40,11 +40,9 @@ const esbuild = require(path.join(ROOT, 'node_modules', 'esbuild'));
 
     let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf-8');
     html = html.replace(/<script type="importmap">[\s\S]*?<\/script>/, '');
-    // absolute path: the <base> tag below rewrites all relative URLs
     const scriptRe = /<script type="module" src="[^"]*"><\/script>/;
     if (!scriptRe.test(html)) throw new Error('make.js: entry <script type="module"> not found in index.html');
-    html = html.replace(scriptRe, '<script src="/dist/app.js"></script>');
-    html = html.replace(/(<head>)/, '$1\n    <base href="/"> <!-- assets stay at repo root; JS embeds relative paths -->');
+    html = html.replace(scriptRe, '<script src="dist/app.js"></script>');
     fs.writeFileSync(path.join(ROOT, 'dist', 'index.html'), html);
 
     const kb = fs.statSync(path.join(ROOT, 'dist', 'app.js')).size / 1024;

@@ -32,13 +32,15 @@ jobs:
       - run: npm ci
       - name: Build dist/
         run: npm run build
-      - name: Stage Pages root (repo + vendored three + dist)
+      - name: Stage Pages root
         run: |
-          mkdir -p pages/node_modules
-          cp -r node_modules/three pages/node_modules/
-          rsync -a --exclude '.git' --exclude 'node_modules' --exclude '.github' \
-                   --exclude 'tests' --exclude 'tools' --exclude 'scratch.js' \
-                   --exclude 'pages' ./ pages/
+          mkdir -p pages/dist
+          cp dist/app.js pages/dist/
+          cp dist/index.html pages/index.html
+          cp style.css pages/
+          cp -r textures pages/
+          cp -r assets pages/
+          touch pages/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
