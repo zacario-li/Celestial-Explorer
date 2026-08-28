@@ -105,6 +105,17 @@ window.addEventListener('pointerdown', (e) => {
     }
 });
 
+// Chase view: mouse-wheel zoom (radius band 0.25x..10x of the classic
+// 20x ship-scale fit; the idle drift eases it back to 1).
+window.addEventListener('wheel', (e) => {
+    if (state.isFlying && state.shipViewMode === 'chase' && e.target.tagName === 'CANVAS') {
+        const prev = Number.isFinite(state._chaseZoom) ? state._chaseZoom : 1;
+        state._chaseZoom = Math.max(0.25, Math.min(10, prev * (e.deltaY < 0 ? 0.9 : 1.1))); // up = closer
+        state.isOrbitingShip = true;
+        state.lastOrbitTime = Date.now();
+    }
+}, { passive: true });
+
 window.addEventListener('pointermove', (e) => {
     if (isShipOrbitPointerDown && state.isFlying && state.shipViewMode === 'chase') {
         const deltaX = e.clientX - prevShipOrbitPointerX;
@@ -1095,6 +1106,43 @@ window.__compileWarm = (() => {
 // everything else (frame gap) -- so a slow-machine engineer can see
 // which side of the fence the time lives on. Zero steady-state cost
 // beyond three lightweight timers.
+window.__shipViewReport = () => {
+    const sim = window.__sim;
+    const ship = sim.spaceship, cam = sim.camera;
+    const cls = Object.getPrototypeOf(cam.position).constructor;
+    const wS = new cls(), wC = new cls();
+    ship.getWorldPosition(wS);
+    cam.getWorldPosition(wC);
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    ship.traverse((o) => {
+        if (o.isMesh && o.geometry && o.geometry.attributes.position) {
+            const g = o.geometry;
+            if (g.boundingBox === null) g.computeBoundingBox();
+            const bb = g.boundingBox;
+            const v = new cls();
+            for (const sx of [bb.min.x, bb.max.x])
+                for (const sy of [bb.min.y, bb.max.y])
+                    for (const sz of [bb.min.z, bb.max.z]) {
+                        v.set(sx, sy, sz).applyMatrix4(o.matrixWorld).project(cam);
+                        const x = ((v.x + 1) / 2) * innerWidth;
+                        const y = ((1 - v.y) / 2) * innerHeight;
+                        if (x < minX) minX = x; if (x > maxX) maxX = x;
+                        if (y < minY) minY = y; if (y > maxY) maxY = y;
+                    }
+        }
+    });
+    return {
+        viewMode: state.shipViewMode,
+        realisticScale: state.isRealisticScale,
+        shipScale: ship.scale.x,
+        camToShip: +wC.distanceTo(wS).toFixed(3),
+        shipOnScreenPx: [Math.round(minX), Math.round(minY), Math.round(maxX), Math.round(maxY)],
+        shipPxSize: [Math.round(maxX - minX), Math.round(maxY - minY)],
+        chaseZoom: state._chaseZoom,
+        camFinite: Number.isFinite(cam.position.x) && Number.isFinite(cam.position.y) && Number.isFinite(cam.position.z) && Number.isFinite(cam.up.x),
+    };
+};
+
 window.__perfCheck = () => {
     const out = {
         devicePixelRatio: window.devicePixelRatio,

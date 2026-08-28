@@ -24,8 +24,14 @@ export class CameraSafeguardSystem {
         // to survive to the exit button.
         if (state.isFlying) {
             const sp = ctx.spaceship;
-            const camBad = !(Number.isFinite(camera.position.x) && Number.isFinite(camera.position.y) && Number.isFinite(camera.position.z));
-            const shipBad = !(sp && Number.isFinite(sp.position.x) && Number.isFinite(sp.position.y) && Number.isFinite(sp.position.z));
+            const finiteV = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+            // Position AND up/quaternion: a good position with a NaN up/quat is
+            // the classic 'the frame vanishes into nothing' state (position
+            // looks finite so the old check never fired) -- a roll that blows
+            // the look-at basis produces exactly that, and nothing else could
+            // rebuild the orientation.
+            const camBad = !(finiteV(camera.position) && finiteV(camera.up) && Number.isFinite(camera.quaternion.x) && Number.isFinite(camera.quaternion.y) && Number.isFinite(camera.quaternion.z) && Number.isFinite(camera.quaternion.w));
+            const shipBad = !(sp && finiteV(sp.position));
             if (camBad || shipBad) {
                 console.warn('Camera Safeguard: resetting corrupted in-flight camera/ship.');
                 if (sp) {
@@ -33,8 +39,10 @@ export class CameraSafeguardSystem {
                     sp.scale.setScalar(state.isRealisticScale ? 0.00005 : 0.2);
                     state.shipVelocity.set(0, 0, 0);
                 }
+                camera.up.set(0, 1, 0);
                 camera.position.set(sunBody.pos.x, sunBody.pos.y + 20, sunBody.pos.z + 10);
                 camera.lookAt(sunBody.pos);
+                camera.quaternion.normalize();
             }
             return;
         }

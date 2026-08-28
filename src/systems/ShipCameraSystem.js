@@ -48,13 +48,23 @@ export class ShipCameraSystem {
 
                 // Auto-Reset logic: Interpolate back to default after 1s of inactivity
                 if (!state.shipOrbitAngles) state.shipOrbitAngles = { theta: 4.712, phi: 0.3 };
+                if (!Number.isFinite(state.shipOrbitAngles.theta) || !Number.isFinite(state.shipOrbitAngles.phi) || !Number.isFinite(state._chaseZoom)) {
+                    state.shipOrbitAngles.theta = DEFAULT_THETA;
+                    state.shipOrbitAngles.phi = DEFAULT_PHI;
+                    state._chaseZoom = 1;
+                }
+                if (!Number.isFinite(state._chaseZoom)) state._chaseZoom = 1;
                 if (!state.isOrbitingShip && (Date.now() - state.lastOrbitTime > 1000)) {
                     state.shipOrbitAngles.theta += (DEFAULT_THETA - state.shipOrbitAngles.theta) * 0.05;
                     state.shipOrbitAngles.phi += (DEFAULT_PHI - state.shipOrbitAngles.phi) * 0.05;
+                    state._chaseZoom += (1 - state._chaseZoom) * 0.05;
                 }
 
-                // Calculate offset based on current orbit angles (r = 20.0 is perfect for ship scale)
-                const r = 20.0 * shipScale;
+                // Calculate offset based on current orbit angles (r = 20.0 is the
+                // classic fit). Chase zoom (mouse wheel) multiplies the radius;
+                // idle drift eases it back to 1.
+                const zoom = Number.isFinite(state._chaseZoom) ? state._chaseZoom : 1;
+                const r = 20.0 * shipScale * zoom;
                 const ox = r * Math.sin(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
                 const oy = r * Math.sin(state.shipOrbitAngles.phi);
                 const oz = r * Math.cos(state.shipOrbitAngles.theta) * Math.cos(state.shipOrbitAngles.phi);
