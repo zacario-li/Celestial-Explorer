@@ -13,15 +13,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22, 24]
+        node-version: ['20', '22']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - run: npm ci
+      - run: npm install
       - run: npm test
 
   # Headless browser boot of the real dev server (source modules + local
@@ -34,8 +33,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-      - run: npm ci
+      - run: npm install
       - run: npx playwright install --with-deps chromium
       - name: Boot dev server
         run: node server.js > server.log 2>&1 &
