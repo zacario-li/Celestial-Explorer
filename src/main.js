@@ -5,7 +5,8 @@ import { state } from './core/state.js';
 import { planetsData } from './celestial/planetsData.js';
 import { t, tName } from './core/i18n.js';
 import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './ui/uiCore.js';
-import { scene, camera, renderer, ambientLight, sunLight, highVisLight, focusedLight } from './core/sceneSetup.js';
+import { scene, camera, renderer, ambientLight, sunLight, highVisLight, focusedLight, fillLight } from './core/sceneSetup.js';
+const flightTmp = new THREE.Vector3();
 
 console.log("CELESTIAL EXPLORER: Bundle V3.8 Loading...");
 window.SIM_VERSION = "V3.8";
@@ -1031,6 +1032,15 @@ function animate() {
 
     // Sync sun light to sun's actual physics position (critical when sun drifts from origin)
     sunLight.position.copy(sunBody.pos);
+
+    // Camera-chasing fill: sits at the viewer and points where the viewer
+    // looks, so the night hemisphere in front of the camera always has a
+    // soft lift instead of hard black. Skipped when the camera is not
+    // finite (corrupt-frame safeguard owns that situation).
+    if (Number.isFinite(camera.position.x) && Number.isFinite(camera.position.y) && Number.isFinite(camera.position.z)) {
+        fillLight.position.copy(camera.position);
+        fillLight.target.position.copy(camera.position).add(flightTmp.setFromMatrixColumn(camera.matrixWorld, 2).negate());
+    }
 
     for (const sys of postPhysicsSystems) sys.update();
 

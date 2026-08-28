@@ -24,7 +24,17 @@ document.getElementById('canvas-container').appendChild(renderer.domElement);
 camera.position.set(0, 300 / 250, 500 / 250);
 
 // Lighting
-export const ambientLight = new THREE.AmbientLight(0xffffff, 0.02); // Minimal fill
+// Scene receives several cooperating lights instead of a bare sun: the
+// point light owns the real day/night terminator, a cool ambient floor
+// keeps the night hemisphere from rendering dead black, and a
+// camera-chasing fill (see main.js) softly lifts whichever face the
+// viewer is looking at. Any single body therefore never shows a hard
+// half-dark disc -- the far side stays dark blue, but still readable.
+export const ambientLight = new THREE.AmbientLight(0x8fa3bf, 0.18); // cool night floor
+export const fillLight = new THREE.DirectionalLight(0xbfd4ff, 0.45); // camera-chasing fill
+fillLight.castShadow = false; // the focused light owns the shadows
+scene.add(fillLight);
+scene.add(fillLight.target);
 ambientLight.layers.enable(0);
 ambientLight.layers.enable(2);
 scene.add(ambientLight);
