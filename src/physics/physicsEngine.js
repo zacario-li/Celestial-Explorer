@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { G, STELLAR_IGNITION_THRESHOLD } from './constants.js';
 import { computeSubSteps, FRAME_SUBSTEP_BUDGET, MAX_PENDING_SUBSTEPS } from './integratorConfig.js';
 import { state } from '../core/state.js';
+import { flightInteractionRadius } from './interactionRadius.js';
 
 export class PhysicsEngine {
     constructor(options = {}) {
@@ -279,8 +280,7 @@ export class PhysicsEngine {
             const p = this.activePlanets[i];
             if (p.destroyed) continue;
             const distSq = ship.position.distanceToSquared(p.pos);
-            const scaleX = p.mesh ? p.mesh.scale.x : 1.0;
-            const rPlanet = (p.mesh?.userData?.radius || 0.02) * scaleX;
+            const rPlanet = flightInteractionRadius(p, 0.02);
             const rShip = 0.5 * (ship.scale.x || 1.0);
             const collisionDist = rPlanet + rShip;
             if (distSq < collisionDist * collisionDist) {

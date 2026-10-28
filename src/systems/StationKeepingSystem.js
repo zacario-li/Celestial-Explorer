@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { state } from '../core/state.js';
 import { t } from '../core/i18n.js';
+import { flightInteractionRadius } from '../physics/interactionRadius.js';
 
 /**
  * StationKeepingSystem — hover / capture lock logic
@@ -96,8 +97,7 @@ export class StationKeepingSystem {
 
             if (closest) {
                 // Radius-based capture zone (8x radius)
-                const scaleX = closest.mesh ? closest.mesh.scale.x : 1.0;
-                const planetRadius = (closest.mesh.userData.radius || 0.04) * scaleX;
+                const planetRadius = flightInteractionRadius(closest, 0.04);
                 const captureRadius = planetRadius * 8;
 
                 if (minDist < captureRadius) {

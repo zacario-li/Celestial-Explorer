@@ -4,6 +4,7 @@ import { applyLanguage } from '../ui/uiCore.js';
 import { planTransferOrbit } from '../core/transferOrbit.js';
 import { solveIntercept, throttleForDeltaV, AP_GUIDANCE } from '../core/autopilotGuidance.js';
 import { G } from '../physics/constants.js';
+import { flightInteractionRadius } from '../physics/interactionRadius.js';
 
 /**
  * AutopilotSystem — orbital transfer state machine
@@ -49,8 +50,7 @@ export class AutopilotSystem {
                 return; // the OFF branch below clears the rest next frame
             }
             const dist = ship.position.distanceTo(target.pos);
-            const scaleX = target.mesh ? target.mesh.scale.x : 1.0;
-            const planetRadius = (target.mesh.userData.radius || 0.04) * scaleX;
+            const planetRadius = flightInteractionRadius(target, 0.04);
             const captureRadius = planetRadius * 8;
 
             // The transfer-line visibility mirrors the Misc-settings choice
