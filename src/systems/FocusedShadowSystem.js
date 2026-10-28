@@ -59,10 +59,10 @@ export class FocusedShadowSystem {
             const sysBody = celestialBodies.find(b => b.mesh === currentFocused || b.satellites?.some(s => s.mesh === currentFocused));
             const sats = (sysBody && sysBody.satellites) || [];
             for (const sat of sats) {
-                const d = (sat.dist || 0) + (sat.radius || sat.r || 0) + 8;
+                const d = (sat.orbitRadius || 0) + (sat.radius || 0) + 8;
                 if (d > this._shadowSize) this._shadowSize = Math.ceil(d);
             }
-            const ring = sysBody && sysBody.rings ? (sysBody.userData.radius || 0) * 1.5 : 0;
+            const ring = sysBody && sysBody.rings ? (sysBody.radius || 0) * 1.5 : 0;
             if (ring > this._shadowSize) this._shadowSize = Math.ceil(ring);
             this._shadowSize = Math.min(this._shadowSize, 300);
             this._prevFocused = currentFocused;
