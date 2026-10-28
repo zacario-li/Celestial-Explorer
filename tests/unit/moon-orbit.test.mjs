@@ -94,8 +94,19 @@ ok('realistic scale round trip restores the physical orbit and phase', () => {
     scaled.relPos.set(0, 0, -28);
     scaled.relVel.set(-scaled.omegaSim * 28, 0, 0);
     const initialVelocity = scaled.relVel.length();
+    const beforePos = scaled.relPos.clone();
+    const beforeVel = scaled.relVel.clone();
+    const beforeMu = scaled.muEff;
     scaled.updateScale(true);
-    assert.ok(Math.abs(scaled.relPos.length() - 0.257) < 1e-9);
+    assert.ok(scaled.relPos.equals(beforePos), 'display scale leaves physical position intact');
+    assert.ok(scaled.relVel.equals(beforeVel), 'display scale leaves physical velocity intact');
+    assert.equal(scaled.muEff, beforeMu);
+    assert.ok(Math.abs(scaled.translationGroup.position.length() - 0.257) < 1e-9);
+    assert.ok(Math.abs(scaled.orbitLine.scale.x - 0.257 / 28) < 1e-12);
+    scaled.publishWorld(planet);
+    const physicalWorld = scaled.pos.clone();
+    scaled.syncWorld(0);
+    assert.ok(scaled.pos.equals(physicalWorld), 'render sync does not modify world physics');
     scaled.updateScale(false);
     assert.equal(scaled.orbitR, 28);
     assert.ok(Math.abs(scaled.relPos.z + 28) < 1e-9, 'phase preserved');
@@ -103,6 +114,29 @@ ok('realistic scale round trip restores the physical orbit and phase', () => {
     scaled.stepDynamics(1);
     scaled.syncWorld(0);
     assert.ok(Math.abs(scaled.translationGroup.position.length() - 28) < 1e-6);
+    for (let i = 0; i < 10; i++) {
+        const p = scaled.relPos.clone(), v = scaled.relVel.clone(), mu = scaled.muEff;
+        scaled.updateScale(true);
+        scaled.updateScale(false);
+        assert.ok(scaled.relPos.equals(p) && scaled.relVel.equals(v));
+        assert.equal(scaled.muEff, mu);
+    }
+});
+
+ok('display toggles do not affect subsequent physics', () => {
+    const data = { name: 'CompareMoon', r: 2, realR: 0.01, dist: 28,
+        realDist: 0.257, speed: 0.013, c: 0x888888 };
+    const a = new Moon(data, planet), b = new Moon(data, planet);
+    for (let i = 0; i < 100; i++) {
+        if (i % 7 === 0) a.updateScale(true);
+        if (i % 11 === 0) a.updateScale(false);
+        a.stepDynamics(100);
+        b.stepDynamics(100);
+        a.syncWorld(0);
+    }
+    assert.ok(a.relPos.equals(b.relPos), 'positions remain bit-identical');
+    assert.ok(a.relVel.equals(b.relVel), 'velocities remain bit-identical');
+    assert.equal(a.muEff, b.muEff);
 });
 
 console.log(`\nmoon-orbit: ${pass} checks passed.`);

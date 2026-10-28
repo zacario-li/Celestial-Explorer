@@ -16,6 +16,7 @@ export class Moon extends CelestialBody {
         this.color = data.c;
         this.orbitRadius = data.dist;
         this.speed = data.speed;
+        this.displayOrbitScale = 1;
         this.textureKey = data.textureKey || data.name;
 
         this.inc = (data.inc || 0) * (Math.PI / 180);
@@ -129,11 +130,11 @@ export class Moon extends CelestialBody {
         this.spinGroup.rotation.set(0, 0, 0);
         this.relPos.set(this.orbitR, 0, 0);
         this.relVel.set(0, 0, -this.omegaSim * this.orbitR);
-        this.translationGroup.position.copy(this.relPos);
+        this.syncWorld(0);
         if (this.planet) this.publishWorld(this.planet);
     }
 
-    /** Realistic-scale change: rescale the orbit (linear, period-conserving). */
+    /** Rescale the simulation orbit explicitly (not a display-scale operation). rescale the orbit (linear, period-conserving). */
     setOrbitRadius(newR) {
         if (!(newR > 0)) return;
         const f = newR / (this.orbitR || newR);
@@ -142,17 +143,17 @@ export class Moon extends CelestialBody {
         this.relPos.multiplyScalar(f);
         this.relVel.multiplyScalar(f);
         this.muEff = this.omegaSim * this.omegaSim * newR * newR * newR;
-        this.translationGroup.position.copy(this.relPos);
+        this.syncWorld(0);
     }
 
     /**
-     * Render sync (dynamics are owned by the engine). Pushes the integrated
-     * relative state into the scene graph: translationGroup sits under a
-     * frozen spinGroup, so its local position IS relPos.
+     * Render sync (dynamics are owned by the engine). The frozen spinGroup
+     * places the display-scaled relative position in the orbital plane;
+     * relPos itself remains in simulation units.
      */
     syncWorld(dt) {
         if (this.translationGroup && this.relPos) {
-            this.translationGroup.position.copy(this.relPos);
+            this.translationGroup.position.copy(this.relPos).multiplyScalar(this.displayOrbitScale);
         }
     }
 
@@ -196,13 +197,14 @@ export class Moon extends CelestialBody {
         if (isRealistic && this.data.realR && this.data.realDist) {
             const rFactor = this.data.realR / this.radius;
             this.mesh.scale.set(rFactor, rFactor, rFactor);
-            this.setOrbitRadius(this.data.realDist);
             const distFactor = this.data.realDist / this.orbitRadius;
+            this.displayOrbitScale = distFactor;
             this.orbitLine.scale.set(distFactor, distFactor, distFactor);
         } else {
             this.mesh.scale.set(1, 1, 1);
-            this.setOrbitRadius(this.orbitRadius);
+            this.displayOrbitScale = 1;
             this.orbitLine.scale.set(1, 1, 1);
         }
+        this.syncWorld(0);
     }
 }
