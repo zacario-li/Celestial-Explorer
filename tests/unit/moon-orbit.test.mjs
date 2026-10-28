@@ -86,4 +86,23 @@ ok('publishWorld places the moon at planet-center + rotated offset', () => {
     assert.ok(Number.isFinite(moon.pos.x) && Number.isFinite(moon.vel.y), 'finite world state');
 });
 
+ok('realistic scale round trip restores the physical orbit and phase', () => {
+    const scaled = new Moon({
+        name: 'ScaleMoon', r: 2, realR: 0.01, dist: 28, realDist: 0.257,
+        speed: 0.013, c: 0x888888, inc: 5, lan: 20, tilt: 0,
+    }, planet);
+    scaled.relPos.set(0, 0, -28);
+    scaled.relVel.set(-scaled.omegaSim * 28, 0, 0);
+    const initialVelocity = scaled.relVel.length();
+    scaled.updateScale(true);
+    assert.ok(Math.abs(scaled.relPos.length() - 0.257) < 1e-9);
+    scaled.updateScale(false);
+    assert.equal(scaled.orbitR, 28);
+    assert.ok(Math.abs(scaled.relPos.z + 28) < 1e-9, 'phase preserved');
+    assert.ok(Math.abs(scaled.relVel.length() - initialVelocity) < 1e-12);
+    scaled.stepDynamics(1);
+    scaled.syncWorld(0);
+    assert.ok(Math.abs(scaled.translationGroup.position.length() - 28) < 1e-6);
+});
+
 console.log(`\nmoon-orbit: ${pass} checks passed.`);

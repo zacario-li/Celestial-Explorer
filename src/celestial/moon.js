@@ -201,7 +201,7 @@ export class Moon extends CelestialBody {
             this.orbitLine.scale.set(distFactor, distFactor, distFactor);
         } else {
             this.mesh.scale.set(1, 1, 1);
-            this.translationGroup.position.x = this.orbitRadius;
+            this.setOrbitRadius(this.orbitRadius);
             this.orbitLine.scale.set(1, 1, 1);
         }
     }
