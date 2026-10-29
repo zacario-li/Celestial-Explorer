@@ -24,6 +24,13 @@ try {
     assert.ok(balanced(result.busy));
     assert.equal(result.reset.pendingSteps, 0);
     assert.ok(balanced(result.reset));
+    await page.waitForFunction(() => {
+        const output = document.getElementById('sim-speed-health');
+        return output && !output.hidden && output.textContent.includes('Physics:');
+    }, null, { timeout: 30000 });
+    if (process.env.TIMING_SCREENSHOT) await page.screenshot({ path: process.env.TIMING_SCREENSHOT });
+    await page.evaluate(() => { window.state.isPaused = true; });
+    await page.waitForFunction(() => document.getElementById('sim-speed-health').hidden, null, { timeout: 10000 });
     assert.deepEqual(errors, []);
-    console.log('time-accounting-smoke: backlog, overflow and reset balanced');
+    console.log('time-accounting-smoke: backlog, overflow, reset and visible status OK');
 } finally { await browser.close(); }

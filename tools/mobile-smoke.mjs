@@ -64,6 +64,14 @@ try {
         const speedBox = await speed.boundingBox();
         assert.ok(speedBox.x >= 0 && speedBox.x + speedBox.width <= viewport.width + 1 &&
             speedBox.y >= 0 && speedBox.y + speedBox.height <= viewport.height + 1, `${name}: speed control unreachable`);
+        await speed.evaluate(el => { el.value = '200'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+        await page.waitForFunction(() => !document.getElementById('sim-speed-health').hidden, null, { timeout: 15000 });
+        const health = page.locator('#sim-speed-health');
+        await health.scrollIntoViewIfNeeded();
+        const healthBox = await health.boundingBox();
+        assert.ok(healthBox.y >= 0 && healthBox.y + healthBox.height <= viewport.height + 1, `${name}: speed status unreachable`);
+        if (shots) await page.screenshot({ path: path.join(shots, `${name}-speed.png`) });
+        await speed.evaluate(el => { el.value = '0'; el.dispatchEvent(new Event('input', { bubbles: true })); });
         const beltBefore = await page.evaluate(() => window.__sim.state.isAsteroidBeltActive);
         await page.locator('#asteroid-belt-button').tap();
         assert.notEqual(await page.evaluate(() => window.__sim.state.isAsteroidBeltActive), beltBefore);

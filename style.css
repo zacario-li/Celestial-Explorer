@@ -762,6 +762,13 @@ canvas {
     box-shadow: 0 0 12px rgba(255, 90, 60, 0.9);
 }
 
+#sim-speed-health:not([hidden]) {
+    display: block;
+    max-width: 160px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
 /* Keep desktop controls in their original vertical layout. */
 .mobile-action-strip, .mobile-extra-actions { display: contents; }
 #mobile-more-button { display: none; }
@@ -875,6 +882,7 @@ canvas {
     .mobile-extra-actions.is-open { display: flex; flex-direction: column; gap: 6px; }
     .mobile-extra-actions .pause-btn { width: 100%; flex: 0 0 auto; }
     .mobile-extra-actions .modal-group { width: 100%; box-sizing: border-box; margin: 0 !important; padding: 8px !important; }
+    .mobile-extra-actions #sim-speed-health:not([hidden]) { max-width: none; }
     .info-panel {
         bottom: calc(65px + env(safe-area-inset-bottom));
         right: max(8px, env(safe-area-inset-right));

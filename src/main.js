@@ -994,6 +994,7 @@ import { CameraSafeguardSystem } from './systems/CameraSafeguardSystem.js';
 import { BodyVisualSystem } from './systems/BodyVisualSystem.js';
 import { CameraFollowSystem } from './systems/CameraFollowSystem.js';
 import { FocusedShadowSystem } from './systems/FocusedShadowSystem.js';
+import { TimingStatusSystem } from './systems/TimingStatusSystem.js';
 
 // Time & orbital mechanics
 import { TimeSystem } from './core/time.js';
@@ -1043,6 +1044,8 @@ const finalSystems = [
     new FocusedShadowSystem(simCtx)
 ];
 
+const timingStatus = new TimingStatusSystem(physicsEngine, document.getElementById('sim-speed-health'));
+
 // Main Animation Loop — frame scheduler (the systems do the per-frame work)
 function animate() {
     requestAnimationFrame(animate);
@@ -1063,6 +1066,7 @@ function animate() {
 
     // Modular Physics Engine
     physicsEngine.update(physicsDt, time.realDt);
+    timingStatus.update();
 
     // Sync sun light to sun's actual physics position (critical when sun drifts from origin)
     sunLight.position.copy(sunBody.pos);
