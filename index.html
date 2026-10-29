@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>3D Solar System Simulation</title>
     <link rel="stylesheet" href="style.css?v=13">
     <!-- #6: three comes from the local, version-pinned node_modules (single
@@ -111,6 +111,7 @@
 
     <!-- Right Data & Controls UI -->
     <div id="ui-right" class="ui-side-right">
+        <div class="mobile-action-strip">
         <button id="pause-button" class="pause-btn">⏸ PAUSE</button>
         <button id="settings-button" class="pause-btn" style="margin-top: 10px;">⚙️ SETTINGS</button>
         <button id="overview-button" class="pause-btn" style="margin-top: 10px;">🌌 OVERVIEW</button>
@@ -128,6 +129,7 @@
             </div>
         </div>
 
+        </div>
         <div id="info-panel" class="info-panel">
             <div id="info-name" class="info-name">Earth</div>
             <div id="info-mass" class="info-mass">Mass: 5.972 × 10²⁴ kg</div>

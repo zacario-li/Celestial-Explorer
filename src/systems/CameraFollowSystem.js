@@ -47,7 +47,11 @@ export class CameraFollowSystem {
                 const mesh = state.focusedBody;
                 const radius = mesh ? (mesh.userData.radius * mesh.scale.x || 10) : 40;
                 const minDist = state.isRealisticScale ? radius * 2.5 : 12;
-                const dist = state.isOverview ? 6000 : Math.max(radius * 3.5, minDist);
+                // Portrait view has a narrower horizontal field of view.
+                // Pull back only while framing a focused body, preserving the
+                // desktop/landscape distance and manual zoom afterwards.
+                const portraitFit = Math.max(1, 1 / Math.max(camera.aspect, 0.1));
+                const dist = state.isOverview ? 6000 : Math.max(radius * 3.5, minDist) * portraitFit;
 
                 _camDir.subVectors(camera.position, controls.target).normalize();
 
