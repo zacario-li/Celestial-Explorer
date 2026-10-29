@@ -62,7 +62,7 @@ const server = http.createServer((req, res) => {
             // (previously every reload re-uploaded tens of MB with no 304s).
             ...(req.url.split('?')[0].match(/\/(textures|assets)\//)
                 ? { 'Cache-Control': 'public, max-age=86400' }
-                : {})
+                : { 'Cache-Control': 'no-cache' })
         };
 
         // Conditional GET: unchanged asset -> 304, skip the payload.

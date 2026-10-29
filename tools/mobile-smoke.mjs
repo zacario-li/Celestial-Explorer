@@ -35,8 +35,15 @@ try {
         assert.ok(bounds.bar.left >= 0 && bounds.bar.right <= viewport.width, `${name}: controls out of view`);
         assert.equal(bounds.canvas.width, viewport.width, `${name}: canvas width`);
         if (shots) await page.screenshot({ path: path.join(shots, `${name}-overview.png`) });
-        await page.locator('#mobile-more-button').tap();
-        assert.equal(await page.locator('#mobile-more-button').getAttribute('aria-expanded'), 'true');
+        const more = page.locator('#mobile-more-button');
+        const hit = await more.evaluate(button => {
+            const r = button.getBoundingClientRect();
+            const target = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+            return target === button || button.contains(target);
+        });
+        assert.ok(hit, `${name}: more button is covered`);
+        await more.tap();
+        assert.equal(await more.getAttribute('aria-expanded'), 'true');
         assert.ok(await page.locator('#spawn-button').isVisible(), `${name}: extra actions hidden`);
         if (shots) await page.screenshot({ path: path.join(shots, `${name}-more.png`) });
         const beltBefore = await page.evaluate(() => window.__sim.state.isAsteroidBeltActive);
@@ -63,6 +70,10 @@ try {
         assert.equal(await page.locator('#v-controller').isVisible(), true, `${name}: touch controls hidden`);
         if (shots) await page.screenshot({ path: path.join(shots, `${name}-pilot.png`) });
         await page.locator('#v-up').tap();
+        await page.locator('#mobile-more-button').tap();
+        assert.equal(await page.locator('#mobile-more-button').getAttribute('aria-expanded'), 'true', `${name}: drawer in pilot mode`);
+        assert.ok(await page.locator('#spawn-button').isVisible());
+        await page.locator('#mobile-more-button').tap();
         assert.deepEqual(errors, [], `${name}: page errors`);
         console.log(`${name}: layout, modal and pilot touch OK`);
         await context.close();

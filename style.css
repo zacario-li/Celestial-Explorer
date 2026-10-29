@@ -819,6 +819,7 @@ canvas {
         white-space: normal;
         line-height: 1.2;
         overflow: visible;
+        touch-action: manipulation;
     }
     .mobile-action-strip > .pause-btn {
         flex: 1 1 0;
@@ -835,7 +836,7 @@ canvas {
     #overview-button::after { content: '🌌'; }
     #pilot-button::after { content: '🚀'; }
     #pilot-button.mobile-flying::after { content: '✕'; }
-    #mobile-more-button { display: block; }
+    #mobile-more-button { display: block; position: relative; z-index: 1; }
     #mobile-more-button::after { content: '⋯'; }
     .mobile-extra-actions {
         display: none;
