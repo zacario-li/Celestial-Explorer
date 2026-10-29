@@ -64,6 +64,18 @@ try {
     engine.flushAll();
     assert.equal(ship.position.x, 0, 'new flight does not replay pre-flight movement');
 
+    state.isAutopilotActive = false;
+    engine.update(1, 0.01); // queue manual-control steps
+    const priorPending = engine.getTimingStats().pendingSeconds;
+    assert.ok(priorPending > 0);
+    const previousDropped = engine.getTimingStats().droppedSeconds;
+    state.isAutopilotActive = true;
+    engine.update(0.1, 0.01);
+    assert.ok(engine.getTimingStats().droppedSeconds >= previousDropped + priorPending - 1e-12,
+        'autopilot transition clears stale manual backlog even without the UI');
+    engine.clearPending();
+    state.isAutopilotActive = false;
+
     state.isPaused = true;
     state.isAutoLeveling = true;
     ship.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), 0.5);
@@ -93,7 +105,7 @@ try {
     assert.equal(ship.position.x, 0, 'station hold does not move without executed sim time');
     skCtx.physicsDt = 0.5; station.update();
     assert.ok(ship.position.x > 0, 'station hold advances with executed sim time');
-    console.log('unified-time: 17 checks passed');
+    console.log('unified-time: 19 checks passed');
 } finally {
     state.isFlying = saved.flying; state.isPaused = saved.paused; state.isAutopilotActive = saved.auto;
     state.capturedBody = saved.captured; state.shipThrottle = saved.throttle; state.isReverse = saved.reverse;

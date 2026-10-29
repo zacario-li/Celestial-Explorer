@@ -112,7 +112,9 @@ export class ShipControlSystem {
     captureSubstepInput() {
         const ship = this.ctx.spaceship;
         if (!state.isFlying || !ship) return null;
-        const throttle = state.isReverse ? -state.shipThrottle : state.shipThrottle;
+        // Reverse is a manual-control setting; automatic guidance already
+        // computes the actual desired thrust direction.
+        const throttle = state.isReverse && !state.isAutopilotActive ? -state.shipThrottle : state.shipThrottle;
         return {
             ship,
             flightSessionId: state.flightSessionId,

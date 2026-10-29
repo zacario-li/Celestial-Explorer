@@ -52,4 +52,6 @@ jobs:
           npm run test:texture-race
           npm run test:time-accounting
           npm run test:unified-time
+          npm run test:autopilot-arrival
+          SMOKE_URL=http://localhost:3001/dist/index.html npm run test:autopilot-arrival
           npm run test:mobile

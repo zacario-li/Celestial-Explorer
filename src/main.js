@@ -337,7 +337,12 @@ const simSpeedLabel = document.getElementById('sim-speed-label');
 if (simSpeedSlider) {
     simSpeedSlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
-        const actualSpeed = Math.floor(Math.pow(10, val / 100));
+        let actualSpeed = Math.floor(Math.pow(10, val / 100));
+        if (state.isAutopilotActive && actualSpeed > 1) {
+            actualSpeed = 1;
+            simSpeedSlider.value = '0';
+            showToast(t('apSpeedLimited'));
+        }
         state.simSpeedMultiplier = actualSpeed;
         if (simSpeedLabel) simSpeedLabel.textContent = `${t('simSpeed')}: ${actualSpeed}x`;
     });

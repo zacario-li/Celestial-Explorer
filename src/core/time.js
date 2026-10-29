@@ -18,6 +18,11 @@ export const SCRIPTED_TIME_SCALE = (Math.PI * 2) / (0.013 * 30 * 24 * 3600);
  *  from exploding the integrator. (Was the 0.05 clamp in the old loop.) */
 export const MAX_REAL_DT = 0.05;
 
+// Guidance and attitude are updated per rendered frame. Until they can run
+// inside every physics step, bound automatic flight to real-time simulation
+// so it can brake safely rather than traversing a target in one frame.
+export const AUTOPILOT_MAX_SIM_SPEED = 1;
+
 /**
  * TimeSystem — the single owner of the simulation clocks
  * (was the time-computation block at the top of the old 730-line animate()).
@@ -56,7 +61,10 @@ export class TimeSystem {
         this.dt = state.isPaused ? 0 : this.realDt;
         state.virtualTime += this.dt;
 
-        this.simDt = this.dt * state.simSpeedMultiplier;
+        const speed = state.isFlying && state.isAutopilotActive
+            ? Math.min(state.simSpeedMultiplier, AUTOPILOT_MAX_SIM_SPEED)
+            : state.simSpeedMultiplier;
+        this.simDt = this.dt * speed;
         this.scriptedDt = this.simDt * SCRIPTED_TIME_SCALE;
         return this;
     }

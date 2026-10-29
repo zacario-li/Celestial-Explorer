@@ -21,9 +21,9 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
 - **Chase Camera**: A dynamic follow-camera system for an immersive piloting experience.
 - **追逐摄像机**：动态跟随系统，提供沉浸式的驾驶感。
 - **Interplanetary Travel**: Seamlessly detach from Earth's orbit and fly across the solar system.
-- **Autopilot**: Iterative trajectory prediction and continuous intercept guidance, with proximity capture.
+- **Autopilot**: A trajectory preview and target-relative guidance brake toward a safe standoff before capture. For safety, engaging autopilot resets simulation speed to 1×; it remains at 1× after disengagement.
 - **星际航行**：无缝脱离地球轨道，在全局坐标系中自由探索太阳系。
-- **自动驾驶**：迭代预测轨迹，持续修正飞行方向，并在靠近目标时捕获。
+- **自动驾驶**：提供轨迹预览，通过相对目标的制导在表面外减速并捕获。为安全制导，启动时仿真速度会重置为 1×，退出后也保持 1×。
 
 ### ⚛️ Real-Time Physics | 实时物理引擎
 - **Scaled Gravity**: Planets and asteroid clusters use scaled gravitational calculations; moons use host-centered orbits calibrated to scripted periods, without third-body perturbations.

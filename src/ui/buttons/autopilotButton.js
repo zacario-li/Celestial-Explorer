@@ -98,8 +98,21 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
             // AutopilotSystem (target.pos/.vel/.mesh) — keep it an object.
             const targetName = planet.name;
             const dist = planet.pos.length();
+            // Old high-warp input belongs to a different control state. Do
+            // not replay it after a new destination has been selected.
+            physicsEngine?.clearPending?.();
+            const speedWasLimited = state.simSpeedMultiplier > 1;
             state.autopilotTarget = planet;
             state.isAutopilotActive = true;
+            if (speedWasLimited) {
+                // Keep the UI and persisted setting at 1× after disengaging;
+                // automatically jumping back to high warp near a target is unsafe.
+                const slider = document.getElementById('sim-speed-slider');
+                if (slider) {
+                    slider.value = '0';
+                    slider.dispatchEvent(new Event('input', { bubbles: true }));
+                } else state.simSpeedMultiplier = 1;
+            }
             // The autopilot takes FULL ownership of the ship: release any
             // station-hold lock, otherwise station-keeping re-locks every
             // frame and the burn can never pull the ship off its home body.
@@ -119,6 +132,7 @@ export function initAutopilotButton(physicsEngineOrScene, camera, controls, opti
             }
 
             if (window.clearToastMessage) window.clearToastMessage();
+            if (speedWasLimited && window.showToastMsg) window.showToastMsg(t('apSpeedLimited'));
             state.isAutopilotModalActive = false;
             modal?.classList.remove('active');
 

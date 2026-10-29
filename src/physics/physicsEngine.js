@@ -32,6 +32,7 @@ export class PhysicsEngine {
         // engine free of a direct DOM click (window/ID fallback preserved).
         this.onFlightReset = options.onFlightReset || null;
         this._flightResetPending = false;
+        this._autopilotWasActive = false;
 
         // Pre-allocated vectors for performance (Zero GC)
         this._diff = new THREE.Vector3();
@@ -81,6 +82,9 @@ export class PhysicsEngine {
         
         const sunBody = this.physicsBodies.find(b => b.isSun);
         if (!sunBody) return 0;
+        const autopilotActive = state.isFlying && state.isAutopilotActive;
+        if (autopilotActive && !this._autopilotWasActive) this.clearPending();
+        this._autopilotWasActive = autopilotActive;
         let integratedDt = 0;
 
         const subSteps = this.subStepsFor(physicsDt, state.simSpeedMultiplier);

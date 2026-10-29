@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { state } from '../core/state.js';
 import { applyLanguage } from '../ui/uiCore.js';
 import { planTransferOrbit } from '../core/transferOrbit.js';
-import { solveIntercept, throttleForDeltaV, AP_GUIDANCE } from '../core/autopilotGuidance.js';
+import { solveSafeApproach, approachThrottle } from '../core/approachGuidance.js';
 import { G } from '../physics/constants.js';
 import { flightInteractionRadius } from '../physics/interactionRadius.js';
 
@@ -10,10 +10,9 @@ import { flightInteractionRadius } from '../physics/interactionRadius.js';
  * AutopilotSystem — orbital transfer state machine
  * (was script.js animate(), ~L985-1113).
  *
- * Phases: PLANNING -> ALIGNING -> BURNING -> COASTING -> arrival/capture.
- *
- * Extracted verbatim from the main loop. Now a self-contained, unit-testable
- * state machine. It drives:
+ * A trajectory preview is followed by target-relative approach guidance.
+ * The ship brakes toward a standoff outside the hull before capture.
+ * It drives:
  *  - state.isAutopilotActive / autopilotPhase / autopilotTarget / timeToIntercept
  *  - the trajectory line (apPathLine) and rendezvous ghost visuals
  *  - arrival hand-off to StationKeeping (state.capturedBody)
@@ -35,11 +34,6 @@ export class AutopilotSystem {
         const { ctx } = this;
         const ship = ctx.spaceship;
         if (!state.isFlying || !ship || state.isPaused) return;
-        const physicsDt = ctx.physicsDt;
-        // Whole-second edge trigger for course corrections (see COASTING):
-        // computed once per frame so every phase can observe the same value.
-        const vSecNow = Math.floor(state.virtualTime);
-
         if (state.isAutopilotActive && state.autopilotTarget) {
             this._wasEngaged = true;
             const target = state.autopilotTarget;
@@ -84,12 +78,17 @@ export class AutopilotSystem {
                     state.shipThrottle = 0;
                 }
 
+                const guidance = solveSafeApproach(ship.position, state.shipVelocity, target, captureRadius, planetRadius + shipRadius);
                 if (state.autopilotPhase === 'PLANNING') {
                     // Estimate travel time (approximate 1.5 units/s average speed)
                     const scaleFactor = state.isRealisticScale ? 0.00005 : 0.2;
                     state.timeToIntercept = dist / (1.5 * scaleFactor);
 
-                    const plan = planTransferOrbit(ship.position, target, state.timeToIntercept, ctx.sunBody.pos, G * ctx.sunBody.physMass);
+                    const away = new THREE.Vector3().subVectors(ship.position, target.pos);
+                    if (away.lengthSq() < 1e-12) away.set(1, 0, 0);
+                    away.normalize();
+                    const planTarget = { pos: target.pos.clone().addScaledVector(away, guidance.standoff), vel: target.vel };
+                    const plan = planTransferOrbit(ship.position, planTarget, state.timeToIntercept, ctx.sunBody.pos, G * ctx.sunBody.physMass);
                     state.autopilotVReq.copy(plan.v0);
 
                     // Show planned trajectory
@@ -114,36 +113,15 @@ export class AutopilotSystem {
                     state.autopilotPhase = 'ALIGNING';
                 }
 
-                // 3. CONTINUOUS GUIDANCE (phase 2).
-                // Every frame: propagate the target under sun gravity to
-                // time tau, aim the burn at the residual delta-V for that
-                // lead point, and scale throttle proportionally -- so the
-                // burn auto-tapers and no phase ever sits idle while the
-                // hand (attitude) drifts.
-                const guidance = solveIntercept(ship.position, state.shipVelocity, target, ctx.sunBody.pos, G * ctx.sunBody.physMass);
+                // Approach a point outside the hull and match the target's
+                // velocity. The drawn path remains only an initial preview.
                 state.autopilotVReq.copy(guidance.vReq);
                 state.timeToIntercept = guidance.tau; // LIVE ETA (per-frame solved)
                 const dvMag = guidance.deltaV.length();
 
-                // ARRIVAL: on topology and residual negligible inside the
-                // capture radius -- stop burning and hand the ship to
-                // station keeping (its assist picks up the last ~0.02 and
-                // soft-locks; the hull window protects the interior).
-                if (outsideHull && dist < captureRadius && dvMag <= AP_GUIDANCE.deadband) {
-                    state.isAutopilotActive = false;
-                    state.shipThrottle = 0;
-                    state.autopilotPhase = '';
-                    state.autopilotStatus = 'apDisengaged';
-                    if (this.apIndicator) this.apIndicator.style.display = 'none';
-                    if (this.apPathLine.visible) this.apPathLine.visible = false;
-                    if (this.rendezvousGhost.visible) this.rendezvousGhost.visible = false;
-                    return;
-                }
-
-                // Aim + proportional burn
-                const throttle = throttleForDeltaV(dvMag);
-                state.shipThrottle = throttle;
-                if (throttle > 0) {
+                // Rotate toward the velocity correction first. Thrust stays
+                // off while misaligned, especially during braking reversals.
+                if (dvMag > 1e-9) {
                     const dvDir = guidance.deltaV.clone().normalize();
                     if (dvDir.lengthSq() > 1e-9) {
                         let cross = new THREE.Vector3().crossVectors(dvDir, new THREE.Vector3(0, 1, 0));
@@ -155,6 +133,9 @@ export class AutopilotSystem {
                         ship.quaternion.slerp(aimQuat, 0.12);
                     }
                 }
+                const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
+                const throttle = approachThrottle(guidance.deltaV, forward);
+                state.shipThrottle = throttle;
                 state.autopilotPhase = throttle > 0 ? 'STEERING' : 'HOLD';
 
                 // ETA: live-solved per frame by the guidance law above
@@ -175,7 +156,6 @@ export class AutopilotSystem {
                     state._prevAutopilotPhase = state.autopilotPhase;
                     applyLanguage();
                 }
-                state._prevCourseSec = vSecNow;
             }
         } else {
             // Cleanup visuals & state cache when autopilot evaluates as OFF
