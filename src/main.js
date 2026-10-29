@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { state } from './core/state.js';
 import { random } from './core/random.js';
 import { TextureRequests } from './core/textureRequests.js';
+import { trimTextureCache } from './core/textureCache.js';
 import { planetsData } from './celestial/planetsData.js';
 import { t, tName } from './core/i18n.js';
 import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './ui/uiCore.js';
@@ -539,18 +540,13 @@ function texRemember(key, tex) {
     TEX_OWNED.add(tex.uuid);
     if (texCache.has(key)) texCache.delete(key);
     texCache.set(key, tex);  // re-assert recency
-    while (texCache.size > TEX_CACHE_MAX) {
-        const oldKey = texCache.keys().next().value;
-        const oldTex = texCache.get(oldKey);
-        texCache.delete(oldKey);
-        // Evict only when a live body does not still use this texture
-        // (spawned planets intentionally share their template's texture):
-        let inUse = false;
-        for (const b of celestialBodies) if (bodyUsesTexture(b, oldTex)) { inUse = true; break; }
-        if (inUse) { texCache.set(oldKey, oldTex); break; }
-        oldTex.dispose();
-        TEX_OWNED.delete(oldTex.uuid);
-    }
+    trimTextureCache(texCache, TEX_CACHE_MAX,
+        candidate => celestialBodies.some(body => bodyUsesTexture(body, candidate)),
+        candidate => {
+            candidate.dispose();
+            TEX_OWNED.delete(candidate.uuid);
+        }
+    );
 }
 
 // Disposed the body's cache entries on destruction (skipping anything any other
