@@ -102,7 +102,8 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
    ```
 
 3. **Open in Browser | 浏览器访问**:
-   Navigate to `http://localhost:3001`.
+   Navigate to `http://localhost:3001`. Add `?seed=20260827` to reproduce randomly generated scene contents across runs; this does not freeze the simulation clock.
+   添加 `?seed=20260827` 可以复现随机生成的场景内容；仿真时间仍会正常推进。
 
 > **Deploy mode | 构建**: `npm run build` bundles everything (app + three)
 > into `dist/` (single `app.js`, no importmap for JavaScript). Serve the repo root

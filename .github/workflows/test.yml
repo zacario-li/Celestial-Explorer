@@ -48,4 +48,5 @@ jobs:
           node tools/ci-smoke.mjs http://localhost:3001/dist/index.html
           npm run test:lifecycle
           npm run test:ui
+          npm run test:seed
           npm run test:mobile

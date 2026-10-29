@@ -1,6 +1,7 @@
 import { Planet } from './planet.js';
 import { planetsData } from './planetsData.js';
 import { t, tName } from '../core/i18n.js';
+import { random } from '../core/random.js';
 
 export function initSpawnManager(physicsEngine, scene, celestialBodies, navList, createNavItem, applyTextures) {
     // Injected by main.js: importing main.js from here would re-enter the entry
@@ -20,20 +21,20 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList,
         }
 
         let baseData = spawnTemplate.value === 'Random' 
-            ? planetsData[Math.floor(Math.random() * planetsData.length)]
+            ? planetsData[Math.floor(random() * planetsData.length)]
             : planetsData[parseInt(spawnTemplate.value)];
 
-        const jitterDist = isSilent ? (Math.random() - 0.5) * 40 : 0;
+        const jitterDist = isSilent ? (random() - 0.5) * 40 : 0;
         const dist = parseFloat(spawnDistance.value) + jitterDist;
-        const massMult = parseFloat(spawnMass.value) * (isSilent ? (0.9 + Math.random() * 0.2) : 1);
-        const spawnName = `${baseData.name}-${Math.floor(Math.random() * 90000) + 10000}`;
+        const massMult = parseFloat(spawnMass.value) * (isSilent ? (0.9 + random() * 0.2) : 1);
+        const spawnName = `${baseData.name}-${Math.floor(random() * 90000) + 10000}`;
 
         const newPlanetData = {
             ...baseData,
             name: spawnName,
             dist: dist,
             massValue: baseData.massValue * massMult,
-            angle: Math.random() * Math.PI * 2,
+            angle: random() * Math.PI * 2,
             mass: `Custom: ${massMult.toFixed(1)}x Mass`
         };
 

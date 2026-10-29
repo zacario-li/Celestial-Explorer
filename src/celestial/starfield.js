@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { random } from '../core/random.js';
 
 export function createStarfield() {
     const starsGeometry = new THREE.BufferGeometry();
@@ -10,20 +11,20 @@ export function createStarfield() {
     const cYellow = new THREE.Color(0xffeedd);
 
     for (let i = 0; i < 9000; i++) {
-        const x = THREE.MathUtils.randFloatSpread(20000);
-        const y = THREE.MathUtils.randFloatSpread(20000);
-        const z = THREE.MathUtils.randFloatSpread(20000);
+        const x = 20000 * (0.5 - random());
+        const y = 20000 * (0.5 - random());
+        const z = 20000 * (0.5 - random());
         
         if (Math.abs(x) < 2.4 && Math.abs(y) < 2.4 && Math.abs(z) < 2.4) continue;
         
         starsVertices.push(x, y, z);
 
         let col = cWhite;
-        const r = Math.random();
+        const r = random();
         if (r > 0.85) col = cBlue;
         else if (r > 0.7) col = cYellow;
 
-        const intensity = 0.6 + Math.random() * 0.8;
+        const intensity = 0.6 + random() * 0.8;
         starsColors.push(col.r * intensity, col.g * intensity, col.b * intensity);
     }
 

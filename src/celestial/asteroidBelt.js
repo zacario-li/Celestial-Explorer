@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { G, SUN_MASS } from '../physics/constants.js';
+import { random } from '../core/random.js';
 
 export class AsteroidBelt {
     constructor(count, minRadius, maxRadius, beltType, physicsEngine, scene) {
@@ -34,25 +35,25 @@ export class AsteroidBelt {
         let instanceIdCounter = 0;
 
         for (let k = 0; k < clusterCount; k++) {
-            const orbitRadius = this.minRadius + Math.random() * (this.maxRadius - this.minRadius);
-            const initialAngle = (k / clusterCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
+            const orbitRadius = this.minRadius + random() * (this.maxRadius - this.minRadius);
+            const initialAngle = (k / clusterCount) * Math.PI * 2 + (random() - 0.5) * 0.1;
             const circularSpeed = Math.sqrt((G * SUN_MASS) / orbitRadius);
-            const speed = circularSpeed * (0.98 + Math.random() * 0.04);
+            const speed = circularSpeed * (0.98 + random() * 0.04);
             const clusterVisualRadius = 10; 
             const instances = [];
             
             for (let g = 0; g < groupSize; g++) {
                 if (instanceIdCounter >= this.count) break;
-                const radius = 0.15 + Math.random() * 0.6; 
+                const radius = 0.15 + random() * 0.6;
                 const localPos = new THREE.Vector3(
-                    (Math.random() - 0.5) * clusterVisualRadius * 2,
-                    (Math.random() - 0.5) * clusterVisualRadius * 0.4, 
-                    (Math.random() - 0.5) * clusterVisualRadius * 2
+                    (random() - 0.5) * clusterVisualRadius * 2,
+                    (random() - 0.5) * clusterVisualRadius * 0.4,
+                    (random() - 0.5) * clusterVisualRadius * 2
                 );
                 const rotationOffsets = new THREE.Euler(
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI
+                    random() * Math.PI,
+                    random() * Math.PI,
+                    random() * Math.PI
                 );
 
                 instances.push({
@@ -64,12 +65,12 @@ export class AsteroidBelt {
             }
 
             const pos = new THREE.Vector3(orbitRadius * Math.cos(initialAngle), 0, orbitRadius * Math.sin(initialAngle));
-            pos.y = (Math.random() - 0.5) * (orbitRadius * 0.04);
+            pos.y = (random() - 0.5) * (orbitRadius * 0.04);
 
             const vel = new THREE.Vector3(-speed * Math.sin(initialAngle), 0, speed * Math.cos(initialAngle));
-            vel.y = (Math.random() - 0.5) * speed * 0.05;
+            vel.y = (random() - 0.5) * speed * 0.05;
 
-            const rotSpeed = 0.01 + Math.random() * 0.05;
+            const rotSpeed = 0.01 + random() * 0.05;
 
             instances.forEach(inst => {
                 dummy.position.copy(pos).add(inst.localPos);

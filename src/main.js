@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { state } from './core/state.js';
+import { random } from './core/random.js';
 import { planetsData } from './celestial/planetsData.js';
 import { t, tName } from './core/i18n.js';
 import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './ui/uiCore.js';
@@ -964,7 +965,7 @@ if (earthRef) {
 // deterministic, as it always rendered)
 celestialBodies.forEach(body => {
     if (!body.isAsteroid && !body.isSun) {
-        body.mesh.rotation.y = Math.random() * Math.PI * 2;
+        body.mesh.rotation.y = random() * Math.PI * 2;
     }
 });
 
