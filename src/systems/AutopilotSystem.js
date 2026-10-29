@@ -28,6 +28,7 @@ export class AutopilotSystem {
         this.skIndicator = document.getElementById('station-keeping-indicator');
         this._diffVec = new THREE.Vector3();
         this._lastRemainSec = null;
+        this._wasEngaged = false;
     }
 
     update() {
@@ -40,6 +41,7 @@ export class AutopilotSystem {
         const vSecNow = Math.floor(state.virtualTime);
 
         if (state.isAutopilotActive && state.autopilotTarget) {
+            this._wasEngaged = true;
             const target = state.autopilotTarget;
             if (target.destroyed) {
                 // Destination was taken in during the transfer: abort instead of
@@ -182,8 +184,11 @@ export class AutopilotSystem {
             if (this.apIndicator) this.apIndicator.style.display = 'none';
             // Refresh the pill once so a stale ghost target stops being shown
             // (e.g. the destination was consumed mid-transfer):
+            const needsUiReset = this._wasEngaged || state.autopilotStatus !== 'apDisengaged' ||
+                state.autopilotTarget || state.autopilotPhase || state._prevAutopilotTarget || state._prevAutopilotPhase;
             state.autopilotStatus = 'apDisengaged';
-            applyLanguage();
+            if (needsUiReset) applyLanguage();
+            this._wasEngaged = false;
             state.timeToIntercept = 0;
             state.autopilotTarget = null;
             state._prevAutopilotTarget = null;
