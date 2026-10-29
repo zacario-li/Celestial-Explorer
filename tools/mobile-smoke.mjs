@@ -44,6 +44,7 @@ try {
         await iapetus.scrollIntoViewIfNeeded();
         const moonBox = await iapetus.boundingBox();
         assert.ok(moonBox.y >= 0 && moonBox.y + moonBox.height <= bounds.bar.top, `${name}: last moon obscured`);
+        if (shots) await page.screenshot({ path: path.join(shots, `${name}-satellites.png`) });
         await iapetus.tap();
         assert.equal(await page.evaluate(() => window.__sim.state.focusedBody?.userData?.name), 'Iapetus');
         await saturn.locator('button').tap();
