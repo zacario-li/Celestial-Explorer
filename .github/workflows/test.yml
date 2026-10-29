@@ -49,4 +49,5 @@ jobs:
           npm run test:lifecycle
           npm run test:ui
           npm run test:seed
+          npm run test:texture-race
           npm run test:mobile

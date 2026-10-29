@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { state } from './core/state.js';
 import { random } from './core/random.js';
+import { TextureRequests } from './core/textureRequests.js';
 import { planetsData } from './celestial/planetsData.js';
 import { t, tName } from './core/i18n.js';
 import { updateInfoPanel, applyLanguage, populateAutopilotDestinations } from './ui/uiCore.js';
@@ -60,9 +61,17 @@ const targetVec = new THREE.Vector3();
 let shipRef = null;
 const shipProvider = () => shipRef;
 
-const physicsEngine = new PhysicsEngine({ shipProvider, onIgnition: igniteStar, onFlightReset: requestPilotExit, frameBudgetMs: 12 });
+const igniteWithTextureCleanup = body => {
+    const materials = body.mesh?.material
+        ? (Array.isArray(body.mesh.material) ? body.mesh.material : [body.mesh.material]) : [];
+    for (const material of materials) textureRequests.cancel(material);
+    const previousMaps = materials.map(material => material.map).filter(Boolean);
+    igniteStar(body);
+    for (const texture of previousMaps) releaseIfUnreferenced(texture);
+};
+const physicsEngine = new PhysicsEngine({ shipProvider, onIgnition: igniteWithTextureCleanup, onFlightReset: requestPilotExit, frameBudgetMs: 12 });
 window.physicsEngine = physicsEngine; // For global access if needed
-window.igniteStar = igniteStar; // Kept for external tooling (engine prefers injected onIgnition)
+window.igniteStar = igniteWithTextureCleanup; // external tooling follows the same cleanup path
 
 // Pilot Input State (shared keys object — physical key events and the
 // on-screen virtual controls all write to this single object)
@@ -584,6 +593,35 @@ function releaseIfUnreferenced(tex) {
     }
 }
 
+const textureRequests = new TextureRequests({
+    loader: texLoader,
+    cache: texCache,
+    prepare: texture => { texture.colorSpace = THREE.SRGBColorSpace; },
+    remember: texRemember,
+    release: releaseIfUnreferenced,
+    onError: (error, key, url) => {
+        const el = document.getElementById('error-log');
+        if (el) {
+            el.style.display = 'block';
+            if (el.querySelectorAll('.texture-error').length < 6) {
+                const line = document.createElement('div');
+                line.className = 'texture-error';
+                line.textContent = `Failed to load ${key} at ${url}`;
+                el.appendChild(line);
+            }
+        }
+        console.error(`Error loading texture ${key} at ${url}:`, error);
+    }
+});
+
+function cancelBodyTextureRequests(body) {
+    const root = body?.orbitObj || body?.mesh;
+    root?.traverse(node => {
+        const materials = node.material ? (Array.isArray(node.material) ? node.material : [node.material]) : [];
+        for (const material of materials) textureRequests.cancel(material);
+    });
+}
+
 function getOrLoadTexture(name, category, tier, material) {
     const registry = category === 'planet' ? pTexPaths : mTexPaths;
     // Spawned planets inherit their template's texture (a "Earth-48211" has
@@ -600,47 +638,7 @@ function getOrLoadTexture(name, category, tier, material) {
     const path = registry[name][tier] || registry[name].high;
     const cacheKey = REMOTE_SINGLE_TIER.includes(name) ? `${name}-high` : `${name}-${tier}`;
 
-    if (texCache.has(cacheKey)) {
-        const tex = texCache.get(cacheKey);
-        if (material && material.map !== tex) {
-            const prev = material.map;
-            material.map = tex;
-            material.color.set(0xffffff);
-            material.needsUpdate = true;
-            if (prev) releaseIfUnreferenced(prev);
-        }
-        return tex;
-    }
-
-    const texture = texLoader.load(path,
-        (tex) => {
-            tex.colorSpace = THREE.SRGBColorSpace;
-            if (material) {
-                const prev = material.map;
-                material.map = tex;
-                material.color.set(0xffffff);
-                material.needsUpdate = true;
-                if (prev) releaseIfUnreferenced(prev);
-            }
-            // Only successful loads enter the cache (a failed fetch used to
-            // poison this body's texture for the rest of the session):
-            texRemember(cacheKey, tex);
-        },
-        undefined,
-        (err) => {
-            texCache.delete(cacheKey);              // allow a retry on the next focus
-            const el = document.getElementById('error-log');
-            if (el) {
-                el.style.display = 'block';
-                if (el.querySelectorAll('br').length < 6) {
-                    el.innerHTML += `Failed to load ${name} (${tier}) at ${path}<br>`;
-                }
-            }
-            console.error(`Error loading texture for ${name} at ${path}:`, err);
-        }
-    );
-
-    return texture;
+    return textureRequests.request(cacheKey, path, material);
 }
 
 function updateTextureResolution() {
@@ -1019,7 +1017,7 @@ const simCtx = {
     physicsEngine,
     apPathLine, apPathGeometry, rendezvousGhost,
     keys,
-    releaseBodyTextures, canDisposeTexture,
+    releaseBodyTextures, canDisposeTexture, cancelBodyTextureRequests,
     dt: 0, physicsDt: 0, scriptedDt: 0
 };
 

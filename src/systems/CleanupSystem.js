@@ -95,6 +95,10 @@ export class CleanupSystem {
                     if (state._shipDockParent === b.orbitObj) state._shipDockParent = null;
                 }
 
+                // Ignore pending texture completions for every material in
+                // this body and its satellites before disposing the hierarchy.
+                if (ctx.cancelBodyTextureRequests) ctx.cancelBodyTextureRequests(b);
+
                 if (b.orbitObj) {
                     scene.remove(b.orbitObj);
                     this.disposeHierarchy(b.orbitObj);
