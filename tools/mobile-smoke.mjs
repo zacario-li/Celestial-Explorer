@@ -37,6 +37,16 @@ try {
         assert.ok(bounds.bar.left >= 0 && bounds.bar.right <= viewport.width, `${name}: controls out of view`);
         assert.equal(bounds.canvas.width, viewport.width, `${name}: canvas width`);
         if (shots) await page.screenshot({ path: path.join(shots, `${name}-overview.png`) });
+        // The longest satellite list must remain reachable on short screens.
+        const saturn = page.locator('.nav-group').filter({ has: page.locator('[data-eng-name="Saturn"]') });
+        await saturn.locator('button').tap();
+        const iapetus = page.locator('[data-eng-name="Iapetus"]');
+        await iapetus.scrollIntoViewIfNeeded();
+        const moonBox = await iapetus.boundingBox();
+        assert.ok(moonBox.y >= 0 && moonBox.y + moonBox.height <= bounds.bar.top, `${name}: last moon obscured`);
+        await iapetus.tap();
+        assert.equal(await page.evaluate(() => window.__sim.state.focusedBody?.userData?.name), 'Iapetus');
+        await saturn.locator('button').tap();
         const more = page.locator('#mobile-more-button');
         const hit = await more.evaluate(button => {
             const r = button.getBoundingClientRect();
@@ -81,6 +91,14 @@ try {
         await page.locator('#v-throttle-up').tap();
         await page.locator('#v-throttle-down').tap();
         await page.locator('#v-toggle-view').tap();
+        await page.evaluate(() => {
+            const target = window.__bodies.allBodies().find(b => b.name === 'Saturn');
+            window.__sim.state.capturedBody = null;
+            window.__sim.state.autopilotTarget = target;
+            window.__sim.state.isAutopilotActive = true;
+        });
+        await page.locator('#v-up').tap();
+        assert.equal(await page.evaluate(() => window.__sim.state.isAutopilotActive), false, `${name}: touch must disengage autopilot`);
         await page.locator('#mobile-more-button').tap();
         assert.equal(await page.locator('#mobile-more-button').getAttribute('aria-expanded'), 'true', `${name}: drawer in pilot mode`);
         assert.ok(await page.locator('#spawn-button').isVisible());

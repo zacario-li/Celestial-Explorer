@@ -786,7 +786,15 @@ canvas {
         padding: 6px 8px;
     }
     .nav-title { display: none; }
-    .nav-list { min-width: 0; overscroll-behavior-x: contain; touch-action: pan-x; }
+    .nav-list {
+        min-width: 0;
+        max-height: max(44px, calc(100dvh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+        overflow-x: auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        touch-action: pan-x pan-y;
+        -webkit-overflow-scrolling: touch;
+    }
     .nav-item { min-height: 36px; box-sizing: border-box; display: flex; align-items: center; }
     .ui-side-right {
         top: auto; left: 0; right: 0; bottom: 0;

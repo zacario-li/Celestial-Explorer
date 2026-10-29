@@ -52,6 +52,8 @@ export class AutopilotSystem {
             const dist = ship.position.distanceTo(target.pos);
             const planetRadius = flightInteractionRadius(target, 0.04);
             const captureRadius = planetRadius * 8;
+            const shipRadius = 0.5 * (ship.scale.x || 1.0);
+            const outsideHull = dist > planetRadius + shipRadius;
 
             // The transfer-line visibility mirrors the Misc-settings choice
             // for the whole engagement (off by default):
@@ -62,7 +64,7 @@ export class AutopilotSystem {
             // plumbing would read as 'force capture'). The guidance law
             // hands off cleanly when it settles a ship with ~zero residual.
             const relAtArrival = state.shipVelocity.distanceTo(target.vel);
-            if (dist < captureRadius && relAtArrival < 0.15) {
+            if (outsideHull && dist < captureRadius && relAtArrival < 0.15) {
                 state.isAutopilotActive = false;
                 state.shipThrottle = 0;
                 if (this.skIndicator) this.skIndicator.style.display = 'block';
@@ -125,7 +127,7 @@ export class AutopilotSystem {
                 // capture radius -- stop burning and hand the ship to
                 // station keeping (its assist picks up the last ~0.02 and
                 // soft-locks; the hull window protects the interior).
-                if (dist < captureRadius && dvMag <= AP_GUIDANCE.deadband) {
+                if (outsideHull && dist < captureRadius && dvMag <= AP_GUIDANCE.deadband) {
                     state.isAutopilotActive = false;
                     state.shipThrottle = 0;
                     state.autopilotPhase = '';

@@ -57,7 +57,9 @@ export class ShipControlSystem {
         const pitch = (keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0);
         const roll = (keys['KeyQ'] ? 1 : 0) - (keys['KeyE'] ? 1 : 0);
 
-        const rotSpeed = 0.025;
+        // Preserve the former 60 FPS response, independent of render rate.
+        // Pausing freezes attitude changes along with simulation input.
+        const rotSpeed = 0.025 * Math.max(0, ctx.dt || 0) * 60;
 
         if (yaw !== 0 || pitch !== 0 || roll !== 0) {
             state.isAutoLeveling = false;

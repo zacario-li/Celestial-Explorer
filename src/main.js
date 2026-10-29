@@ -76,18 +76,19 @@ window.addEventListener('keydown', (e) => {
     requestPilotToggle();
 });
 
-// Disengage autopilot on any manual pilot input
+// All manual pilot inputs, including touch controls, release autopilot.
+function disengageAutopilotForManualInput() {
+    if (!state.isAutopilotActive) return;
+    state.isAutopilotActive = false;
+    state.autopilotStatus = 'apDisengaged';
+    const apIndicator = document.getElementById('autopilot-indicator');
+    if (apIndicator) apIndicator.style.display = 'none';
+}
 window.addEventListener('keydown', (e) => {
     const el = e.target;
     if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
-    if (state.isAutopilotActive) {
-        if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyE', 'ShiftLeft'].includes(e.code)) {
-            state.isAutopilotActive = false;
-            state.autopilotStatus = 'apDisengaged';
-            const apIndicator = document.getElementById('autopilot-indicator');
-            if (apIndicator) apIndicator.style.display = 'none';
-            console.log("AUTOPILOT: Disengaged due to manual input.");
-        }
+    if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyE', 'ShiftLeft'].includes(e.code)) {
+        disengageAutopilotForManualInput();
     }
 });
 
@@ -256,7 +257,7 @@ import { initSpawnManager } from './celestial/spawnManager.js';
 function bindVKey(id, keyCode) {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.addEventListener('pointerdown', (e) => { e.preventDefault(); keys[keyCode] = true; });
+    btn.addEventListener('pointerdown', (e) => { e.preventDefault(); disengageAutopilotForManualInput(); keys[keyCode] = true; });
     btn.addEventListener('pointerup', (e) => { e.preventDefault(); keys[keyCode] = false; });
     btn.addEventListener('pointerleave', (e) => { e.preventDefault(); keys[keyCode] = false; });
     // OS gesture hijack: pointercancel must release too, else a touch
@@ -276,13 +277,13 @@ const vToggleReverse = document.getElementById('v-toggle-reverse');
 const vToggleView = document.getElementById('v-toggle-view');
 
 if (vThrottleUp) {
-    vThrottleUp.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['KeyW'] = true; });
+    vThrottleUp.addEventListener('pointerdown', (e) => { e.preventDefault(); disengageAutopilotForManualInput(); keys['KeyW'] = true; });
     vThrottleUp.addEventListener('pointerup', (e) => { e.preventDefault(); keys['KeyW'] = false; });
     vThrottleUp.addEventListener('pointercancel', (e) => { e.preventDefault(); keys['KeyW'] = false; });
     vThrottleUp.addEventListener('pointerleave', (e) => { e.preventDefault(); keys['KeyW'] = false; });
 }
 if (vThrottleDown) {
-    vThrottleDown.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['KeyS'] = true; });
+    vThrottleDown.addEventListener('pointerdown', (e) => { e.preventDefault(); disengageAutopilotForManualInput(); keys['KeyS'] = true; });
     vThrottleDown.addEventListener('pointerup', (e) => { e.preventDefault(); keys['KeyS'] = false; });
     vThrottleDown.addEventListener('pointercancel', (e) => { e.preventDefault(); keys['KeyS'] = false; });
     vThrottleDown.addEventListener('pointerleave', (e) => { e.preventDefault(); keys['KeyS'] = false; });
