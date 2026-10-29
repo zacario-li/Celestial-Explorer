@@ -14,6 +14,8 @@ try {
         ['iphone-se', devices['iPhone SE']],
         ['iphone-13', devices['iPhone 13']],
         ['iphone-se-landscape', { ...devices['iPhone SE'], viewport: { width: 568, height: 320 } }],
+        ['iphone-13-landscape', { ...devices['iPhone 13'], viewport: { width: 844, height: 390 } }],
+        ['iphone-large-landscape', { ...devices['iPhone 13'], viewport: { width: 932, height: 430 } }],
     ]) {
         const context = await browser.newContext(config);
         const page = await context.newPage();
@@ -46,6 +48,11 @@ try {
         assert.equal(await more.getAttribute('aria-expanded'), 'true');
         assert.ok(await page.locator('#spawn-button').isVisible(), `${name}: extra actions hidden`);
         if (shots) await page.screenshot({ path: path.join(shots, `${name}-more.png`) });
+        const speed = page.locator('#sim-speed-slider');
+        await speed.scrollIntoViewIfNeeded();
+        const speedBox = await speed.boundingBox();
+        assert.ok(speedBox.x >= 0 && speedBox.x + speedBox.width <= viewport.width + 1 &&
+            speedBox.y >= 0 && speedBox.y + speedBox.height <= viewport.height + 1, `${name}: speed control unreachable`);
         const beltBefore = await page.evaluate(() => window.__sim.state.isAsteroidBeltActive);
         await page.locator('#asteroid-belt-button').tap();
         assert.notEqual(await page.evaluate(() => window.__sim.state.isAsteroidBeltActive), beltBefore);
@@ -70,10 +77,29 @@ try {
         assert.equal(await page.locator('#v-controller').isVisible(), true, `${name}: touch controls hidden`);
         if (shots) await page.screenshot({ path: path.join(shots, `${name}-pilot.png`) });
         await page.locator('#v-up').tap();
+        await page.locator('#v-down').tap();
+        await page.locator('#v-throttle-up').tap();
+        await page.locator('#v-throttle-down').tap();
+        await page.locator('#v-toggle-view').tap();
         await page.locator('#mobile-more-button').tap();
         assert.equal(await page.locator('#mobile-more-button').getAttribute('aria-expanded'), 'true', `${name}: drawer in pilot mode`);
         assert.ok(await page.locator('#spawn-button').isVisible());
         await page.locator('#mobile-more-button').tap();
+        if (name === 'iphone-13') {
+            await page.setViewportSize({ width: 844, height: 390 });
+            await page.waitForTimeout(300);
+            const rotated = await page.evaluate(() => ({
+                width: innerWidth, height: innerHeight,
+                aspect: window.__sim.camera.aspect,
+                moreVisible: getComputedStyle(document.getElementById('mobile-more-button')).display !== 'none',
+            }));
+            assert.equal(rotated.width, 844);
+            assert.equal(rotated.height, 390);
+            assert.ok(Math.abs(rotated.aspect - 844 / 390) < 1e-6, 'camera resizes on rotation');
+            assert.ok(rotated.moreVisible, 'mobile controls persist after rotation');
+            await page.locator('#mobile-more-button').tap();
+            assert.equal(await page.locator('#mobile-more-button').getAttribute('aria-expanded'), 'true');
+        }
         assert.deepEqual(errors, [], `${name}: page errors`);
         console.log(`${name}: layout, modal and pilot touch OK`);
         await context.close();

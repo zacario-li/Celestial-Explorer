@@ -385,7 +385,7 @@ document.addEventListener('keydown', (event) => {
 });
 const mobileInfoPanel = document.getElementById('info-panel');
 function toggleMobileInfo() {
-    if (!window.matchMedia('(max-width: 768px)').matches) return;
+    if (!window.matchMedia('(max-width: 768px), (pointer: coarse) and (max-height: 500px)').matches) return;
     const expanded = mobileInfoPanel.classList.toggle('mobile-expanded');
     mobileInfoPanel.setAttribute('aria-expanded', String(expanded));
 }
