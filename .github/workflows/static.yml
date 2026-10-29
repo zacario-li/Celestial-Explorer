@@ -28,14 +28,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install
+      - run: npm ci
+      - name: Run unit tests
+        run: npm test
       - name: Build dist/
         run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke-test build before deploying
+        run: |
+          node server.js > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3001/ > /dev/null && break
+            sleep 1
+          done
+          node tools/ci-smoke.mjs http://localhost:3001/dist/index.html
       - name: Stage Pages root
         run: |
           mkdir -p pages/dist
           cp dist/app.js pages/dist/
           cp dist/index.html pages/index.html
+          node -e 'const fs=require("fs"), p="pages/index.html", s=fs.readFileSync(p,"utf8"); if(!s.includes("<base href=\"../\">")) throw Error("missing dist base"); fs.writeFileSync(p,s.replace("<base href=\"../\">","<base href=\"./\">"));'
           cp style.css pages/
           cp -r textures pages/
           cp -r assets pages/

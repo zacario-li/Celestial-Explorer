@@ -39,6 +39,9 @@ const esbuild = require(path.join(ROOT, 'node_modules', 'esbuild'));
     }
 
     let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf-8');
+    // dist/index.html lives one directory below the shared assets. The Pages
+    // staging step rewrites this base to './' when placing HTML at site root.
+    html = html.replace('<head>', '<head>\n    <base href="../">');
     html = html.replace(/<script type="importmap">[\s\S]*?<\/script>/, '');
     const scriptRe = /<script type="module" src="[^"]*"><\/script>/;
     if (!scriptRe.test(html)) throw new Error('make.js: entry <script type="module"> not found in index.html');

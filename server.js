@@ -4,8 +4,8 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3001; // single canonical port (#6)
 
-// NOTE: serves the whole repo (incl. node_modules) -- dev server only; the
-// local three package is needed by index.html's importmap in dev mode.
+// Local development server: expose only application assets and the three
+// package needed by the import map. This is not a production web server.
 const ROOT = __dirname;  // compare with the grouped-sep form
 const MIME_TYPES = {
     '.html': 'text/html',
@@ -42,15 +42,36 @@ const server = http.createServer((req, res) => {
         return res.end('400 Bad Request');
     }
     if (filePath === ROOT) filePath = path.join(ROOT, 'index.html');
+    const relative = path.relative(ROOT, filePath).split(path.sep).join('/');
+    const allowed = relative === 'index.html' || relative === 'style.css' ||
+        ['src/', 'dist/', 'textures/', 'assets/', 'node_modules/three/'].some(prefix => relative.startsWith(prefix));
+    if (!allowed || relative.split('/').some(part => part.startsWith('.'))) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        return res.end('404 Not Found');
+    }
 
     const extname = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
-    fs.stat(filePath, (err, stat) => {
+    // Resolve symlinks as well as lexical paths: an allowed-looking path
+    // must not expose a hidden file or anything outside the repository.
+    fs.realpath(filePath, (realErr, realPath) => {
+        if (realErr) {
+            res.writeHead(realErr.code === 'ENOENT' || realErr.code === 'ENOTDIR' ? 404 : 500, { 'Content-Type': 'text/plain' });
+            return res.end('Not Found');
+        }
+        const resolvedRelative = path.relative(ROOT, realPath);
+        if (resolvedRelative.startsWith('..' + path.sep) || path.isAbsolute(resolvedRelative) ||
+            resolvedRelative.split(path.sep).some(part => part.startsWith('.'))) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            return res.end('404 Not Found');
+        }
+        fs.stat(realPath, (err, stat) => {
         if (err || !stat.isFile()) {
             if (err || (stat && !stat.isFile())) {
-                res.writeHead(err ? 500 : 404, { 'Content-Type': 'text/plain' });
-                return res.end(err ? `Server Error: ${err.code}\n` : '404 Not Found', 'utf-8');
+                const status = err && err.code !== 'ENOENT' && err.code !== 'ENOTDIR' ? 500 : 404;
+                res.writeHead(status, { 'Content-Type': 'text/plain' });
+                return res.end(status === 404 ? '404 Not Found' : 'Server Error', 'utf-8');
             }
         }
 
@@ -71,7 +92,7 @@ const server = http.createServer((req, res) => {
             return res.end();
         }
 
-        fs.readFile(filePath, (readErr, content) => {
+        fs.readFile(realPath, (readErr, content) => {
             if (readErr) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end(`Server Error: ${readErr.code}\n`);
@@ -80,11 +101,12 @@ const server = http.createServer((req, res) => {
                 res.end(content);
             }
         });
+        });
     });
 });
 
 server.listen(PORT, () => {
-    console.log(`Node.js static server running at http://127.0.0.1:${PORT}/`);
+    console.log(`Node.js static server running at http://127.0.0.1:${server.address().port}/`);
     console.log(`Serving files from ${__dirname}`);
 });
 

@@ -3,9 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Three.js](https://img.shields.io/badge/Three.js-r160-black)](https://threejs.org/)
 
-**Celestial Explorer** is a high-fidelity, interactive 3D solar system simulation built with Three.js. It combines physically plausible orbital mechanics with modern web performance optimizations, offering an immersive educational and visual experience.
+**Celestial Explorer** is an interactive 3D solar system visualization built with Three.js. It combines scaled orbital simulations with gameplay-oriented approximations; it is not a precision ephemeris.
 
-**星空探索者** 是一款基于 Three.js 开发的高精度、交互式 3D 太阳系模拟系统。它将真实的轨道物理力学与现代 Web 性能优化技术相结合，为用户提供身临其境的科普与视觉体验。
+**星空探索者** 是一款基于 Three.js 的交互式 3D 太阳系可视化系统。轨道和尺寸使用缩放及游戏化近似，不应作为高精度天文星历使用。
 
 ![Header Overview](assets/readme/header_overview.png)
 
@@ -21,13 +21,13 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
 - **Chase Camera**: A dynamic follow-camera system for an immersive piloting experience.
 - **追逐摄像机**：动态跟随系统，提供沉浸式的驾驶感。
 - **Interplanetary Travel**: Seamlessly detach from Earth's orbit and fly across the solar system.
-- **AI Autopilot System**: Advanced Lambert solver for realistic orbital transfers. It predicts target positions and uses gravitational arcing for precision arrival and automatic capture.
+- **Autopilot**: Iterative trajectory prediction and continuous intercept guidance, with proximity capture.
 - **星际航行**：无缝脱离地球轨道，在全局坐标系中自由探索太阳系。
-- **AI 自动驾驶系统**：基于 Lambert 算法的高级轨道转移系统。支持路径预测、引力弹道航行及自动入轨捕获。
+- **自动驾驶**：迭代预测轨迹，持续修正飞行方向，并在靠近目标时捕获。
 
 ### ⚛️ Real-Time Physics | 实时物理引擎
-- **Newtonian Gravity**: Realistic orbital calculations for planets, moons, and thousands of asteroids.
-- **牛顿万有引力**：针对行星、卫星及数千颗小行星的真实轨道计算。
+- **Scaled Gravity**: Planets and asteroid clusters use scaled gravitational calculations; moons use host-centered orbits calibrated to scripted periods, without third-body perturbations.
+- **缩放引力**：行星和小行星簇使用缩放引力；卫星使用按既有周期校准的母星中心轨道，目前不包含第三体扰动。
 - **Collision Merging**: Bodies that collide will physically merge, combining their mass and volume.
 - **碰撞融合**：天体碰撞后会实时合并质量与体积。
 
@@ -105,8 +105,8 @@ Take command of a stylized sci-fi spaceship. The simulation features a fully con
    Navigate to `http://localhost:3001`.
 
 > **Deploy mode | 构建**: `npm run build` bundles everything (app + three)
-> into `dist/` (single `app.js`, no CDN, no importmap). Serve the repo root
-> and open `/dist/index.html`.
+> into `dist/` (single `app.js`, no importmap for JavaScript). Serve the repo root
+> and open `/dist/index.html`. Most textures are local; some planet maps and web fonts still load from external hosts.
 
 ---
 
