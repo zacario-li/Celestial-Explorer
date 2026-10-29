@@ -205,13 +205,16 @@ export class PhysicsEngine {
                 }
             }
 
-            // 2. Spaceship Gravity
+            // 2. Spaceship and enabled belt gravity.
             this.updateSpaceshipPhysics(subDt, moveDt, sunBody);
+            this.updateAsteroidsPhysics(subDt, sunBody);
 
             // 3. Integration
             for (let i = 0; i < this.physicsBodies.length; i++) {
                 const b = this.physicsBodies[i];
                 if (!b.destroyed) {
+                    if (b.isAsteroid && ((b.beltType === 'asteroid' && !state.isAsteroidBeltActive) ||
+                        (b.beltType === 'kuiper' && !state.isKuiperBeltActive))) continue;
                     b.pos.addScaledVector(b.vel, subDt);
                     if (b.mesh && !b.orbitObj) {
                         b.mesh.position.copy(b.pos);

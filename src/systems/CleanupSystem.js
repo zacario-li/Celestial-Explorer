@@ -48,12 +48,22 @@ export class CleanupSystem {
         const { ctx } = this;
         const celestialBodies = ctx.celestialBodies;
 
-        // Cleanup destroyed bodies (consumed by collision)
+        // Asteroid clusters are stored in the physics engine, not the
+        // celestial fleet. Hide consumed instances and include them in the
+        // cleanup trigger even when no planet was destroyed.
+        const physicsEngine = ctx.physicsEngine;
         let hasDestroyed = false;
-        for (let i = 0; i < celestialBodies.length; i++) {
-            if (celestialBodies[i].destroyed) { hasDestroyed = true; break; }
+        for (const body of physicsEngine.physicsBodies) {
+            if (!body.destroyed) continue;
+            hasDestroyed = true;
+            if (body.isAsteroid) {
+                for (const inst of body.instances) body.instancedMesh.setMatrixAt(inst.instanceId, this._dummyZero.matrix);
+                body.instancedMesh.instanceMatrix.needsUpdate = true;
+            }
         }
-
+        if (!hasDestroyed) {
+            for (const body of celestialBodies) if (body.destroyed) { hasDestroyed = true; break; }
+        }
         if (!hasDestroyed) return;
 
         for (let i = celestialBodies.length - 1; i >= 0; i--) {
@@ -132,7 +142,6 @@ export class CleanupSystem {
             celestialBodies.splice(i, 1);
         }
 
-        const physicsEngine = ctx.physicsEngine;
         const pb = physicsEngine.physicsBodies;
         for (let i = pb.length - 1; i >= 0; i--) {
             if (pb[i].destroyed) pb.splice(i, 1);

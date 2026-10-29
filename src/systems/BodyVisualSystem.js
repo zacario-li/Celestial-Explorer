@@ -19,6 +19,21 @@ export class BodyVisualSystem {
         this._dummyAsteroid = new THREE.Object3D();
     }
 
+    updateAsteroidVisual(body, scriptedDt, updatedMeshes) {
+        if (scriptedDt === 0 || body.destroyed) return;
+        updatedMeshes.add(body.instancedMesh);
+        const rotInc = body.rotSpeed * scriptedDt;
+        const dummy = this._dummyAsteroid;
+        for (const inst of body.instances) {
+            dummy.position.copy(body.pos).add(inst.localPos);
+            inst.rotationOffsets.y += rotInc;
+            dummy.rotation.copy(inst.rotationOffsets);
+            dummy.scale.setScalar(inst.scale);
+            dummy.updateMatrix();
+            body.instancedMesh.setMatrixAt(inst.instanceId, dummy.matrix);
+        }
+    }
+
     update() {
         const { ctx } = this;
         const celestialBodies = ctx.celestialBodies;
@@ -26,6 +41,10 @@ export class BodyVisualSystem {
         const scriptedDt = ctx.scriptedDt;
 
         const instancedMeshesToUpdate = new Set();
+        // Belt clusters live in the physics engine, not celestialBodies.
+        // Only enabled clusters are present in this list.
+        const activeAsteroids = ctx.physicsEngine?.activeAsteroids || [];
+        for (const asteroid of activeAsteroids) this.updateAsteroidVisual(asteroid, scriptedDt, instancedMeshesToUpdate);
 
         for (let i = 0; i < celestialBodies.length; i++) {
             const body = celestialBodies[i];
@@ -44,20 +63,8 @@ export class BodyVisualSystem {
             }
 
             if (body.isAsteroid) {
-                if (scriptedDt === 0) continue; // Skip rendering update if paused
-                instancedMeshesToUpdate.add(body.instancedMesh);
-                const insts = body.instances;
-                const rotInc = body.rotSpeed * scriptedDt;
-                const _dummyAsteroid = this._dummyAsteroid;
-                for (let k = 0; k < insts.length; k++) {
-                    const inst = insts[k];
-                    _dummyAsteroid.position.copy(body.pos).add(inst.localPos);
-                    inst.rotationOffsets.y += rotInc;
-                    _dummyAsteroid.rotation.copy(inst.rotationOffsets);
-                    _dummyAsteroid.scale.setScalar(inst.scale);
-                    _dummyAsteroid.updateMatrix();
-                    body.instancedMesh.setMatrixAt(inst.instanceId, _dummyAsteroid.matrix);
-                }
+                if (!activeAsteroids.includes(body)) this.updateAsteroidVisual(body, scriptedDt, instancedMeshesToUpdate);
+                continue;
             } else {
                 // #2: sun has no orbitObj (its mesh is the origin-anchored root)
                 if (body.orbitObj) body.orbitObj.position.copy(body.pos);
