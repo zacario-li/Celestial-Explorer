@@ -63,6 +63,15 @@ const probe = await page.evaluate(({ expected }) => {
     out.sunIsPhysicsBody = pe && pe.physicsBodies.find(b => b.isSun) ? 1 : 0;
     out.hasIndex = (window.__bodies && window.__bodies.allBodies().length) || 0;
     out.timeAdvanced = (window.__sim && window.__sim.time && window.state.virtualTime > 0) ? 1 : 0;
+    out.timing = pe?.getTimingStats?.() || null;
+    if (!out.timing || !Object.values(out.timing).every(Number.isFinite)) {
+        out.issues.push('invalid scheduler timing');
+    } else {
+        const accounted = out.timing.integratedSeconds + out.timing.pendingSeconds + out.timing.droppedSeconds;
+        if (Math.abs(out.timing.requestedSeconds - accounted) > 1e-6 * Math.max(1, out.timing.requestedSeconds)) {
+            out.issues.push('scheduler timing does not balance');
+        }
+    }
 
     if (out.physicsPlanets !== expected.physicsPlanets) out.issues.push('planets ' + out.physicsPlanets);
     if (out.aliveBodies < expected.minAliveBodies) out.issues.push('alive ' + out.aliveBodies);

@@ -106,4 +106,32 @@ ok('state reset discards old queued steps instead of replaying them', () => {
     assert.equal(e.clearPending(), 0, 'clearing again is harmless');
 });
 
+ok('scheduler accounts for integrated, queued and discarded simulation time', () => {
+    state.simSpeedMultiplier = 8000;
+    const e = new PhysicsEngine({ subStepsFor: homogenizedSubSteps, frameBudget: 1 });
+    for (const b of makeWorld()) e.addBody(b);
+    const check = label => {
+        const s = e.getTimingStats();
+        const total = s.integratedSeconds + s.pendingSeconds + s.droppedSeconds;
+        assert.ok(Math.abs(s.requestedSeconds - total) < 1e-6, `${label}: ${JSON.stringify(s)}`);
+        return s;
+    };
+    e.update(10, 0.0167);
+    let s = check('queued');
+    assert.equal(s.requestedSeconds, 10);
+    assert.equal(s.integratedSeconds, 0.5);
+    assert.equal(s.pendingSteps, 19);
+    e.update(3000, 0.0167); // overflows oldest queued steps
+    s = check('overflow');
+    assert.ok(s.droppedSeconds > 0);
+    e.clearPending();
+    s = check('reset');
+    assert.equal(s.pendingSteps, 0);
+    assert.equal(s.pendingSeconds, 0);
+    e.update(10, 0.0167);
+    e.flushAll();
+    s = check('flushed');
+    assert.equal(s.pendingSteps, 0);
+});
+
 console.log(`\nphysics-slice: ${pass} checks passed`);

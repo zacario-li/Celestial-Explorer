@@ -13,7 +13,8 @@
     "test:lifecycle": "node tools/lifecycle-smoke.mjs",
     "test:ui": "node tools/ui-churn-smoke.mjs",
     "test:seed": "node tools/seed-smoke.mjs",
-    "test:texture-race": "node tools/texture-race-smoke.mjs"
+    "test:texture-race": "node tools/texture-race-smoke.mjs",
+    "test:time-accounting": "node tools/time-accounting-smoke.mjs"
   },
   "repository": {
     "type": "git",

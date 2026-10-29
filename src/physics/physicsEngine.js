@@ -32,6 +32,9 @@ export class PhysicsEngine {
         this._diff = new THREE.Vector3();
         this._forceDir = new THREE.Vector3();
         this._sunDir = new THREE.Vector3();
+        // Monotonic accounting of time accepted, integrated, or discarded by
+        // the scheduler. These counters do not control integration.
+        this._timing = { requestedSeconds: 0, integratedSeconds: 0, droppedSeconds: 0 };
     }
 
     /** Spaceship reference via the injected provider (window fallback kept). */
@@ -83,6 +86,7 @@ export class PhysicsEngine {
             // trajectory is the identical run -- just spread over a few
             // wall frames instead of one frozen one.
             this._pending = this._pending || [];
+            this._timing.requestedSeconds += physicsDt;
             this._pending.push({ n: subSteps, dt: physicsDt / subSteps, move: realDt / subSteps });
             let totalQ = 0;
             for (const c of this._pending) totalQ += c.n;
@@ -91,6 +95,7 @@ export class PhysicsEngine {
                 while (over > 0 && this._pending.length) {
                     const head = this._pending[0];
                     const take = Math.min(head.n, over);
+                    this._timing.droppedSeconds += take * head.dt;
                     head.n -= take;
                     over -= take;
                     if (head.n === 0) this._pending.shift();
@@ -101,6 +106,7 @@ export class PhysicsEngine {
                 while (this._pending.length) {
                     const chunk = this._pending[0];
                     this.stepSubStep(chunk.dt, chunk.move, sunBody);
+                    this._timing.integratedSeconds += chunk.dt;
                     chunk.n -= 1;
                     if (chunk.n === 0) this._pending.shift();
                     if (performance.now() - t0 >= this.frameBudgetMs) break;
@@ -110,6 +116,7 @@ export class PhysicsEngine {
                 while (budget > 0 && this._pending.length) {
                     const chunk = this._pending[0];
                     this.stepSubStep(chunk.dt, chunk.move, sunBody);
+                    this._timing.integratedSeconds += chunk.dt;
                     chunk.n -= 1;
                     budget -= 1;
                     if (chunk.n === 0) this._pending.shift();
@@ -118,12 +125,24 @@ export class PhysicsEngine {
         }
     }
 
+    /** Snapshot scheduler accounting without advancing simulation. */
+    getTimingStats() {
+        let pendingSteps = 0;
+        let pendingSeconds = 0;
+        for (const chunk of this._pending || []) {
+            pendingSteps += chunk.n;
+            pendingSeconds += chunk.n * chunk.dt;
+        }
+        return { ...this._timing, pendingSteps, pendingSeconds };
+    }
+
     /** Discard queued pre-reset steps before replacing simulation state. */
     clearPending() {
         if (!this._pending) return 0;
-        const dropped = this._pending.reduce((total, chunk) => total + chunk.n, 0);
+        const { pendingSteps, pendingSeconds } = this.getTimingStats();
+        this._timing.droppedSeconds += pendingSeconds;
         this._pending.length = 0;
-        return dropped;
+        return pendingSteps;
     }
 
     /** Drain the whole pending queue at once (determinism + test seam; also
@@ -136,6 +155,7 @@ export class PhysicsEngine {
         while (this._pending.length) {
             const chunk = this._pending[0];
             this.stepSubStep(chunk.dt, chunk.move, sunBody);
+            this._timing.integratedSeconds += chunk.dt;
             chunk.n -= 1;
             n += 1;
             if (chunk.n === 0) this._pending.shift();
