@@ -15,6 +15,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 
 const ROOT = __dirname;
 const esbuild = require(path.join(ROOT, 'node_modules', 'esbuild'));
@@ -45,7 +46,9 @@ const esbuild = require(path.join(ROOT, 'node_modules', 'esbuild'));
     html = html.replace(/<script type="importmap">[\s\S]*?<\/script>/, '');
     const scriptRe = /<script type="module" src="[^"]*"><\/script>/;
     if (!scriptRe.test(html)) throw new Error('make.js: entry <script type="module"> not found in index.html');
-    html = html.replace(scriptRe, '<script src="dist/app.js"></script>');
+    const bundle = fs.readFileSync(path.join(ROOT, 'dist', 'app.js'));
+    const version = createHash('sha256').update(bundle).digest('hex').slice(0, 12);
+    html = html.replace(scriptRe, `<script src="dist/app.js?v=${version}"></script>`);
     fs.writeFileSync(path.join(ROOT, 'dist', 'index.html'), html);
 
     const kb = fs.statSync(path.join(ROOT, 'dist', 'app.js')).size / 1024;
