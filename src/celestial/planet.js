@@ -492,12 +492,14 @@ const geo = new THREE.SphereGeometry(this.radius, 40, 40);
     }
 
     updateScale(isRealistic) {
-        if (isRealistic && this.data.realR) {
-            const factor = this.data.realR / this.radius;
-            this.mesh.scale.set(factor, factor, factor);
-        } else {
-            this.mesh.scale.set(1, 1, 1);
-        }
+        // Geometry is built from data.r; radius is the current simulation
+        // radius and can grow after spawning or merging. Display mode must
+        // not erase that growth.
+        const growth = this.radius / this.data.r;
+        const factor = isRealistic && this.data.realR
+            ? growth * this.data.realR / this.data.r
+            : growth;
+        this.mesh.scale.set(factor, factor, factor);
 
         
         // Update all satellites

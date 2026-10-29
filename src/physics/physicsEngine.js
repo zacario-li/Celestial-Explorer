@@ -147,7 +147,7 @@ export class PhysicsEngine {
                 // --- Planet vs Sun ---
                 this._diff.subVectors(sunBody.pos, pA.pos);
                 const rSqA = this._diff.lengthSq();
-                const pRad = pA.mesh?.userData?.radius || 0.02;
+                const pRad = pA.radius || pA.mesh?.userData?.radius || 0.02;
                 // #9: collision boundary is the sun's VISUAL radius (40 u), not
                 // 0.16 u -- otherwise bodies could be swallowed while still
                 // visibly orbiting inside the solar disk
@@ -173,8 +173,8 @@ export class PhysicsEngine {
                     if (!pB || pB.destroyed) continue;
                     this._diff.subVectors(pB.pos, pA.pos);
                     const dSq = this._diff.lengthSq();
-                    const rA = pA.mesh?.userData?.radius || 0.02;
-                    const rB = pB.mesh?.userData?.radius || 0.02;
+                    const rA = pA.radius || pA.mesh?.userData?.radius || 0.02;
+                    const rB = pB.radius || pB.mesh?.userData?.radius || 0.02;
                     const minD = rA + rB;
 
                     if (dSq < minD * minD) {
@@ -234,10 +234,12 @@ export class PhysicsEngine {
             if (ignite) ignite(heavier);
         }
 
-        const mR = Math.pow(totalMass / (totalMass - lighter.physMass), 0.33);
+        const mR = Math.cbrt(totalMass / (totalMass - lighter.physMass));
         if (!heavier.isStar && heavier.mesh) {
+            // Geometry metadata is the unscaled mesh radius; simulation
+            // radius grows once, while mesh.scale maps that geometry to it.
+            heavier.radius = (heavier.radius || heavier.mesh.userData.radius || 5) * mR;
             heavier.mesh.scale.multiplyScalar(mR);
-            heavier.mesh.userData.radius = (heavier.mesh.userData.radius || 5) * mR;
         }
         lighter.destroyed = true; 
         this.bodiesListDirty = true;

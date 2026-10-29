@@ -52,7 +52,9 @@ export function initSpawnManager(physicsEngine, scene, celestialBodies, navList,
         const scaleVal = finalRadius / baseData.r;
 
         planet.mesh.scale.setScalar(scaleVal);
-        planet.mesh.userData.radius = finalRadius;
+        // userData.radius describes the unscaled geometry; scaleVal maps it
+        // to the current simulation radius (used by flight and camera code).
+        planet.mesh.userData.radius = baseData.r;
         planet.radius = finalRadius; // keep planet's own radius consistent
 
         planet.isSpawned = true; // custom body: date-sync must not reseed onto the template ellipse
