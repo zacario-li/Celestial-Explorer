@@ -96,4 +96,14 @@ ok('overflow trims the oldest chunks to MAX_PENDING_SUBSTEPS', () => {
     assert.equal(e._pending.length, 0);
 });
 
+ok('state reset discards old queued steps instead of replaying them', () => {
+    state.simSpeedMultiplier = 8000;
+    const e = new PhysicsEngine({ subStepsFor: homogenizedSubSteps, frameBudget: 1 });
+    for (const b of makeWorld()) e.addBody(b);
+    e.update(10, 0.0167);
+    assert.ok(e.clearPending() > 0, 'backlog existed');
+    assert.equal(e.flushAll(), 0, 'nothing from pre-reset state replays');
+    assert.equal(e.clearPending(), 0, 'clearing again is harmless');
+});
+
 console.log(`\nphysics-slice: ${pass} checks passed`);

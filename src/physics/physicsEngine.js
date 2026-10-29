@@ -118,6 +118,14 @@ export class PhysicsEngine {
         }
     }
 
+    /** Discard queued pre-reset steps before replacing simulation state. */
+    clearPending() {
+        if (!this._pending) return 0;
+        const dropped = this._pending.reduce((total, chunk) => total + chunk.n, 0);
+        this._pending.length = 0;
+        return dropped;
+    }
+
     /** Drain the whole pending queue at once (determinism + test seam; also
      * used conceptually as 'replay all owed sub-steps in one turn'). */
     flushAll() {

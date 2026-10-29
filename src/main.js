@@ -705,6 +705,9 @@ let earthRef = null;
 // which is now the single source shared by the date-sync and Planet init.
 
 function syncPlanetsToDate(targetDate = null) {
+    // Queued steps belong to the previous state and must never be replayed
+    // against freshly reseeded orbital positions.
+    physicsEngine.clearPending();
     const now = targetDate || new Date();
     console.log(`SYNC: Aligning planets with date/time: ${now.toString()}`);
     
