@@ -27,8 +27,6 @@ export class ShipControlSystem {
         const { ctx } = this;
         const ship = ctx.spaceship;
         if (!state.isFlying || !ship) return;
-        const physicsDt = ctx.physicsDt;
-
         // Dynamically update spaceship scale based on Realistic Scale mode (normalized geometries)
         const shipScale = state.isRealisticScale ? 0.00005 : 0.2;
         ship.scale.setScalar(shipScale);
@@ -50,6 +48,10 @@ export class ShipControlSystem {
             }
             state._prevRealisticScaleForCam = state.isRealisticScale;
         }
+
+        // Attitude and throttle must remain unchanged while paused; display
+        // scale above may still respond to the user's settings.
+        if (state.isPaused) return;
 
         // 1. Rotation (Arrow keys for Pitch/Yaw, Q/E for Roll)
         const keys = ctx.keys;
@@ -104,21 +106,26 @@ export class ShipControlSystem {
             state.shipThrottle = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
         }
 
-        const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion);
+    }
 
-        // The REV toggle inverts the throttle (FWD keys fire aft). Previously
-        // it was display-only -- the HUD said REV: ON but the ship ignored it.
-        const effThrottle = state.isReverse ? -state.shipThrottle : state.shipThrottle;
+    /** Freeze the input associated with a newly enqueued simulation frame. */
+    captureSubstepInput() {
+        const ship = this.ctx.spaceship;
+        if (!state.isFlying || !ship) return null;
+        const throttle = state.isReverse ? -state.shipThrottle : state.shipThrottle;
+        return {
+            ship,
+            flightSessionId: state.flightSessionId,
+            autopilot: state.isAutopilotActive,
+            direction: new THREE.Vector3(1, 0, 0).applyQuaternion(ship.quaternion),
+            acceleration: throttle * 0.08 * (this.ctx.keys['ShiftLeft'] ? 3 : 1) / 0.016
+        };
+    }
 
-        // Apply engine thrust physics to shipVelocity. Acceleration is a
-        // PHYSICS quantity, independent of the model's render scale (which
-        // was silently multiplying the delta-V by 0.2 -- five times weaker
-        // than intended, forever-stalling autopilot burns).
-        if (effThrottle !== 0) {
-            const turbo = keys['ShiftLeft'] ? 3 : 1;
-            const maxAccel = 0.08 * turbo;
-            const currentAccel = effThrottle * maxAccel;
-            state.shipVelocity.addScaledVector(dir, currentAccel * (physicsDt / 0.016));
-        }
+    /** Apply only the thrust corresponding to an actually executed substep. */
+    applySubstepInput(input, simDt) {
+        if (!input || !state.isFlying || state.capturedBody || input.ship !== this.ctx.spaceship ||
+            input.flightSessionId !== state.flightSessionId || input.autopilot !== state.isAutopilotActive) return;
+        if (input.acceleration) state.shipVelocity.addScaledVector(input.direction, input.acceleration * simDt);
     }
 }

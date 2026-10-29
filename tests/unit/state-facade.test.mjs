@@ -19,7 +19,7 @@ const ALL_FIELDS = [
     // simState
     'isPaused', 'virtualTime', 'simSpeedMultiplier', 'isAsteroidBeltActive', 'isKuiperBeltActive',
     // flightState
-    'isFlying', 'shipThrottle', 'isReverse', 'shipViewMode', 'shipVelocity', 'shipRotation',
+    'isFlying', 'flightSessionId', 'shipThrottle', 'isReverse', 'shipViewMode', 'shipVelocity', 'shipRotation',
     'isOrbitingShip', 'shipOrbitAngles', 'lastOrbitTime', 'isAutoLeveling', 'showHoverZones',
     'capturedBody', 'relativePos',
     // navState
@@ -34,7 +34,7 @@ const ALL_FIELDS = [
 
 console.log('state facade');
 
-ok('all 42 fields exist and are explicitly initialized', () => {
+ok('all declared fields exist and are explicitly initialized', () => {
     for (const f of ALL_FIELDS) {
         assert.equal(f in state, true, `missing field: ${f}`);
     }

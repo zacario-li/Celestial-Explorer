@@ -34,6 +34,7 @@ export const simState = {
 
 export const flightState = {
     isFlying: false,
+    flightSessionId: 0, // invalidates queued flight input after exit/re-entry
     shipThrottle: 0,
     isReverse: false,
     shipViewMode: 'cockpit', // 'cockpit' (1st person) or 'chase' (3rd person)

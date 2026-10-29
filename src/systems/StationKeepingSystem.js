@@ -20,15 +20,11 @@ export class StationKeepingSystem {
         this.skStatus = document.getElementById('sk-status');
         this.skHint = document.getElementById('sk-hint');
         this.skTargetThrottle = document.getElementById('sk-target-throttle');
-        this._lastHoldMs = performance.now();
         this._desired = new THREE.Vector3();
     }
 
     _frameDt() {
-        const now = performance.now();
-        const dt = Math.min((now - this._lastHoldMs) / 1000, 0.05);
-        this._lastHoldMs = now;
-        return dt > 0 ? dt : 0.016;
+        return Math.max(0, this.ctx.physicsDt || 0);
     }
 
     _setIndicator(on) {
@@ -39,12 +35,9 @@ export class StationKeepingSystem {
         }
     }
 
-    update() {
-        const { ctx } = this;
-        const ship = ctx.spaceship;
-        if (!state.isFlying || !ship) return;
-        const keys = ctx.keys;
-
+    prepareInput() {
+        if (!state.isFlying || state.isPaused || !this.ctx.spaceship) return;
+        const keys = this.ctx.keys;
         // Break lock on ANY real pilot input (thrust, turbo, or attitude):
         // aiming with the arrows must not be held against a wall.
         if (state.capturedBody) {
@@ -55,6 +48,15 @@ export class StationKeepingSystem {
                 this._setIndicator(false);
             }
         }
+
+    }
+
+    update() {
+        const { ctx } = this;
+        const ship = ctx.spaceship;
+        if (!state.isFlying || state.isPaused || !ship || !(ctx.physicsDt > 0)) return;
+        const keys = ctx.keys;
+        this.prepareInput();
 
         // A corpse cannot be docked: if the captured body got destroyed
         // mid-collision, release the lock instead of pinning the ship to the
@@ -128,7 +130,6 @@ export class StationKeepingSystem {
                     if (outsideHull && rv < 0.0008) {
                         state.capturedBody = closest;
                         state.relativePos.copy(ship.position).sub(closest.pos);
-                        this._lastHoldMs = performance.now(); // no jump on first frame
                         this._setIndicator(true);
                         if (this.skTargetThrottle) this.skTargetThrottle.style.display = 'none';
                     } else if (rv < 0.025) {

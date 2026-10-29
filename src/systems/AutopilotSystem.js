@@ -34,7 +34,7 @@ export class AutopilotSystem {
     update() {
         const { ctx } = this;
         const ship = ctx.spaceship;
-        if (!state.isFlying || !ship) return;
+        if (!state.isFlying || !ship || state.isPaused) return;
         const physicsDt = ctx.physicsDt;
         // Whole-second edge trigger for course corrections (see COASTING):
         // computed once per frame so every phase can observe the same value.

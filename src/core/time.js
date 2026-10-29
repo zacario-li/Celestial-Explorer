@@ -27,9 +27,10 @@ export const MAX_REAL_DT = 0.05;
  *  - dt         realDt, or 0 while paused. This "wall time" deliberately
  *               drives the sun glow pulse / starfield drift (history
  *               preserved — they are not simulation-scaled).
- *  - simDt      dt * simSpeedMultiplier — what the physics engine integrates
- *  - scriptedDt simDt * SCRIPTED_TIME_SCALE — the calibrated scripted clock
- *               for planet spin, moon orbits and belt rotation
+ *  - simDt      dt * simSpeedMultiplier — simulation time requested this frame
+ *  - scriptedDt simDt * SCRIPTED_TIME_SCALE — requested scripted time
+ *  - integratedDt / integratedScriptedDt are set by the frame scheduler
+ *    after the physics budget runs; simulation visuals use these values.
  *
  * It also maintains state.virtualTime (accumulated non-paused wall time).
  */
@@ -41,6 +42,10 @@ export class TimeSystem {
         this.dt = 0;
         this.simDt = 0;
         this.scriptedDt = 0;
+        // Populated by the scheduler after execution; simDt above is the
+        // requested amount and may be larger under a bounded frame budget.
+        this.integratedDt = 0;
+        this.integratedScriptedDt = 0;
     }
 
     update() {

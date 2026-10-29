@@ -44,7 +44,15 @@ try {
     autopilot.update();
     assert.equal(state.capturedBody, target, 'safe slow arrival should still capture');
     assert.equal(state.isAutopilotActive, false);
-    console.log('flight-safety: 5 checks passed');
+    state.capturedBody = null;
+    state.isAutopilotActive = true;
+    state.isPaused = true;
+    ship.position.set(9, 0, 0);
+    const pausedAttitude = ship.quaternion.clone();
+    autopilot.update();
+    assert.equal(state.capturedBody, null, 'autopilot cannot capture while paused');
+    assert.ok(ship.quaternion.equals(pausedAttitude), 'autopilot cannot steer while paused');
+    console.log('flight-safety: 7 checks passed');
 } finally {
     for (const [key, value] of Object.entries(saved)) state[key] = value;
     state.shipVelocity.copy(savedVelocity);

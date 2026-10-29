@@ -24,9 +24,14 @@ export class PhysicsEngine {
         // window fallbacks preserve historic behavior for out-of-tooling use)
         this.shipProvider = options.shipProvider || null;
         this.onIgnition = options.onIgnition || null;
+        // Capture frame input with queued time, then apply it only when that
+        // frame's simulation substeps actually execute.
+        this.captureSubstepInput = options.captureSubstepInput || null;
+        this.beforeSubstep = options.beforeSubstep || null;
         // Called when a hard collision ends flight (UI reset); keeps the
         // engine free of a direct DOM click (window/ID fallback preserved).
         this.onFlightReset = options.onFlightReset || null;
+        this._flightResetPending = false;
 
         // Pre-allocated vectors for performance (Zero GC)
         this._diff = new THREE.Vector3();
@@ -75,7 +80,8 @@ export class PhysicsEngine {
         this.refreshActiveLists();
         
         const sunBody = this.physicsBodies.find(b => b.isSun);
-        if (!sunBody) return;
+        if (!sunBody) return 0;
+        let integratedDt = 0;
 
         const subSteps = this.subStepsFor(physicsDt, state.simSpeedMultiplier);
         if (subSteps > 0) {
@@ -87,7 +93,8 @@ export class PhysicsEngine {
             // wall frames instead of one frozen one.
             this._pending = this._pending || [];
             this._timing.requestedSeconds += physicsDt;
-            this._pending.push({ n: subSteps, dt: physicsDt / subSteps, move: realDt / subSteps });
+            this._pending.push({ n: subSteps, dt: physicsDt / subSteps, move: realDt / subSteps,
+                input: this.captureSubstepInput ? this.captureSubstepInput() : null });
             let totalQ = 0;
             for (const c of this._pending) totalQ += c.n;
             if (totalQ > MAX_PENDING_SUBSTEPS) {
@@ -105,8 +112,9 @@ export class PhysicsEngine {
                 let t0 = performance.now();
                 while (this._pending.length) {
                     const chunk = this._pending[0];
-                    this.stepSubStep(chunk.dt, chunk.move, sunBody);
+                    this.stepSubStep(chunk.dt, chunk.move, sunBody, chunk.input);
                     this._timing.integratedSeconds += chunk.dt;
+                    integratedDt += chunk.dt;
                     chunk.n -= 1;
                     if (chunk.n === 0) this._pending.shift();
                     if (performance.now() - t0 >= this.frameBudgetMs) break;
@@ -115,14 +123,16 @@ export class PhysicsEngine {
                 let budget = this.frameBudget;
                 while (budget > 0 && this._pending.length) {
                     const chunk = this._pending[0];
-                    this.stepSubStep(chunk.dt, chunk.move, sunBody);
+                    this.stepSubStep(chunk.dt, chunk.move, sunBody, chunk.input);
                     this._timing.integratedSeconds += chunk.dt;
+                    integratedDt += chunk.dt;
                     chunk.n -= 1;
                     budget -= 1;
                     if (chunk.n === 0) this._pending.shift();
                 }
             }
         }
+        return integratedDt;
     }
 
     /** Snapshot scheduler accounting without advancing simulation. */
@@ -154,7 +164,7 @@ export class PhysicsEngine {
         let n = 0;
         while (this._pending.length) {
             const chunk = this._pending[0];
-            this.stepSubStep(chunk.dt, chunk.move, sunBody);
+            this.stepSubStep(chunk.dt, chunk.move, sunBody, chunk.input);
             this._timing.integratedSeconds += chunk.dt;
             chunk.n -= 1;
             n += 1;
@@ -164,7 +174,8 @@ export class PhysicsEngine {
     }
 
     /** One integration sub-step (the body of the legacy per-frame run). */
-    stepSubStep(subDt, moveDt, sunBody) {
+    stepSubStep(subDt, moveDt, sunBody, input = null) {
+        if (this.beforeSubstep && !this._flightResetPending) this.beforeSubstep(input, subDt);
         const nPlanets = this.activePlanets.length;
 
             // 1. Planet-Sun and Planet-Planet interactions
@@ -234,7 +245,7 @@ export class PhysicsEngine {
             }
 
             // 2. Spaceship and enabled belt gravity.
-            this.updateSpaceshipPhysics(subDt, moveDt, sunBody);
+            this.updateSpaceshipPhysics(subDt, moveDt, sunBody, input);
             this.updateAsteroidsPhysics(subDt, sunBody);
 
             // 3. Integration
@@ -276,9 +287,12 @@ export class PhysicsEngine {
         this.bodiesListDirty = true;
     }
 
-    updateSpaceshipPhysics(subDt, moveDtBase, sunBody) {
+    updateSpaceshipPhysics(subDt, moveDtBase, sunBody, input = null) {
         const ship = this.getShip();
-        if (!state.isFlying || !ship || state.capturedBody) return;
+        if (!state.isFlying || !ship || state.capturedBody || this._flightResetPending) return;
+        // A flight must not be advanced through queued time from before it
+        // existed, or from a previous exit/re-entry session.
+        if (this.captureSubstepInput && (!input || input.ship !== ship || input.flightSessionId !== state.flightSessionId)) return;
 
         const sPos = ship.position;
 
@@ -305,8 +319,8 @@ export class PhysicsEngine {
         // (The old 0.5^(dt/50) drag silently bled off all velocity.)
 
         // Ship Position Integration
-        const moveDt = state.isAutopilotActive ? subDt : moveDtBase;
-        ship.position.addScaledVector(state.shipVelocity, moveDt);
+        // Ship and celestial bodies advance on the same executed sim step.
+        ship.position.addScaledVector(state.shipVelocity, subDt);
 
         // Surface Collision
         for (let i = 0; i < this.activePlanets.length; i++) {
@@ -324,16 +338,20 @@ export class PhysicsEngine {
     }
 
     resetShipFlight() {
-        if (!state.isFlying) return;
+        if (!state.isFlying || this._flightResetPending) return;
         state.shipVelocity.set(0, 0, 0);
-        if (this.onFlightReset) {
-            setTimeout(this.onFlightReset, 0);
-            return;
-        }
-        // Fallback for out-of-tooling usage (in-app the injection is active)
+        this._flightResetPending = true;
         setTimeout(() => {
-            const btn = document.getElementById('pilot-button');
-            if (btn && state.isFlying) btn.click();
+            try {
+                if (this.onFlightReset) this.onFlightReset();
+                else {
+                    // Fallback for out-of-tooling usage.
+                    const btn = document.getElementById('pilot-button');
+                    if (btn && state.isFlying) btn.click();
+                }
+            } finally {
+                this._flightResetPending = false;
+            }
         }, 0);
     }
 

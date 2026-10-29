@@ -997,7 +997,7 @@ import { FocusedShadowSystem } from './systems/FocusedShadowSystem.js';
 import { TimingStatusSystem } from './systems/TimingStatusSystem.js';
 
 // Time & orbital mechanics
-import { TimeSystem } from './core/time.js';
+import { TimeSystem, SCRIPTED_TIME_SCALE } from './core/time.js';
 import { orbitalStateAt } from './core/kepler.js';
 
 // App context handed to every system (single dependency-injection point)
@@ -1018,21 +1018,25 @@ const simCtx = {
     dt: 0, physicsDt: 0, scriptedDt: 0
 };
 
-// Pre-physics systems: flight control, autopilot, HUD, ship cameras, ambience
-// (order = original loop order)
+// Controls and guidance run once per rendered frame. Thrust is captured
+// after guidance and applied only inside executed physics substeps.
+const shipControlSystem = new ShipControlSystem(simCtx);
+const stationKeepingSystem = new StationKeepingSystem(simCtx);
+physicsEngine.captureSubstepInput = () => shipControlSystem.captureSubstepInput();
+physicsEngine.beforeSubstep = (input, dt) => shipControlSystem.applySubstepInput(input, dt);
 const prePhysicsSystems = [
-    new ShipControlSystem(simCtx),
+    shipControlSystem,
     new AutopilotSystem(simCtx),
-    new StationKeepingSystem(simCtx),
     new ShipHudSystem(simCtx),
-    new ShipCameraSystem(simCtx),
-    new AmbientSystem(simCtx)
+    new ShipCameraSystem(simCtx)
 ];
 
 // Post-physics part 1: body cleanup, camera safety, per-body visuals
 // (order = original loop order)
 const postPhysicsSystems = [
     new CleanupSystem(simCtx),
+    stationKeepingSystem,
+    new AmbientSystem(simCtx),
     new CameraSafeguardSystem(simCtx),
     new BodyVisualSystem(simCtx)
 ];
@@ -1053,19 +1057,24 @@ function animate() {
     // Time (TimeSystem owns the clocks; see modules/time/timeSystem.js)
     time.update();
     const dt = time.dt;
-    const physicsDt = time.simDt;
-    const scriptedDt = time.scriptedDt;
+    const requestedPhysicsDt = time.simDt;
 
-    simCtx.dt = dt;
-    simCtx.physicsDt = physicsDt;
-    simCtx.scriptedDt = scriptedDt;
+    simCtx.dt = dt; // real-time input/camera response
+    simCtx.physicsDt = 0;
+    simCtx.scriptedDt = 0;
 
     for (const sys of prePhysicsSystems) sys.update();
+    stationKeepingSystem.prepareInput();
 
     state._prevRealisticScaleForCam = state.isRealisticScale;
 
-    // Modular Physics Engine
-    physicsEngine.update(physicsDt, time.realDt);
+    // The physics scheduler is the authoritative simulation clock. Rendered
+    // body rotation and station keeping consume only the time actually run.
+    const integratedDt = physicsEngine.update(requestedPhysicsDt, time.realDt);
+    time.integratedDt = integratedDt;
+    time.integratedScriptedDt = integratedDt * SCRIPTED_TIME_SCALE;
+    simCtx.physicsDt = integratedDt;
+    simCtx.scriptedDt = time.integratedScriptedDt;
     timingStatus.update();
 
     // Sync sun light to sun's actual physics position (critical when sun drifts from origin)
