@@ -210,6 +210,7 @@ function updatePauseButtonVisuals() {
     const btn = document.getElementById('pause-button');
     if (!btn) return;
     btn.textContent = state.isPaused ? t('resume') : t('pause');
+    btn.classList.toggle('mobile-paused', state.isPaused);
     btn.style.borderColor = state.isPaused ? '#ff4f4f' : '#4fa6ff';
     btn.style.background = state.isPaused ? 'rgba(255,79,79,0.2)' : 'rgba(255,255,255,0.05)';
 }
@@ -357,6 +358,40 @@ document.getElementById('set-time-button').addEventListener('click', function() 
 
 document.getElementById('time-modal-cancel').addEventListener('click', function() {
     document.getElementById('time-modal').classList.remove('active');
+});
+
+// Mobile-only compact action drawer and expandable body details. Desktop
+// retains the original controls and full information panel.
+const mobileMoreButton = document.getElementById('mobile-more-button');
+const mobileExtraActions = document.getElementById('mobile-extra-actions');
+function setMobileActionsOpen(open) {
+    mobileExtraActions.classList.toggle('is-open', open);
+    mobileMoreButton.setAttribute('aria-expanded', String(open));
+}
+mobileMoreButton.addEventListener('click', () => {
+    setMobileActionsOpen(mobileMoreButton.getAttribute('aria-expanded') !== 'true');
+});
+mobileExtraActions.addEventListener('click', (event) => {
+    if (event.target.closest('button')) setMobileActionsOpen(false);
+});
+document.addEventListener('pointerdown', (event) => {
+    if (mobileMoreButton.getAttribute('aria-expanded') === 'true' &&
+        !mobileExtraActions.contains(event.target) && !mobileMoreButton.contains(event.target)) {
+        setMobileActionsOpen(false);
+    }
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setMobileActionsOpen(false);
+});
+const mobileInfoPanel = document.getElementById('info-panel');
+function toggleMobileInfo() {
+    if (!window.matchMedia('(max-width: 768px)').matches) return;
+    const expanded = mobileInfoPanel.classList.toggle('mobile-expanded');
+    mobileInfoPanel.setAttribute('aria-expanded', String(expanded));
+}
+mobileInfoPanel.addEventListener('click', toggleMobileInfo);
+mobileInfoPanel.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleMobileInfo(); }
 });
 
 document.getElementById('settings-button').addEventListener('click', function() {

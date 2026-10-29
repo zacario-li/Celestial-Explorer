@@ -50,6 +50,7 @@ export function initPilotButton(scene, camera, controls, headlight, targetVec, o
         if (nowMs - _lastToggleAt < 150) return;
         _lastToggleAt = nowMs;
         state.isFlying = !state.isFlying;
+        this.classList.toggle('mobile-flying', state.isFlying);
         const hud = document.getElementById('pilot-hud');
         const vController = document.getElementById('v-controller');
         const vCrosshair = document.getElementById('v-crosshair');

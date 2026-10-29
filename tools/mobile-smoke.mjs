@@ -35,6 +35,21 @@ try {
         assert.ok(bounds.bar.left >= 0 && bounds.bar.right <= viewport.width, `${name}: controls out of view`);
         assert.equal(bounds.canvas.width, viewport.width, `${name}: canvas width`);
         if (shots) await page.screenshot({ path: path.join(shots, `${name}-overview.png`) });
+        await page.locator('#mobile-more-button').tap();
+        assert.equal(await page.locator('#mobile-more-button').getAttribute('aria-expanded'), 'true');
+        assert.ok(await page.locator('#spawn-button').isVisible(), `${name}: extra actions hidden`);
+        if (shots) await page.screenshot({ path: path.join(shots, `${name}-more.png`) });
+        const beltBefore = await page.evaluate(() => window.__sim.state.isAsteroidBeltActive);
+        await page.locator('#asteroid-belt-button').tap();
+        assert.notEqual(await page.evaluate(() => window.__sim.state.isAsteroidBeltActive), beltBefore);
+        assert.equal(await page.locator('#mobile-more-button').getAttribute('aria-expanded'), 'false');
+        const info = page.locator('#info-panel');
+        if (await info.isVisible()) {
+            await info.tap();
+            assert.equal(await info.getAttribute('aria-expanded'), 'true');
+            await info.tap();
+            assert.equal(await info.getAttribute('aria-expanded'), 'false');
+        }
         await page.locator('#settings-button').tap();
         const modal = page.locator('#settings-modal .modal-content');
         await modal.waitFor({ state: 'visible', timeout: 5000 });
