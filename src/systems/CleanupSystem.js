@@ -67,6 +67,23 @@ export class CleanupSystem {
                 b.instancedMesh.instanceMatrix.needsUpdate = true;
             } else {
                 const scene = ctx.scene;
+                const satellites = b.satellites || [];
+                const removedMeshes = new Set([b.mesh, ...satellites.map(s => s.mesh)]);
+                const removedNames = new Set([b.name, ...satellites.map(s => s.name)]);
+                for (const moon of satellites) moon.destroyed = true;
+
+                // A docked ship is an independent entity, not part of the
+                // planet's disposable geometry. Preserve its world pose.
+                const ship = ctx.spaceship;
+                if (ship && b.orbitObj) {
+                    let parent = ship.parent;
+                    while (parent && parent !== b.orbitObj) parent = parent.parent;
+                    if (parent) {
+                        scene.updateMatrixWorld(true);
+                        scene.attach(ship);
+                    }
+                    if (state._shipDockParent === b.orbitObj) state._shipDockParent = null;
+                }
 
                 if (b.orbitObj) {
                     scene.remove(b.orbitObj);
@@ -85,7 +102,7 @@ export class CleanupSystem {
                     this.disposeHierarchy(b.pastTrailLine);
                 }
 
-                if (state.focusedBody === b.mesh) {
+                if (removedMeshes.has(state.focusedBody)) {
                     state.focusedBody = null;
                     state.isOverview = true;
                     updateInfoPanel(null);
@@ -97,7 +114,7 @@ export class CleanupSystem {
                 if (state.capturedBody === b) state.capturedBody = null;
                 if (state.autopilotTarget === b) state.autopilotTarget = null;
                 if (state._prevAutopilotTarget === b) state._prevAutopilotTarget = null;
-                if (state.previousBody === b) state.previousBody = null;
+                if (state.previousBody === b || removedMeshes.has(state.previousBody)) state.previousBody = null;
 
                 // Free the body's texture cache entries that no other live
                 // body still shares:
@@ -106,8 +123,9 @@ export class CleanupSystem {
                 // Remove from Nav List
                 const items = this.navList.querySelectorAll('.nav-item');
                 items.forEach(item => {
-                    if (item.dataset.engName === b.name) {
-                        item.remove();
+                    if (removedNames.has(item.dataset.engName)) {
+                        const group = item.dataset.engName === b.name ? item.closest('.nav-group') : null;
+                        (group || item).remove();
                     }
                 });
             }
